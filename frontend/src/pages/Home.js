@@ -33,8 +33,8 @@ export default function Home() {
       api.get('/battles/leaderboard'),
     ])
       .then(([t, l]) => {
-        setTrending(t.data);
-        setLeaderboard(l.data.slice(0, 5));
+        if (Array.isArray(t.data)) setTrending(t.data);
+        if (Array.isArray(l.data)) setLeaderboard(l.data.slice(0, 5));
       })
       .catch((err) => console.error('HOME ERROR:', err))
       .finally(() => setLoading(false));
@@ -163,7 +163,7 @@ export default function Home() {
         </div>
 
         <div className="lb-list">
-          {leaderboard.map((u, i) => (
+          {leaderboard?.map((u, i) => (
             <div key={u.id} className="lb-row">
               <span className={`lb-rank ${i < 3 ? 'top' : ''}`}>
                 {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}

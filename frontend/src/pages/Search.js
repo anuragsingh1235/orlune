@@ -16,7 +16,7 @@ export default function Search() {
     setLoading(true);
     try {
       const res = await api.get(`/movies/search?q=${encodeURIComponent(q)}`);
-      const results = res.data || [];
+      const results = Array.isArray(res.data) ? res.data : [];
 
       setResults(prev =>
         p === 1 ? results : [...prev, ...results]
