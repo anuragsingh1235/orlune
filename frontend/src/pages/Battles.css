@@ -1,0 +1,52 @@
+.battles-page { padding: 40px 24px 80px; }
+
+.battles-explainer {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 36px;
+}
+.explain-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; text-align: center;
+}
+.explain-card span { font-size: 24px; display: block; margin-bottom: 8px; }
+.explain-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+
+.battles-list { display: flex; flex-direction: column; gap: 16px; }
+.battle-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px; transition: border-color 0.2s;
+}
+.battle-card:hover { border-color: var(--border-light); }
+.battle-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.battle-date { font-size: 12px; color: var(--text-muted); }
+
+.battle-vs {
+  display: flex; align-items: center; gap: 16px;
+}
+.battle-user {
+  flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+}
+.battle-user.right { align-items: flex-end; }
+.battle-user span { font-size: 15px; font-weight: 600; }
+.battle-user em { color: var(--text-muted); font-style: normal; font-size: 12px; }
+.battle-user strong { font-size: 20px; font-weight: 800; color: var(--accent-gold); }
+
+.b-avatar {
+  width: 44px; height: 44px; background: var(--accent); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+}
+.vs-badge {
+  font-size: 20px; font-weight: 900; color: var(--accent);
+  padding: 0 16px; flex-shrink: 0;
+}
+
+.challenge-results { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.challenge-user {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; background: var(--bg-secondary);
+  border-radius: 10px; border: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .battles-explainer { grid-template-columns: repeat(2,1fr); }
+}
