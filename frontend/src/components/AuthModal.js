@@ -5,17 +5,21 @@ import api from '../utils/api';
 
 export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
   const { login } = useAuth();
+  
+  // Modes: 'login', 'register', 'register-otp', 'forgot-password', 'forgot-password-otp'
   const [mode, setMode] = useState(defaultMode);
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
+  // Form Data
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [loginError, setLoginError] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
+  const [regForm, setRegForm] = useState({ username: '', email: '', password: '', otp: '' });
+  const [forgotForm, setForgotForm] = useState({ email: '', otp: '', newPassword: '' });
 
-  const [regForm, setRegForm] = useState({ username: '', email: '', password: '' });
-  const [regError, setRegError] = useState('');
-  const [regLoading, setRegLoading] = useState(false);
+  // State
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -23,6 +27,12 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
       setVisible(true);
       setExiting(false);
       document.body.style.overflow = 'hidden';
+      // RESET forms
+      setLoginForm({ email: '', password: '' });
+      setRegForm({ username: '', email: '', password: '', otp: '' });
+      setForgotForm({ email: '', otp: '', newPassword: '' });
+      setError('');
+      setSuccessMsg('');
     }
   }, [isOpen, defaultMode]);
 
@@ -33,8 +43,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
       setExiting(false);
       document.body.style.overflow = '';
       onClose();
-      setLoginError('');
-      setRegError('');
+      setError('');
+      setSuccessMsg('');
     }, 350);
   }, [onClose]);
 
@@ -46,57 +56,87 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
 
   const switchMode = (m) => {
     setMode(m);
-    setLoginError('');
-    setRegError('');
+    setError('');
+    setSuccessMsg('');
   };
+
+  /* ----- API HANDLERS ----- */
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoginError('');
-    setLoginLoading(true);
+    setError(''); setLoading(true);
     try {
       const res = await api.post('/auth/login', loginForm);
       login(res.data.token, res.data.user);
       handleClose();
     } catch (err) {
-      setLoginError(err.response?.data?.error || 'Invalid credentials');
+      setError(err.response?.data?.error || 'Invalid credentials');
     } finally {
-      setLoginLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleRegister = async (e) => {
+  const handleRequestRegOtp = async (e) => {
     e.preventDefault();
-    setRegError('');
-    setRegLoading(true);
+    setError(''); setLoading(true);
     try {
-      const res = await api.post('/auth/register', regForm);
+      await api.post('/auth/register/request-otp', { email: regForm.email });
+      switchMode('register-otp');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyRegister = async (e) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      const res = await api.post('/auth/register/verify', regForm);
       login(res.data.token, res.data.user);
       handleClose();
     } catch (err) {
-      setRegError(err.response?.data?.error || 'Registration failed');
+      setError(err.response?.data?.error || 'Verification failed');
     } finally {
-      setRegLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleForgotOtp = async (e) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      await api.post('/auth/forgot-password/request-otp', { email: forgotForm.email });
+      switchMode('forgot-password-otp');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      await api.post('/auth/forgot-password/reset', forgotForm);
+      setSuccessMsg("Password updated! You can now login.");
+      setTimeout(() => switchMode('login'), 2000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Reset failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!visible) return null;
 
   return (
-    <div
-      className={`am-overlay ${exiting ? 'am-overlay--exit' : 'am-overlay--enter'}`}
-      onClick={handleClose}
-      aria-modal="true"
-      role="dialog"
-    >
-      <div
-        className={`am-panel ${exiting ? 'am-panel--exit' : 'am-panel--enter'}`}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className={`am-overlay ${exiting ? 'am-overlay--exit' : 'am-overlay--enter'}`} onClick={handleClose} aria-modal="true" role="dialog">
+      <div className={`am-panel ${exiting ? 'am-panel--exit' : 'am-panel--enter'}`} onClick={(e) => e.stopPropagation()}>
         <button className="am-close" onClick={handleClose} aria-label="Close">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
 
         <div className="am-brand">
@@ -104,139 +144,135 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
           <span className="am-brand-name">Orlune</span>
         </div>
 
-        <div className="am-tabs">
-          <button className={`am-tab ${mode === 'login' ? 'am-tab--active' : ''}`} onClick={() => switchMode('login')}>
-            Sign In
-          </button>
-          <button className={`am-tab ${mode === 'register' ? 'am-tab--active' : ''}`} onClick={() => switchMode('register')}>
-            Create Account
-          </button>
-          <div className={`am-tab-ink ${mode === 'register' ? 'am-tab-ink--right' : ''}`} />
-        </div>
-
-        <div className="am-body">
-          {/* LOGIN PANEL */}
-          <div className={`am-slide ${mode === 'login' ? 'am-slide--active' : 'am-slide--out-left'}`}>
-            <div className="am-heading">
-              <h2>Welcome back</h2>
-              <p>Your cinematic universe awaits</p>
-            </div>
-            <form onSubmit={handleLogin} className="am-form">
-              <div className="am-field">
-                <label>Email</label>
-                <div className="am-input-wrap">
-                  <IconMail />
-                  <input type="email" placeholder="you@example.com" value={loginForm.email}
-                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                    required autoComplete="email" />
-                </div>
-              </div>
-              <div className="am-field">
-                <label>Password</label>
-                <div className="am-input-wrap">
-                  <IconLock />
-                  <input type="password" placeholder="••••••••" value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    required autoComplete="current-password" />
-                </div>
-              </div>
-              {loginError && <div className="am-error">{loginError}</div>}
-              <button type="submit" className="am-submit" disabled={loginLoading}>
-                {loginLoading ? <Dots /> : 'Sign In'}
-              </button>
-            </form>
-            <p className="am-footer-text">
-              New here? <button className="am-link" onClick={() => switchMode('register')}>Create an account</button>
-            </p>
+        {/* ONLY SHOW TABS IF NOT IN OTP OR FORGOT PASSWORD STEPS */}
+        {(mode === 'login' || mode === 'register') && (
+          <div className="am-tabs">
+            <button className={`am-tab ${mode === 'login' ? 'am-tab--active' : ''}`} onClick={() => switchMode('login')}>Sign In</button>
+            <button className={`am-tab ${mode === 'register' ? 'am-tab--active' : ''}`} onClick={() => switchMode('register')}>Create Account</button>
+            <div className={`am-tab-ink ${mode === 'register' ? 'am-tab-ink--right' : ''}`} />
           </div>
+        )}
 
-          {/* REGISTER PANEL */}
-          <div className={`am-slide ${mode === 'register' ? 'am-slide--active' : 'am-slide--out-right'}`}>
-            <div className="am-heading">
-              <h2>Join Orlune</h2>
-              <p>Begin your journey through cinema</p>
+        <div className="am-body" style={{ minHeight: '300px' }}>
+          
+          {/* LOGIN */}
+          {mode === 'login' && (
+            <div className="am-slide am-slide--active">
+              <div className="am-heading">
+                <h2>Welcome back</h2><p>Your cinematic universe awaits</p>
+              </div>
+              {successMsg && <div className="am-success" style={{color: '#a3be8c', marginBottom: 15, fontSize: 13, background: 'rgba(163,190,140,0.1)', padding: 10, borderRadius: 6}}>{successMsg}</div>}
+              <form onSubmit={handleLogin} className="am-form">
+                <div className="am-field">
+                  <label>Email</label>
+                  <div className="am-input-wrap">
+                    <IconMail />
+                    <input type="email" placeholder="you@example.com" value={loginForm.email} onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })} required />
+                  </div>
+                </div>
+                <div className="am-field">
+                  <label>Password</label>
+                  <div className="am-input-wrap">
+                    <IconLock />
+                    <input type="password" placeholder="••••••••" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} required />
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', marginTop: '-10px', marginBottom: '15px' }}>
+                    <button type="button" className="am-link" style={{fontSize: '12px'}} onClick={() => switchMode('forgot-password')}>Forgot password?</button>
+                </div>
+                {error && <div className="am-error">{error}</div>}
+                <button type="submit" className="am-submit" disabled={loading}>{loading ? <Dots /> : 'Sign In'}</button>
+              </form>
+              <p className="am-footer-text">New here? <button className="am-link" onClick={() => switchMode('register')}>Create an account</button></p>
             </div>
+          )}
 
-            <div className="am-social-proof">
-              <div className="am-faces">
-                {['A','K','R','M','S'].map((l, i) => (
-                  <div key={i} className="am-face" style={{ '--i': i }}>{l}</div>
-                ))}
+          {/* REGISTER STEP 1 */}
+          {mode === 'register' && (
+            <div className="am-slide am-slide--active">
+              <div className="am-heading">
+                <h2>Join Orlune</h2><p>Begin your journey through cinema</p>
               </div>
-              <span>500+ members · always free</span>
+              <form onSubmit={handleRequestRegOtp} className="am-form">
+                <div className="am-field">
+                  <label>Username</label>
+                  <div className="am-input-wrap"><IconUser /><input type="text" placeholder="Your name" value={regForm.username} onChange={(e) => setRegForm({ ...regForm, username: e.target.value })} required /></div>
+                </div>
+                <div className="am-field">
+                  <label>Email</label>
+                  <div className="am-input-wrap"><IconMail /><input type="email" placeholder="you@example.com" value={regForm.email} onChange={(e) => setRegForm({ ...regForm, email: e.target.value })} required /></div>
+                </div>
+                <div className="am-field">
+                  <label>Choose Password</label>
+                  <div className="am-input-wrap"><IconLock /><input type="password" placeholder="Min 6 characters" value={regForm.password} onChange={(e) => setRegForm({ ...regForm, password: e.target.value })} required minLength={6} /></div>
+                </div>
+                {error && <div className="am-error">{error}</div>}
+                <button type="submit" className="am-submit" disabled={loading}>{loading ? <Dots /> : 'Send Verification OTP'}</button>
+              </form>
             </div>
+          )}
 
-            <form onSubmit={handleRegister} className="am-form">
-              <div className="am-field">
-                <label>Username</label>
-                <div className="am-input-wrap">
-                  <IconUser />
-                  <input type="text" placeholder="Your name" value={regForm.username}
-                    onChange={(e) => setRegForm({ ...regForm, username: e.target.value })}
-                    required autoComplete="username" />
+          {/* REGISTER STEP 2 (OTP) */}
+          {mode === 'register-otp' && (
+            <div className="am-slide am-slide--active">
+              <div className="am-heading"><h2>Check your email</h2><p>We've sent a 6-digit code to {regForm.email}</p></div>
+              <form onSubmit={handleVerifyRegister} className="am-form">
+                <div className="am-field">
+                  <label>Verification Code</label>
+                  <div className="am-input-wrap">
+                    <input type="text" placeholder="123456" maxLength={6} style={{letterSpacing: '5px', textAlign: 'center', fontSize: '20px', paddingLeft: '15px'}} value={regForm.otp} onChange={(e) => setRegForm({ ...regForm, otp: e.target.value })} required />
+                  </div>
                 </div>
-              </div>
-              <div className="am-field">
-                <label>Email</label>
-                <div className="am-input-wrap">
-                  <IconMail />
-                  <input type="email" placeholder="you@example.com" value={regForm.email}
-                    onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                    required autoComplete="email" />
+                {error && <div className="am-error">{error}</div>}
+                <button type="submit" className="am-submit" disabled={loading}>{loading ? <Dots /> : 'Verify & Create Account'}</button>
+              </form>
+              <button className="am-link" style={{display: 'block', margin: '20px auto 0'}} onClick={() => switchMode('register')}>← Back</button>
+            </div>
+          )}
+
+          {/* FORGOT PASSWORD STEP 1 */}
+          {mode === 'forgot-password' && (
+            <div className="am-slide am-slide--active">
+              <div className="am-heading"><h2>Reset Password</h2><p>Enter your email to receive a secure OTP</p></div>
+              <form onSubmit={handleForgotOtp} className="am-form">
+                <div className="am-field">
+                  <label>Email</label>
+                  <div className="am-input-wrap"><IconMail /><input type="email" placeholder="you@example.com" value={forgotForm.email} onChange={(e) => setForgotForm({ ...forgotForm, email: e.target.value })} required /></div>
                 </div>
-              </div>
-              <div className="am-field">
-                <label>Password</label>
-                <div className="am-input-wrap">
-                  <IconLock />
-                  <input type="password" placeholder="Min 6 characters" value={regForm.password}
-                    onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                    required minLength={6} autoComplete="new-password" />
+                {error && <div className="am-error">{error}</div>}
+                <button type="submit" className="am-submit" disabled={loading}>{loading ? <Dots /> : 'Send Reset OTP'}</button>
+              </form>
+              <button className="am-link" style={{display: 'block', margin: '20px auto 0'}} onClick={() => switchMode('login')}>← Back to Login</button>
+            </div>
+          )}
+
+          {/* FORGOT PASSWORD STEP 2 (OTP & NEW PASSWORD) */}
+          {mode === 'forgot-password-otp' && (
+            <div className="am-slide am-slide--active">
+              <div className="am-heading"><h2>Create New Password</h2><p>OTP sent to {forgotForm.email}</p></div>
+              <form onSubmit={handleResetPassword} className="am-form">
+                <div className="am-field">
+                  <label>Verification Code</label>
+                  <div className="am-input-wrap">
+                    <input type="text" placeholder="123456" maxLength={6} style={{letterSpacing: '5px', textAlign: 'center', fontSize: '20px', paddingLeft: '15px'}} value={forgotForm.otp} onChange={(e) => setForgotForm({ ...forgotForm, otp: e.target.value })} required />
+                  </div>
                 </div>
-              </div>
-              {regError && <div className="am-error">{regError}</div>}
-              <button type="submit" className="am-submit" disabled={regLoading}>
-                {regLoading ? <Dots /> : 'Join the Community'}
-              </button>
-            </form>
-            <p className="am-footer-text">
-              Already a member? <button className="am-link" onClick={() => switchMode('login')}>Sign in</button>
-            </p>
-          </div>
+                <div className="am-field">
+                  <label>New Password</label>
+                  <div className="am-input-wrap"><IconLock /><input type="password" placeholder="Min 6 characters" value={forgotForm.newPassword} onChange={(e) => setForgotForm({ ...forgotForm, newPassword: e.target.value })} required minLength={6} /></div>
+                </div>
+                {error && <div className="am-error">{error}</div>}
+                <button type="submit" className="am-submit" disabled={loading}>{loading ? <Dots /> : 'Update Password'}</button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function Dots() {
-  return <span className="am-dots"><span /><span /><span /></span>;
-}
-
-function IconMail() {
-  return (
-    <svg className="am-icon" viewBox="0 0 16 16" fill="none" width="14" height="14">
-      <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/>
-      <path d="M1 5.5l7 4.5 7-4.5" stroke="currentColor" strokeWidth="1.2"/>
-    </svg>
-  );
-}
-
-function IconLock() {
-  return (
-    <svg className="am-icon" viewBox="0 0 16 16" fill="none" width="14" height="14">
-      <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
-      <path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.2"/>
-      <circle cx="8" cy="10.5" r="1" fill="currentColor"/>
-    </svg>
-  );
-}
-
-function IconUser() {
-  return (
-    <svg className="am-icon" viewBox="0 0 16 16" fill="none" width="14" height="14">
-      <circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.2"/>
-      <path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-    </svg>
-  );
-}
+function Dots() { return <span className="am-dots"><span /><span /><span /></span>; }
+function IconMail() { return <svg className="am-icon" viewBox="0 0 16 16" fill="none" width="14" height="14"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 5.5l7 4.5 7-4.5" stroke="currentColor" strokeWidth="1.2"/></svg>; }
+function IconLock() { return <svg className="am-icon" viewBox="0 0 16 16" fill="none" width="14" height="14"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="10.5" r="1" fill="currentColor"/></svg>; }
+function IconUser() { return <svg className="am-icon" viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.2"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>; }

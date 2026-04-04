@@ -3,8 +3,11 @@ const router = express.Router();
 const authController = require("../controllers/authController");
 const auth = require("../middleware/auth");  // ADD THIS
 
-router.post("/register", authController.register);
+router.post("/register/request-otp", authController.requestSignupOtp);
+router.post("/register/verify", authController.verifySignup);
 router.post("/login", authController.login);
-router.get("/me", auth, authController.me);  // ADD auth HERE
+router.post("/forgot-password/request-otp", authController.forgotPasswordOtp);
+router.post("/forgot-password/reset", authController.resetPassword);
+router.get("/me", auth, authController.me);
 
 module.exports = router;
