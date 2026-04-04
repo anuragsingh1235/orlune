@@ -6,7 +6,7 @@ import './MovieCard.css';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w342';
 
-export default function MovieCard({ item, onAdd, showStatus }) {
+export default function MovieCard({ item, onAdd, onClick, showStatus }) {
   const { user } = useAuth();
   const [adding, setAdding] = useState(false);
 
