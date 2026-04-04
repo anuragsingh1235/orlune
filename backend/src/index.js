@@ -5,8 +5,9 @@ require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 const authRoutes = require("./routes/auth");
 const movieRoutes = require("./routes/movies");
-const battleRoutes = require("./routes/battles");
 const watchlistRoutes = require("./routes/watchlist");
+const battleRoutes = require("./routes/battles");
+const animeRoutes = require("./routes/anime");
 
 const app = express();
 

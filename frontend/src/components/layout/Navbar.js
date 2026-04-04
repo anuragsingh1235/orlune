@@ -28,9 +28,10 @@ export default function Navbar() {
   const links = [
     { to: '/', label: 'Home' },
     { to: '/search', label: 'Search' },
+    { to: '/anime', label: 'Anime' },
     { to: '/watchlist', label: 'Watchlist' },
     { to: '/battles', label: 'Battles' },
-    { to: '/leaderboard', label: 'Leaderboard' },
+    { to: '/leaderboard', label: 'Rankings' },
   ];
 
   const handleLogout = () => {

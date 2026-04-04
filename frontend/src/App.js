@@ -28,6 +28,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/anime" element={<Anime />} />
         <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
         <Route path="/battles" element={<ProtectedRoute><Battles /></ProtectedRoute>} />
         <Route path="/leaderboard" element={<Leaderboard />} />

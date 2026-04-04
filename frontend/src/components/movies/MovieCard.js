@@ -66,10 +66,6 @@ export default function MovieCard({ item, onAdd, showStatus }) {
             <span>★</span> {rating}
           </div>
         )}
-        {/* API source badge */}
-        <div className={`api-badge ${isOmdb ? 'api-omdb' : 'api-tmdb'}`}>
-          {isOmdb ? 'OMDB' : 'TMDB'}
-        </div>
         {showStatus && item.status && (
           <div className={`movie-status status-${item.status}`}>
             {item.status === 'completed' ? '✅' : '📋'} {item.status}

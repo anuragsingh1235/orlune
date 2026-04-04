@@ -12,6 +12,7 @@ export default function Home() {
   const location = useLocation();
   const navigate = useNavigate();
   const [trending, setTrending] = useState([]);
+  const [anime, setAnime] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -31,18 +32,18 @@ export default function Home() {
   useEffect(() => {
     Promise.allSettled([
       api.get('/movies/trending'),
+      api.get('/anime/trending'),
       api.get('/battles/leaderboard'),
     ])
-      .then(([tResult, lResult]) => {
+      .then(([tResult, aResult, lResult]) => {
         if (tResult.status === 'fulfilled' && Array.isArray(tResult.value.data)) {
-          setTrending(tResult.value.data);
-        } else if (tResult.status === 'rejected') {
-          console.error('Trending fetch failed:', tResult.reason);
+          setTrending(tResult.value.data.slice(0, 8));
+        }
+        if (aResult.status === 'fulfilled' && Array.isArray(aResult.value.data)) {
+          setAnime(aResult.value.data.slice(0, 8));
         }
         if (lResult.status === 'fulfilled' && Array.isArray(lResult.value.data)) {
           setLeaderboard(lResult.value.data.slice(0, 5));
-        } else if (lResult.status === 'rejected') {
-          console.error('Leaderboard fetch failed:', lResult.reason);
         }
       })
       .finally(() => setLoading(false));
@@ -78,6 +79,22 @@ export default function Home() {
             <div className="movies-grid animate-up">
               {trending?.map((item) => (
                 <MovieCard key={item.id} item={{ ...item, media_type: 'movie' }} />
+              ))}
+            </div>
+          )}
+
+          {/* ✨ SPOTLIGHT: ANIME */}
+          <div className="section-header" style={{ marginTop: '60px' }}>
+            <h2 className="section-title">Spotlight: Anime</h2>
+            <Link to="/anime" className="btn btn-ghost btn-sm">Full Archive →</Link>
+          </div>
+
+          {loading ? (
+            <div className="spinner" />
+          ) : (
+            <div className="movies-grid animate-up">
+              {anime?.map((item) => (
+                <MovieCard key={item.id} item={item} />
               ))}
             </div>
           )}
