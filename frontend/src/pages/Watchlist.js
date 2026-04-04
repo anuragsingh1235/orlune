@@ -63,7 +63,10 @@ export default function Watchlist() {
       setItems((prev) => prev.map((i) => i.id === masteringItem.id ? data : i));
       setMasteringItem(null);
       toast.success('Masterpiece Record Stored 🏛️');
-    } catch { toast.error('Failed to update record'); }
+    } catch (err) { 
+      const msg = err.response?.data?.error || 'Failed to update record';
+      toast.error(msg); 
+    }
   };
 
   const openEdit = (e, item) => {

@@ -128,18 +128,23 @@ exports.updateItem = async (req, res) => {
   const { user_rating, user_review, status } = req.body;
 
   try {
-    // If status is being changed to 'completed', set completed_at
-    let query = `UPDATE watchlist_items 
-                 SET user_rating=$1, user_review=$2, status=$3 `;
-    const params = [user_rating, user_review, status, req.params.id, req.user.id];
-
+    // Standardizing the update
+    let result;
     if (status === 'completed') {
-      query += `, completed_at = NOW() `;
+      result = await pool.query(
+        `UPDATE watchlist_items 
+         SET user_rating=$1, user_review=$2, status=$3, completed_at=NOW() 
+         WHERE id=$4 AND user_id=$5 RETURNING *`,
+        [user_rating, user_review, status, req.params.id, req.user.id]
+      );
+    } else {
+      result = await pool.query(
+        `UPDATE watchlist_items 
+         SET user_rating=$1, user_review=$2, status=$3 
+         WHERE id=$4 AND user_id=$5 RETURNING *`,
+        [user_rating, user_review, status, req.params.id, req.user.id]
+      );
     }
-
-    query += ` WHERE id=$4 AND user_id=$5 RETURNING *`;
-
-    const result = await pool.query(query, params);
 
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Item not found' });
