@@ -135,3 +135,39 @@
   background: rgba(180, 142, 173, 0.7);
   color: white;
 }
+
+.movie-status {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(11, 14, 20, 0.85);
+  backdrop-filter: blur(8px);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.status-completed {
+    border-color: rgba(163, 190, 140, 0.3);
+    color: #a3be8c;
+}
+
+.status-watchlist {
+    border-color: rgba(94, 129, 172, 0.3);
+    color: #81a1c1;
+}
+
+.user-rating {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #B48EAD;
+    letter-spacing: 0.5px;
+}

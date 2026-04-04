@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import MovieCard from '../components/movies/MovieCard';
 import DetailsModal from '../components/movies/DetailsModal';
+import MasteryQuestionModal from '../components/movies/MasteryQuestionModal';
+import CommunityRatings from '../components/movies/CommunityRatings';
 import api from '../utils/api';
 import './Watchlist.css';
 
@@ -17,7 +19,9 @@ export default function Watchlist() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [view, setView] = useState('personal'); // 'personal' or 'community'
   const [activeMovie, setActiveMovie] = useState(null);
+  const [masteringItem, setMasteringItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [editForm, setEditForm] = useState({ user_rating: '', user_review: '', status: '' });
 
@@ -42,12 +46,24 @@ export default function Watchlist() {
 
   const remove = async (e, id) => {
     e.stopPropagation();
-    if (!window.confirm('Remove this title from your archive?')) return;
+    if (!window.confirm('Remove this record from your archive?')) return;
     try {
       await api.delete(`/watchlist/${id}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
-      toast.success('Removed from archive');
-    } catch { toast.error('Failed to remove'); }
+      toast.success('Record purged from archive');
+    } catch (err) { 
+      const msg = err.response?.data?.error || 'Failed to remove';
+      toast.error(msg, { duration: 4000 }); 
+    }
+  };
+
+  const masterRecord = async (editData) => {
+    try {
+      const { data } = await api.put(`/watchlist/${masteringItem.id}`, editData);
+      setItems((prev) => prev.map((i) => i.id === masteringItem.id ? data : i));
+      setMasteringItem(null);
+      toast.success('Masterpiece Record Stored 🏛️');
+    } catch { toast.error('Failed to update record'); }
   };
 
   const openEdit = (e, item) => {
@@ -124,16 +140,27 @@ export default function Watchlist() {
         <div className="wl-stat"><span>★ {stats.avgRating}</span><label>Heritage Score</label></div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="tabs glass-card" style={{ maxWidth: 450, margin: '0 auto 40px', padding: '6px' }}>
-        {['all', 'watchlist', 'completed'].map((f) => (
-          <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'All Records' : f === 'watchlist' ? '📋 Pending' : '✅ Mastered'}
-          </button>
-        ))}
+      {/* Navigation Tabs */}
+      <div className="tabs-container animate-up">
+        <div className="view-selector glass-card">
+          <button className={`view-btn ${view === 'personal' ? 'active' : ''}`} onClick={() => setView('personal')}>📜 My Archive</button>
+          <button className={`view-btn ${view === 'community' ? 'active' : ''}`} onClick={() => setView('community')}>🏛️ Global Heritage</button>
+        </div>
+
+        {view === 'personal' && (
+          <div className="filter-tabs glass-card">
+            {['all', 'watchlist', 'completed'].map((f) => (
+              <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+                {f === 'all' ? 'All Records' : f === 'watchlist' ? '📋 Pending' : '✅ Mastered'}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {loading ? <div className="spinner" style={{ margin: '60px auto' }} /> : filtered.length === 0 ? (
+      {view === 'community' ? (
+        <CommunityRatings />
+      ) : loading ? <div className="spinner" style={{ margin: '60px auto' }} /> : filtered.length === 0 ? (
         <div className="empty-state animate-fade">
           <div className="icon">🎬</div>
           <h3>The Archive is Empty</h3>
@@ -149,8 +176,11 @@ export default function Watchlist() {
                   showStatus
                />
                <div className="watchlist-actions-overlay">
-                  <button className="btn-edit" onClick={(e) => openEdit(e, item)}>✏️</button>
-                  <button className="btn-delete" onClick={(e) => remove(e, item.id)}>🗑️</button>
+                  {item.status !== 'completed' && (
+                    <button className="btn-master" onClick={(e) => { e.stopPropagation(); setMasteringItem(item); }} title="Master this record">✅</button>
+                  )}
+                  <button className="btn-edit" onClick={(e) => openEdit(e, item)} title="Edit record">✏️</button>
+                  <button className="btn-delete" onClick={(e) => remove(e, item.id)} title="Purge Record">🗑️</button>
                </div>
             </div>
           ))}
@@ -159,6 +189,15 @@ export default function Watchlist() {
 
       {/* Detail Modal */}
       {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
+
+      {/* Mastery Question Modal */}
+      {masteringItem && (
+        <MasteryQuestionModal 
+          item={masteringItem} 
+          onComplete={masterRecord} 
+          onClose={() => setMasteringItem(null)} 
+        />
+      )}
 
       {/* Legacy Edit Modal */}
       {editItem && (

@@ -128,12 +128,18 @@ exports.updateItem = async (req, res) => {
   const { user_rating, user_review, status } = req.body;
 
   try {
-    const result = await pool.query(
-      `UPDATE watchlist_items 
-       SET user_rating=$1, user_review=$2, status=$3 
-       WHERE id=$4 AND user_id=$5 RETURNING *`,
-      [user_rating, user_review, status, req.params.id, req.user.id]
-    );
+    // If status is being changed to 'completed', set completed_at
+    let query = `UPDATE watchlist_items 
+                 SET user_rating=$1, user_review=$2, status=$3 `;
+    const params = [user_rating, user_review, status, req.params.id, req.user.id];
+
+    if (status === 'completed') {
+      query += `, completed_at = NOW() `;
+    }
+
+    query += ` WHERE id=$4 AND user_id=$5 RETURNING *`;
+
+    const result = await pool.query(query, params);
 
     if (!result.rows.length) {
       return res.status(404).json({ error: 'Item not found' });
@@ -150,18 +156,62 @@ exports.updateItem = async (req, res) => {
 // ❌ REMOVE ITEM
 exports.removeItem = async (req, res) => {
   try {
+    // Check if item is completed and when
+    const checkQuery = await pool.query(
+      "SELECT status, completed_at FROM watchlist_items WHERE id=$1 AND user_id=$2",
+      [req.params.id, req.user.id]
+    );
+
+    if (!checkQuery.rows.length) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const item = checkQuery.rows[0];
+
+    // If it's a completed masterpiece, enforce the 2-day cooldown
+    if (item.status === 'completed' && item.completed_at) {
+      const completionDate = new Date(item.completed_at);
+      const now = new Date();
+      const diffDays = (now - completionDate) / (1000 * 60 * 60 * 24);
+
+      if (diffDays < 2) {
+        const remainingHours = Math.ceil((2 - diffDays) * 24);
+        return res.status(403).json({ 
+          error: `Great legacy takes time. Mastered records can only be removed after 48 hours of curation. (${remainingHours}h remaining)` 
+        });
+      }
+    }
+
     const result = await pool.query(
       `DELETE FROM watchlist_items 
        WHERE id=$1 AND user_id=$2 RETURNING id`,
       [req.params.id, req.user.id]
     );
 
-    if (!result.rows.length) {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-
     res.json({ message: 'Removed' });
 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// 🏛️ GET COMMUNITY RATINGS
+exports.getCommunityRatings = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT title, poster_path, media_type, tmdb_id,
+              AVG(CAST(user_rating AS FLOAT)) as avg_community_rating,
+              COUNT(user_rating) as total_ratings
+       FROM watchlist_items 
+       WHERE user_rating IS NOT NULL AND status='completed'
+       GROUP BY title, poster_path, media_type, tmdb_id
+       HAVING COUNT(user_rating) > 0
+       ORDER BY avg_community_rating DESC
+       LIMIT 20`
+    );
+
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

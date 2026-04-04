@@ -13,6 +13,9 @@ router.post("/", auth, c.addItem);
 // ✏️ UPDATE item
 router.put("/:id", auth, c.updateItem);
 
+// 🏛️ GET community ratings
+router.get("/community/scores", c.getCommunityRatings);
+
 // ❌ DELETE item
 router.delete("/:id", auth, c.removeItem);
 
