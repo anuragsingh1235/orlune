@@ -5,7 +5,7 @@ import './Search.css';
 
 export default function Search() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]); // ✅ always array
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -16,14 +16,14 @@ export default function Search() {
     setLoading(true);
     try {
       const res = await api.get(`/movies/search?q=${encodeURIComponent(q)}`);
-      const results = Array.isArray(res.data) ? res.data : [];
+      const searchResults = Array.isArray(res.data) ? res.data : [];
 
       setResults(prev =>
-        p === 1 ? results : [...prev, ...results]
+        p === 1 ? searchResults : [...prev, ...searchResults]
       );
 
       // Backend doesn't paginate — disable load more if fewer than 20 results
-      setTotalPages(results.length >= 20 ? p + 1 : p);
+      setTotalPages(searchResults.length >= 20 ? p + 1 : p);
 
     } catch (err) {
       console.error('SEARCH ERROR:', err);
@@ -52,91 +52,99 @@ export default function Search() {
   };
 
   return (
-    <div className="search-page container">
-      <h1 className="page-title">
-        🔍 Search <span>Movies</span>
-      </h1>
+    <div className="search-page container animate-fade">
+      
+      {/* 🔮 HERO SECTION */}
+      <section className="search-hero">
+        <h1 className="page-title text-gradient">
+          Everything <span>Starts</span> with a Search.
+        </h1>
+        
+        <div className="search-bar-wrap glass-card">
+          <input
+            className="search-input"
+            placeholder="Search movies, actors, or themes..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
 
-      <div className="search-bar-wrap">
-        <input
-          className="input search-input"
-          placeholder="Search for movies..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-        />
+          {query && (
+            <button
+              className="clear-btn"
+              onClick={() => {
+                setQuery('');
+                setResults([]);
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
-        {query && (
-          <button
-            className="clear-btn"
-            onClick={() => {
-              setQuery('');
-              setResults([]);
-            }}
-          >
-            ✕
-          </button>
+        {!query && (
+          <div className="search-hints animate-up">
+            <p className="hints-title">Popular Cinema</p>
+            <div className="hints-list">
+              {['Avengers', 'Inception', 'Dune', 'Batman', 'Interstellar'].map((h, i) => (
+                <button
+                  key={h}
+                  className="hint-chip"
+                  onClick={() => setQuery(h)}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  {h}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
-      </div>
+      </section>
 
-      {/* 🔥 LOADING */}
+      {/* 🎥 RESULTS SECTION */}
       {loading && page === 1 ? (
         <div className="spinner" />
       ) : results?.length > 0 ? (
-
-        <>
-          <p className="results-count">
-            {results.length} results for "<strong>{query}</strong>"
-          </p>
+        <div className="animate-up">
+          <div className="results-header">
+            <p className="results-count">
+              Showing {results.length} discoveries for "<strong>{query}</strong>"
+            </p>
+          </div>
 
           <div className="movies-grid-lg">
-            {results.map((item) => (
-              <MovieCard
-                key={item.id}
-                item={{ ...item, media_type: 'movie' }}
-              />
+            {results.map((item, index) => (
+              <div 
+                key={`${item.id}-${index}`} 
+                className="movie-stagger" 
+                style={{ animationDelay: `${(index % 10) * 0.05}s`, animation: 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both' }}
+              >
+                <MovieCard
+                  item={{ ...item, media_type: 'movie' }}
+                />
+              </div>
             ))}
           </div>
 
           {page < totalPages && (
-            <div style={{ textAlign: 'center', marginTop: 32 }}>
+            <div style={{ textAlign: 'center', marginTop: 48 }}>
               <button
-                className="btn btn-secondary"
+                className="btn btn-primary btn-lg"
                 onClick={loadMore}
                 disabled={loading}
               >
-                {loading ? 'Loading...' : 'Load More'}
+                {loading ? 'Discovering...' : 'See More Records'}
               </button>
             </div>
           )}
-        </>
-
+        </div>
       ) : query ? (
-
-        <div className="empty-state">
-          <div className="icon">🎬</div>
-          <h3>No results found</h3>
-          <p>Try a different search term</p>
+        <div className="empty-state animate-fade">
+          <div className="icon">🌓</div>
+          <h3>No records found in the archive</h3>
+          <p>Try searching for a broad title or different year.</p>
         </div>
-
-      ) : (
-
-        <div className="search-hints">
-          <p className="hints-title">Popular searches</p>
-          <div className="hints-list">
-            {['Avengers', 'Inception', 'Dune', 'Batman', 'Interstellar'].map((h) => (
-              <button
-                key={h}
-                className="hint-chip"
-                onClick={() => setQuery(h)}
-              >
-                {h}
-              </button>
-            ))}
-          </div>
-        </div>
-
-      )}
+      ) : null}
     </div>
   );
 }
