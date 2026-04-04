@@ -1,35 +1,126 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import MovieCard from '../components/movies/MovieCard';
 import api from '../utils/api';
 
 /**
- * ─── ANIME PAGE (Jikan API Integration) ──────────────────────────
- * A dedicated high-end gallery for trending anime content, 
- * utilizing the same 'Orlune' visual language.
+ * ─── ANIME ARCHIVE (Jikan High-End Integration) ──────────────────
+ * A dedicated space for anime fans, featuring trending content 
+ * and a specific anime-only search engine. 
  */
 export default function Anime() {
   const [anime, setAnime] = useState([]);
+  const [query, setQuery] = useState('');
+  const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSearchResult, setIsSearchResult] = useState(false);
+
+  // ── FETCH TRENDING ────────────────────
+  const fetchTrending = useCallback(async () => {
+    setLoading(true);
+    setIsSearchResult(false);
+    try {
+      const res = await api.get('/anime/trending');
+      setAnime(res.data);
+    } catch (err) {
+      console.error('Anime trending fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    api.get('/anime/trending')
-      .then(res => setAnime(res.data))
-      .catch(err => console.error('Anime fetch error:', err))
-      .finally(() => setLoading(false));
-  }, []);
+    fetchTrending();
+  }, [fetchTrending]);
+
+  // ── HANDLE SEARCH ─────────────────────
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) {
+      fetchTrending();
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const res = await api.get(`/anime/search?q=${encodeURIComponent(query)}`);
+      setAnime(res.data);
+      setIsSearchResult(true);
+    } catch (err) {
+      console.error('Anime search error:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setQuery('');
+    fetchTrending();
+  };
 
   return (
     <div className="anime-page container animate-fade" style={{ paddingBottom: '100px' }}>
-      <header className="page-header" style={{ marginBottom: '60px', textAlign: 'center' }}>
+      <header className="page-header" style={{ marginBottom: '40px', textAlign: 'center' }}>
         <h1 className="page-title text-gradient">✨ The <span>Anime Archive</span></h1>
         <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '16px auto' }}>
-          Explore the world's most acclaimed animated series and films, 
-          curated by the Orlune community.
+          Explore acclaimed animated series and films from the Jikan archive.
         </p>
+
+        {/* 🔍 ANIME-ONLY SEARCH BAR */}
+        <div className="anime-search-container" style={{ 
+          maxWidth: '500px', 
+          margin: '32px auto',
+          position: 'relative'
+        }}>
+          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              type="text" 
+              placeholder="Search specific anime..." 
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                borderRadius: '30px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'white',
+                fontSize: '0.95rem',
+                outline: 'none',
+                transition: 'border-color 0.3s ease'
+              }}
+              onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+            />
+            <button type="submit" className="btn-nav-primary" style={{ padding: '0 24px', borderRadius: '30px' }}>
+              Search
+            </button>
+          </form>
+          {isSearchResult && (
+            <button 
+              onClick={clearSearch} 
+              style={{ 
+                background: 'transparent', 
+                border: 'none', 
+                color: 'var(--text-muted)', 
+                marginTop: '12px', 
+                cursor: 'pointer',
+                fontSize: '0.85rem'
+              }}
+            >
+              ← Back to Trending
+            </button>
+          )}
+        </div>
       </header>
 
-      {loading ? (
-        <div className="spinner" />
+      <div className="section-header" style={{ marginBottom: '24px' }}>
+        <h2 className="section-title">
+          {searching ? 'Finding...' : isSearchResult ? `Search Results for "${query}"` : 'Trending Now'}
+        </h2>
+      </div>
+
+      {loading || searching ? (
+        <div className="spinner" style={{ margin: '60px auto' }} />
       ) : (
         <div className="movies-grid animate-up">
           {anime.map((item) => (
@@ -38,9 +129,9 @@ export default function Anime() {
         </div>
       )}
 
-      {anime.length === 0 && !loading && (
+      {anime.length === 0 && !(loading || searching) && (
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-          The archive is currently being updated. Please check back soon.
+          No entries found in the archive matching your request.
         </div>
       )}
     </div>
