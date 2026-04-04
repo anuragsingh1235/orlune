@@ -4,7 +4,7 @@
   position: fixed;
   top: 0;
   width: 100%;
-  z-index: 1000;
+  z-index: 2000; /* Increased from 1000 to ensure it's always on top */
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   background: transparent;
 }
@@ -161,6 +161,25 @@
   width: 60px;
   height: 60px;
   font-size: 24px;
+}
+
+/* ── UTILS (The "Hotch Potch" Cleaners) ── */
+
+.page-header-offset {
+  padding-top: 100px; /* Base offset for fixed navbar */
+}
+
+@media (min-width: 900px) {
+  .page-header-offset {
+    padding-top: 120px; /* Larger offset for desktop navbar */
+  }
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, white 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .btn-logout {

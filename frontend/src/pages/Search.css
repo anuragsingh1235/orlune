@@ -1,12 +1,12 @@
 .search-page {
-  padding-top: 170px; /* Increased from 140px to prevent navbar overlap */
+  /* Removed fixed padding-top to avoid redundant constraints */
   min-height: 100vh;
 }
 
 .search-hero {
   text-align: center;
   max-width: 800px;
-  margin: 0 auto 60px;
+  margin: 130px auto 60px; /* Forced 130px margin-top to guarantee clearing the navbar */
   animation: scaleIn 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

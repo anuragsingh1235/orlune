@@ -54,8 +54,8 @@ export default function Home() {
   if (user) {
     // ── DASHBOARD VIEW (LOGGED IN) ──
     return (
-      <div className="home-page dashboard-view animate-fade">
-        <section className="container" style={{ paddingTop: '120px', paddingBottom: '20px' }}>
+      <div className="home-page dashboard-view page-header-offset animate-fade">
+        <section className="container" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
           
           {/* 🔥 DYNAMIC TRIVIA CARD */}
           <FactCard />
