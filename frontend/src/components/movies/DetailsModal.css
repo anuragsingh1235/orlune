@@ -215,9 +215,45 @@
   line-height: 1.2;
 }
 
-.details-body {
-  padding: 40px;
-  color: white;
+/* 📱 MOBILE RESPONSIVENESS (FANTASTIC WEB) */
+@media (max-width: 768px) {
+  .details-modal {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .details-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .trailer-container {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+
+  .scenes-selector {
+    padding: 15px 20px;
+  }
+
+  .scene-card {
+    min-width: 160px;
+  }
+
+  .details-body {
+    padding: 24px;
+  }
+
+  .details-title {
+    font-size: 1.8rem;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 .details-title {

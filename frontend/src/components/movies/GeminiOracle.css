@@ -249,3 +249,44 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 📱 MOBILE RESPONSIVENESS (FANTASTIC WEB) */
+@media (max-width: 600px) {
+  .gemini-oracle-container {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .oracle-window {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+
+  .oracle-chat-body {
+     padding: 16px;
+     padding-top: 80px; /* Spacer for header */
+  }
+
+  .oracle-trigger {
+    width: 56px;
+    height: 56px;
+  }
+
+  .oracle-badge {
+    display: none;
+  }
+
+  .oracle-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(20px);
+    z-index: 10;
+  }
+}

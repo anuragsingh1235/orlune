@@ -28,16 +28,14 @@ async function getYoutubeTrailer(title, year = "") {
   if (!apiKey) return null;
 
   try {
-    const query = encodeURIComponent(`${title} anime official trailer`);
+    const query = encodeURIComponent(`${title} anime official trailer 4k cinematic`);
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=1&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     
     if (response.data.items?.length > 0) {
       return response.data.items[0].id.videoId;
     }
-  } catch (err) {
-    console.error("YouTube Anime search error:", err.message);
-  }
+  } catch (err) { return null; }
   return null;
 }
 
