@@ -2,7 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const router = express.Router();
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AlzaSyC6iBa08j6iMrpY6bt9PvBsaRtJJy1bt8Q";
+const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "AIzaSyC6iBa08j6iMrpY6bt9PvBsaRtJJy1bt8Q";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 router.post("/oracle", async (req, res) => {
