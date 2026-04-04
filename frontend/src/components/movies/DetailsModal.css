@@ -133,20 +133,34 @@
 }
 
 .scenes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  display: flex;
   gap: 16px;
   margin-top: 20px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+
+.scenes-grid::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scenes-grid::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 10px;
 }
 
 .scene-card {
   position: relative;
+  min-width: 220px;
   aspect-ratio: 16 / 9;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.3s ease;
+  flex: 0 0 auto;
 }
 
 .scene-card:hover {

@@ -86,7 +86,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
               <div className="scenes-selector animate-up">
                 <div className="scenes-header">
                    <h4>Cinematic Exploration</h4>
-                   <span>Official moments & Community tributes</span>
+                   <span>Discover Trailers, Iconic Moments & Community Hub</span>
                 </div>
                 
                 <div className="scenes-grid">
@@ -94,7 +94,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                     ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []), 
                     ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic Moment' })),
                     ...(details.fanVideos || []).map(s => ({ ...s, type: 'Creator Fan-Edit' }))
-                  ].slice(0, 5).map((scene, idx) => (
+                  ].map((scene, idx) => (
                     <div 
                       key={idx} 
                       className={`scene-card ${ (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id) === scene.id ? 'active' : '' }`}

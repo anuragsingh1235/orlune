@@ -49,7 +49,7 @@ async function getYoutubeScenes(title, year = "") {
   if (!apiKey) return [];
   try {
     const query = encodeURIComponent(`${title} ${year} iconic scenes movie moments`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=4&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=6&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     return (response.data.items || []).map(item => ({
       id: item.id.videoId,
@@ -64,8 +64,8 @@ async function getYoutubeFanMade(title, year = "") {
   const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
   if (!apiKey) return [];
   try {
-    const query = encodeURIComponent(`${title} ${year} movie fan edit analysis tribute`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=4&key=${apiKey}`;
+    const query = encodeURIComponent(`${title} ${year} movie fan edit analysis tribute best scenes`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=6&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     return (response.data.items || []).map(item => ({
       id: item.id.videoId,
