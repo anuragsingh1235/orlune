@@ -19,6 +19,7 @@ export default function FactCard() {
 
   useEffect(() => {
     fetchFact();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -43,7 +44,7 @@ export default function FactCard() {
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ 
           display: 'flex', 
-          justify-content: 'space-between', 
+          justifyContent: 'space-between', 
           alignItems: 'center',
           marginBottom: '16px'
         }}>
