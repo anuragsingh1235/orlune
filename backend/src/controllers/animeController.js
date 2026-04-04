@@ -104,25 +104,22 @@ exports.getDetails = async (req, res) => {
     const a = response.data.data;
     if (!a) return res.status(404).json({ error: "Anime not found." });
 
-    let trailerId = null;
-    // 1) Jikan provides its own YouTube ID
-    if (a.trailer?.youtube_id) {
-      trailerId = a.trailer.youtube_id;
-    }
-
-    // 2) YouTube search fallback
     const title = a.title_english || a.title;
-    if (!trailerId) {
-      trailerId = await getYoutubeTrailer(title);
-    }
+    let trailerId = a.trailer?.youtube_id || null;
 
-    // 3) Fetch related iconic scenes
-    const relatedScenes = await getYoutubeScenes(title);
+    // Use Promise.allSettled to ensure YouTube failures don't block metadata
+    const [trailerRes, scenesRes] = await Promise.allSettled([
+      !trailerId ? getYoutubeTrailer(title) : Promise.resolve(trailerId),
+      getYoutubeScenes(title)
+    ]);
+
+    const finalTrailerId = trailerRes.status === 'fulfilled' ? trailerRes.value : trailerId;
+    const finalScenes = scenesRes.status === 'fulfilled' ? scenesRes.value : [];
 
     res.json({
       ...jikanToOrlune(a),
-      trailerId,
-      relatedScenes,
+      trailerId: finalTrailerId,
+      relatedScenes: finalScenes,
       episodes: a.episodes,
       status: a.status,
       duration: a.duration,
@@ -132,6 +129,7 @@ exports.getDetails = async (req, res) => {
     });
   } catch (err) {
     console.error("Anime detail error:", err.message);
-    res.status(500).json({ error: "Could not retrieve the legacy of this series." });
+    // Return a skeleton if MAL is partially down but search worked
+    res.status(500).json({ error: "The series legacy is momentarily veiled. Try again shortly." });
   }
 };

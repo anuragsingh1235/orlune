@@ -51,14 +51,14 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
         ) : details ? (
           <div className="details-layout">
 
-            {/* 🎥 TRAILER & SCENES SECTION */}
+            {/* 🎥 CINEMATIC PLAYER SECTION */}
             <div className="trailer-container">
-              {!details.hideTrailer && (details.activeVideoId || details.trailerId) ? (
+              {!details.hideTrailer && (details.activeVideoId || details.trailerId || (details.relatedScenes?.length > 0 && details.relatedScenes[0].id)) ? (
                 <iframe
-                  key={details.activeVideoId || details.trailerId}
+                  key={details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id}
                   className="trailer-iframe"
-                  src={`https://www.youtube.com/embed/${details.activeVideoId || details.trailerId}?autoplay=1&rel=0`}
-                  title="Cinematic Preview"
+                  src={`https://www.youtube.com/embed/${details.activeVideoId || details.trailerId || details.relatedScenes[0].id}?autoplay=1&rel=0`}
+                  title="Cinematic Discovery"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -75,24 +75,27 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   }}
                 >
                   <div className="no-trailer-overlay">
-                    <span>{details.hideTrailer ? 'Legacy Record Locked' : '🎬 Preview coming soon'}</span>
+                    <span>{details.hideTrailer ? 'Legacy Record Locked' : '🎬 Narrative Preview coming soon'}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* 🎞️ RELATED SCENE SELECTOR */}
-            {!details.hideTrailer && details.relatedScenes?.length > 0 && (
+            {/* 🎞️ RELATED CINEMATIC EXPLORATION */}
+            {!details.hideTrailer && (details.relatedScenes?.length > 0 || details.trailerId) && (
               <div className="scenes-selector animate-up">
                 <div className="scenes-header">
                    <h4>Cinematic Moments</h4>
                    <span>Discover iconic scenes & analysis</span>
                 </div>
                 <div className="scenes-grid">
-                  {[ { id: details.trailerId, title: 'Official Trailer', thumbnail: `https://img.youtube.com/vi/${details.trailerId}/mqdefault.jpg` }, ...details.relatedScenes.slice(0, 3)].map((scene, idx) => (
+                  {[ 
+                    ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', thumbnail: `https://img.youtube.com/vi/${details.trailerId}/mqdefault.jpg` }] : []), 
+                    ...details.relatedScenes.slice(0, 4)
+                  ].map((scene, idx) => (
                     <div 
                       key={idx} 
-                      className={`scene-card ${ (details.activeVideoId || details.trailerId) === scene.id ? 'active' : '' }`}
+                      className={`scene-card ${ (details.activeVideoId || details.trailerId || (details.relatedScenes?.length > 0 && details.relatedScenes[0].id)) === scene.id ? 'active' : '' }`}
                       onClick={() => setDetails({ ...details, activeVideoId: scene.id })}
                     >
                       <img src={scene.thumbnail} alt={scene.title} />
