@@ -22,7 +22,8 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
 
   const title = item.title || item.name;
   const year = (item.release_date || item.first_air_date || '').slice(0, 4);
-  const rating = item.vote_average?.toFixed(1);
+  const voteAvg = item.vote_average != null ? Number(item.vote_average) : null;
+  const rating = voteAvg && !isNaN(voteAvg) ? voteAvg.toFixed(1) : null;
   const mediaType = item.media_type || 'movie';
 
   const handleAdd = async (e) => {

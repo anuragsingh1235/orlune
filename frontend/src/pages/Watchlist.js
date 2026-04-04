@@ -76,9 +76,12 @@ export default function Watchlist() {
     total: safeItems.length,
     completed: safeItems.filter((i) => i.status === 'completed').length,
     watchlist: safeItems.filter((i) => i.status === 'watchlist').length,
-    avgRating: safeItems.filter((i) => i.user_rating).length
-      ? (safeItems.filter((i) => i.user_rating).reduce((s, i) => s + Number(i.user_rating), 0) / safeItems.filter((i) => i.user_rating).length).toFixed(1)
-      : '—',
+    avgRating: (() => {
+      const rated = safeItems.filter((i) => i.user_rating != null && i.user_rating !== '');
+      if (!rated.length) return '—';
+      const sum = rated.reduce((s, i) => s + Number(i.user_rating), 0);
+      return (sum / rated.length).toFixed(1);
+    })(),
   };
 
   if (!user) return (
