@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Search from './pages/Search';
+import Anime from './pages/Anime';
 import Watchlist from './pages/Watchlist';
 import Battles from './pages/Battles';
 import Leaderboard from './pages/Leaderboard';
