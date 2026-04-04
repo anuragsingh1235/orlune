@@ -74,7 +74,28 @@ exports.search = async (req, res) => {
     }
 };
 
-// ─── ANIME DETAILS (Jikan + YouTube Trailer) ────────────────────
+// Search YouTube for related iconic scenes
+async function getYoutubeScenes(title, year = "") {
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const query = encodeURIComponent(`${title} anime iconic moments epic scenes`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=4&key=${apiKey}`;
+    const response = await axios.get(url, { timeout: 4000 });
+    
+    return (response.data.items || []).map(item => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      thumbnail: item.snippet.thumbnails?.medium?.url
+    }));
+  } catch (err) {
+    console.error("YouTube Anime Scenes error:", err.message);
+  }
+  return [];
+}
+
+// ─── ANIME DETAILS (Jikan + YouTube Trailer + Scenes) ────────────────────
 exports.getDetails = async (req, res) => {
   const { id } = req.params;
   
@@ -89,14 +110,19 @@ exports.getDetails = async (req, res) => {
       trailerId = a.trailer.youtube_id;
     }
 
-    // 2) YouTube search fallback for rare cases
+    // 2) YouTube search fallback
+    const title = a.title_english || a.title;
     if (!trailerId) {
-      trailerId = await getYoutubeTrailer(a.title_english || a.title);
+      trailerId = await getYoutubeTrailer(title);
     }
+
+    // 3) Fetch related iconic scenes
+    const relatedScenes = await getYoutubeScenes(title);
 
     res.json({
       ...jikanToOrlune(a),
       trailerId,
+      relatedScenes,
       episodes: a.episodes,
       status: a.status,
       duration: a.duration,

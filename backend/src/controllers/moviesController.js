@@ -43,6 +43,27 @@ async function getYoutubeTrailer(title, year = "") {
   return null;
 }
 
+// Search YouTube for related iconic scenes
+async function getYoutubeScenes(title, year = "") {
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const query = encodeURIComponent(`${title} ${year} iconic scenes movie moments`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=4&key=${apiKey}`;
+    const response = await axios.get(url, { timeout: 4000 });
+    
+    return (response.data.items || []).map(item => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      thumbnail: item.snippet.thumbnails?.medium?.url
+    }));
+  } catch (err) {
+    console.error("YouTube Movie Scenes error:", err.message);
+  }
+  return [];
+}
+
 /**
  * ─── CONTROLLER EXPORTS ──────────────────────────────────────────
  */
@@ -109,7 +130,7 @@ exports.search = async (req, res) => {
   res.json([]);
 };
 
-// ENHANCED DETAIL FETCH (Now includes Trailer Search)
+// ENHANCED DETAIL FETCH (Now includes Trailer + Related Scenes)
 exports.getDetails = async (req, res) => {
   const tmdbKey = process.env.TMDB_API_KEY;
   const omdbKey = process.env.OMDB_API_KEY;
@@ -146,7 +167,9 @@ exports.getDetails = async (req, res) => {
 
   if (!data) return res.status(404).json({ error: "Narrative not found." });
 
-  // ── TRAILER DISCOVERY ──
+  // ── TRAILER & SCENES DISCOVERY ──
+  const title = data.title || data.name;
+  const year = (data.release_date || data.first_air_date || "").slice(0, 4);
   let trailerId = null;
   
   // A) Match from TMDB videos
@@ -157,10 +180,11 @@ exports.getDetails = async (req, res) => {
 
   // B) Power Search via YouTube API (Fallback for TMDB/Main for OMDB)
   if (!trailerId) {
-    const title = data.title || data.name;
-    const year = (data.release_date || data.first_air_date || "").slice(0, 4);
     trailerId = await getYoutubeTrailer(title, year);
   }
 
-  res.json({ ...data, trailerId, _api_source: source });
+  // C) Fetch Iconic Scenes
+  const relatedScenes = await getYoutubeScenes(title, year);
+
+  res.json({ ...data, trailerId, relatedScenes, _api_source: source });
 };
