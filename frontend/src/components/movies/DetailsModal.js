@@ -30,11 +30,17 @@ export default function DetailsModal({ item, onClose }) {
             const ytApi = process.env.REACT_APP_YOUTUBE_API_KEY;
             const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&key=${ytApi}&maxResults=1&type=video`);
             const ytData = await ytRes.json();
-            if (ytData.items && ytData.items.length > 0) {
+            
+            if (ytData.error) {
+              detailsData.trailerError = ytData.error.message;
+            } else if (ytData.items && ytData.items.length > 0) {
               detailsData.trailerId = ytData.items[0].id.videoId;
+            } else {
+              detailsData.trailerError = "No trailer found.";
             }
           } catch(err) {
             console.error('Youtube fetch error:', err);
+            detailsData.trailerError = err.message;
           }
         }
         setDetails(detailsData);
@@ -72,7 +78,7 @@ export default function DetailsModal({ item, onClose }) {
                 ></iframe>
               ) : (
                 <div className="no-trailer" style={{ backgroundImage: `url(${item.poster_path})` }}>
-                  <span>Trailer coming soon to the archive.</span>
+                  <span>{details.trailerError ? `Trailer Error: ${details.trailerError}` : "Trailer coming soon to the archive."}</span>
                 </div>
               )}
             </div>
