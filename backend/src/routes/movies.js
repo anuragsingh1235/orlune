@@ -5,6 +5,6 @@ const c = require("../controllers/moviesController");
 
 router.get("/trending", c.getTrending);
 router.get("/search", c.search);
-router.get("/:id", c.getDetails);
+router.get("/details/:id", c.getDetails);
 
 module.exports = router;

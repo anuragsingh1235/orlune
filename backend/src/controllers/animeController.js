@@ -6,7 +6,7 @@ const axios = require("axios");
  * anime data without requiring keys.
  */
 
-// Helper to map Jikan's structure to our internal 'MovieCard' structure
+// Mapping Jikan -> Orlune Card Structure
 function jikanToOrlune(a) {
   return {
     id: a.mal_id,
@@ -22,30 +22,39 @@ function jikanToOrlune(a) {
   };
 }
 
+// Search YouTube fallback using provided key
+async function getYoutubeTrailer(title, year = "") {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const query = encodeURIComponent(`${title} anime official trailer`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=1&key=${apiKey}`;
+    const response = await axios.get(url, { timeout: 4000 });
+    
+    if (response.data.items?.length > 0) {
+      return response.data.items[0].id.videoId;
+    }
+  } catch (err) {
+    console.error("YouTube Anime search error:", err.message);
+  }
+  return null;
+}
+
 exports.getTrending = async (req, res) => {
   try {
-    // Jikan v4 top/anime uses 'filter' for popularity ranking.
-    // 'bypopularity' is the standard for 'Trending' feel.
     const response = await axios.get("https://api.jikan.moe/v4/top/anime", {
       timeout: 8000,
-      params: { 
-        filter: "bypopularity", 
-        sfw: true,
-        limit: 12
-      }
+      params: { filter: "bypopularity", sfw: true, limit: 12 }
     });
-
     const results = (response.data.data || []).map(jikanToOrlune);
     res.json(results);
   } catch (err) {
     console.error("Jikan API error:", err.message);
-    // If Jikan is down, return a hardcoded high-end list so the page isn't empty
     const fallback = [
         { id: 52991, title: "Frieren: Beyond Journey's End", vote_average: 9.4, poster_path: "https://cdn.myanimelist.net/images/anime/1015/138064l.jpg" },
-        { id: 5114, title: "Fullmetal Alchemist: Brotherhood", vote_average: 9.1, poster_path: "https://cdn.myanimelist.net/images/anime/1223/96541l.jpg" },
-        { id: 21, title: "One Piece", vote_average: 8.7, poster_path: "https://cdn.myanimelist.net/images/anime/6/73245l.jpg" }
+        { id: 5114, title: "Fullmetal Alchemist: Brotherhood", vote_average: 9.1, poster_path: "https://cdn.myanimelist.net/images/anime/1223/96541l.jpg" }
     ].map(m => ({ ...m, _api_source: "jikan", media_type: "anime" }));
-    
     res.json(fallback);
   }
 };
@@ -53,20 +62,50 @@ exports.getTrending = async (req, res) => {
 exports.search = async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json([]);
-
     try {
         const response = await axios.get(`https://api.jikan.moe/v4/anime`, {
             timeout: 8000,
-            params: { 
-                q, 
-                limit: 15,
-                sfw: true,
-                order_by: "popularity"
-            }
+            params: { q, limit: 15, sfw: true, order_by: "popularity" }
         });
         const results = (response.data.data || []).map(jikanToOrlune);
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: "Search unavailable." });
     }
+};
+
+// ─── ANIME DETAILS (Jikan + YouTube Trailer) ────────────────────
+exports.getDetails = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const response = await axios.get(`https://api.jikan.moe/v4/anime/${id}/full`, { timeout: 6000 });
+    const a = response.data.data;
+    if (!a) return res.status(404).json({ error: "Anime not found." });
+
+    let trailerId = null;
+    // 1) Jikan provides its own YouTube ID
+    if (a.trailer?.youtube_id) {
+      trailerId = a.trailer.youtube_id;
+    }
+
+    // 2) YouTube search fallback for rare cases
+    if (!trailerId) {
+      trailerId = await getYoutubeTrailer(a.title_english || a.title);
+    }
+
+    res.json({
+      ...jikanToOrlune(a),
+      trailerId,
+      episodes: a.episodes,
+      status: a.status,
+      duration: a.duration,
+      rating: a.rating,
+      studios: a.studios?.map(s => s.name) || [],
+      genres: a.genres?.map(g => g.name) || [],
+    });
+  } catch (err) {
+    console.error("Anime detail error:", err.message);
+    res.status(500).json({ error: "Could not retrieve the legacy of this series." });
+  }
 };

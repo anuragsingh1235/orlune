@@ -52,10 +52,10 @@ export default function MovieCard({ item, onAdd, showStatus }) {
   };
 
   return (
-    <div className="movie-card">
+    <div className="movie-card" onClick={() => onClick && onClick(item)}>
       <div className="movie-poster-wrap">
         <img src={poster} alt={title} className="movie-poster" loading="lazy" />
-        <div className="movie-overlay">
+        <div className="movie-overlay" onClick={(e) => e.stopPropagation()}>
           {user && (
             <button className="add-btn" onClick={handleAdd} disabled={adding}>
               {adding ? '...' : '+ Watchlist'}

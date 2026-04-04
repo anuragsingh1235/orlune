@@ -15,6 +15,7 @@ export default function Home() {
   const [anime, setAnime] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeMovie, setActiveMovie] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('login');
 
@@ -78,7 +79,7 @@ export default function Home() {
           ) : (
             <div className="movies-grid animate-up">
               {trending?.map((item) => (
-                <MovieCard key={item.id} item={{ ...item, media_type: 'movie' }} />
+                <MovieCard key={item.id} item={{ ...item, media_type: 'movie' }} onClick={setActiveMovie} />
               ))}
             </div>
           )}
@@ -94,11 +95,13 @@ export default function Home() {
           ) : (
             <div className="movies-grid animate-up">
               {anime?.map((item) => (
-                <MovieCard key={item.id} item={item} />
+                <MovieCard key={item.id} item={item} onClick={setActiveMovie} />
               ))}
             </div>
           )}
         </section>
+
+        {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
 
         <section className="container leaderboard-preview animate-up" style={{ paddingTop: '60px', paddingBottom: '80px' }}>
           <div className="section-header" style={{ marginBottom: '32px' }}>

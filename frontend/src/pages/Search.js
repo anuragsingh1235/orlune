@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import MovieCard from '../components/movies/MovieCard';
+import DetailsModal from '../components/movies/DetailsModal';
 import api from '../utils/api';
 import './Search.css';
 
@@ -8,6 +9,8 @@ export default function Search() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [activeMovie, setActiveMovie] = useState(null);
+  const [error, setError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
 
   const doSearch = useCallback(async (q, p) => {
@@ -112,7 +115,7 @@ export default function Search() {
             </p>
           </div>
 
-          <div className="movies-grid-lg">
+          <div className="movies-grid">
             {results.map((item, index) => (
               <div 
                 key={`${item.id}-${index}`} 
@@ -121,6 +124,7 @@ export default function Search() {
               >
                 <MovieCard
                   item={{ ...item, media_type: 'movie' }}
+                  onClick={setActiveMovie}
                 />
               </div>
             ))}
@@ -145,6 +149,8 @@ export default function Search() {
           <p>Try searching for a broad title or different year.</p>
         </div>
       ) : null}
+
+      {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
     </div>
   );
 }

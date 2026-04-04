@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import MovieCard from '../components/movies/MovieCard';
+import DetailsModal from '../components/movies/DetailsModal';
 import api from '../utils/api';
+import FactCard from '../components/dashboard/FactCard';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 /**
  * ─── ANIME ARCHIVE (Jikan High-End Integration) ──────────────────
@@ -12,6 +15,7 @@ export default function Anime() {
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeMovie, setActiveMovie] = useState(null);
   const [isSearchResult, setIsSearchResult] = useState(false);
 
   // ── FETCH TRENDING ────────────────────
@@ -122,10 +126,12 @@ export default function Anime() {
       ) : (
         <div className="movies-grid animate-up">
           {anime.map((item) => (
-            <MovieCard key={item.id} item={item} />
+            <MovieCard key={item.id} item={item} onClick={setActiveMovie} />
           ))}
         </div>
       )}
+
+      {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
 
       {anime.length === 0 && !(loading || searching) && (
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>

@@ -1,35 +1,55 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import MovieCard from '../components/movies/MovieCard';
+import DetailsModal from '../components/movies/DetailsModal';
 import api from '../utils/api';
 import './Watchlist.css';
 
-const IMG = 'https://image.tmdb.org/t/p/w185';
-
+/**
+ * ─── PERSONAL ARCHIVE (Watchlist) ───────────────────────────────
+ * A curated collection of the user's cinematic journey. 
+ * Allows for rating, reviewing, and watching trailers.
+ */
 export default function Watchlist() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [activeMovie, setActiveMovie] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [editForm, setEditForm] = useState({ user_rating: '', user_review: '', status: '' });
 
-  useEffect(() => {
-    api.get('/watchlist').then((r) => setItems(r.data)).finally(() => setLoading(false));
-  }, []);
+  const fetchWatchlist = () => {
+    setLoading(true);
+    api.get('/watchlist')
+      .then((r) => setItems(r.data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  };
 
-  const remove = async (id) => {
-    if (!window.confirm('Remove from watchlist?')) return;
+  useEffect(() => {
+    if (user) fetchWatchlist();
+  }, [user]);
+
+  const remove = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('Remove this title from your archive?')) return;
     try {
       await api.delete(`/watchlist/${id}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
-      toast.success('Removed');
-    } catch { toast.error('Failed'); }
+      toast.success('Removed from archive');
+    } catch { toast.error('Failed to remove'); }
   };
 
-  const openEdit = (item) => {
+  const openEdit = (e, item) => {
+    e.stopPropagation();
     setEditItem(item);
-    setEditForm({ user_rating: item.user_rating || '', user_review: item.user_review || '', status: item.status || 'watchlist' });
+    setEditForm({ 
+      user_rating: item.user_rating || '', 
+      user_review: item.user_review || '', 
+      status: item.status || 'watchlist' 
+    });
   };
 
   const saveEdit = async () => {
@@ -37,115 +57,121 @@ export default function Watchlist() {
       const { data } = await api.put(`/watchlist/${editItem.id}`, editForm);
       setItems((prev) => prev.map((i) => i.id === editItem.id ? data : i));
       setEditItem(null);
-      toast.success('Updated!');
-    } catch { toast.error('Failed'); }
+      toast.success('Archive updated');
+    } catch { toast.error('Failed to update'); }
   };
 
   const filtered = filter === 'all' ? items : items.filter((i) => i.status === filter);
+  
   const stats = {
     total: items.length,
     completed: items.filter((i) => i.status === 'completed').length,
     watchlist: items.filter((i) => i.status === 'watchlist').length,
     avgRating: items.filter((i) => i.user_rating).length
-      ? (items.filter((i) => i.user_rating).reduce((s, i) => s + i.user_rating, 0) / items.filter((i) => i.user_rating).length).toFixed(1)
+      ? (items.filter((i) => i.user_rating).reduce((s, i) => s + Number(i.user_rating), 0) / items.filter((i) => i.user_rating).length).toFixed(1)
       : '—',
   };
 
   if (!user) return (
-    <div className="container" style={{ padding: '80px 24px', textAlign: 'center' }}>
-      <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
-      <h2 style={{ marginBottom: 8 }}>Login Required</h2>
-      <p style={{ color: 'var(--text-muted)' }}>Sign in to manage your watchlist</p>
+    <div className="container" style={{ padding: '100px 24px', textAlign: 'center' }}>
+      <div style={{ fontSize: 64, marginBottom: 24 }}>🔒</div>
+      <h2 className="text-gradient" style={{ marginBottom: 12 }}>Archive Locked</h2>
+      <p style={{ color: 'var(--text-muted)' }}>Sign in to access your personal cinematic archive.</p>
     </div>
   );
 
   return (
-    <div className="watchlist-page container">
-      <h1 className="page-title">📋 My <span>Watchlist</span></h1>
+    <div className="watchlist-page container animate-fade">
+      <header className="page-header" style={{ marginBottom: '48px' }}>
+        <h1 className="page-title text-gradient">📋 My <span>Cinematic Archive</span></h1>
+      </header>
 
-      {/* Stats */}
-      <div className="wl-stats">
-        <div className="wl-stat"><span>{stats.total}</span><label>Total</label></div>
-        <div className="wl-stat"><span>{stats.completed}</span><label>Watched</label></div>
-        <div className="wl-stat"><span>{stats.watchlist}</span><label>To Watch</label></div>
-        <div className="wl-stat"><span>⭐ {stats.avgRating}</span><label>Avg Rating</label></div>
+      {/* Stats Dashboard */}
+      <div className="wl-stats animate-up">
+        <div className="wl-stat"><span>{stats.total}</span><label>Total Sagas</label></div>
+        <div className="wl-stat"><span>{stats.completed}</span><label>Mastered</label></div>
+        <div className="wl-stat"><span>{stats.watchlist}</span><label>Pending</label></div>
+        <div className="wl-stat"><span>★ {stats.avgRating}</span><label>Heritage Score</label></div>
       </div>
 
-      {/* Filter */}
-      <div className="tabs" style={{ maxWidth: 360, marginBottom: 28 }}>
+      {/* Filter Tabs */}
+      <div className="tabs glass-card" style={{ maxWidth: 450, margin: '0 auto 40px', padding: '6px' }}>
         {['all', 'watchlist', 'completed'].map((f) => (
           <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {f === 'all' ? 'All' : f === 'watchlist' ? '📋 To Watch' : '✅ Watched'}
+            {f === 'all' ? 'All Records' : f === 'watchlist' ? '📋 Pending' : '✅ Mastered'}
           </button>
         ))}
       </div>
 
-      {loading ? <div className="spinner" /> : filtered.length === 0 ? (
-        <div className="empty-state">
+      {loading ? <div className="spinner" style={{ margin: '60px auto' }} /> : filtered.length === 0 ? (
+        <div className="empty-state animate-fade">
           <div className="icon">🎬</div>
-          <h3>Nothing here yet</h3>
-          <p>Search for movies and add them to your watchlist</p>
+          <h3>The Archive is Empty</h3>
+          <p>Begin your journey by searching and adding titles.</p>
         </div>
       ) : (
-        <div className="wl-list">
+        <div className="movies-grid animate-up">
           {filtered.map((item) => (
-            <div key={item.id} className="wl-item">
-              <img
-                src={item.poster_path
-                  ? (item.poster_path.startsWith('http') ? item.poster_path : `${IMG}${item.poster_path}`)
-                  : `https://via.placeholder.com/185x278/1a1a26/fff?text=${encodeURIComponent(item.title)}`}
-                alt={item.title} className="wl-poster"
-              />
-              <div className="wl-details">
-                <div className="wl-header">
-                  <h3 className="wl-title">{item.title}</h3>
-                  <span className={`badge ${item.status === 'completed' ? 'badge-green' : 'badge-blue'}`}>
-                    {item.status === 'completed' ? '✅ Watched' : '📋 To Watch'}
-                  </span>
-                </div>
-                <p className="wl-meta">{(item.release_date || '').slice(0, 4)} · {item.media_type?.toUpperCase()}</p>
-                {item.user_rating && <p className="wl-rating">{'★'.repeat(Math.round(item.user_rating / 2))} {item.user_rating}/10</p>}
-                {item.user_review && <p className="wl-review">"{item.user_review}"</p>}
-                <p className="wl-overview">{item.overview?.slice(0, 120)}...</p>
-              </div>
-              <div className="wl-actions">
-                <button className="btn btn-secondary btn-sm" onClick={() => openEdit(item)}>✏️ Edit</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => remove(item.id)} style={{ color: 'var(--accent)' }}>🗑️</button>
-              </div>
+            <div key={item.id} className="watchlist-item-wrapper" style={{ position: 'relative' }}>
+               <MovieCard 
+                  item={item} 
+                  onClick={() => setActiveMovie(item)}
+                  showStatus
+               />
+               <div className="watchlist-actions-overlay">
+                  <button className="btn-edit" onClick={(e) => openEdit(e, item)}>✏️</button>
+                  <button className="btn-delete" onClick={(e) => remove(e, item.id)}>🗑️</button>
+               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Edit Modal */}
+      {/* Detail Modal */}
+      {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
+
+      {/* Legacy Edit Modal */}
       {editItem && (
-        <div className="modal-overlay" onClick={() => setEditItem(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: 20 }}>✏️ Edit — {editItem.title}</h2>
-            <div className="form-group" style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>Status</label>
-              <div className="tabs">
-                <button className={`tab ${editForm.status === 'watchlist' ? 'active' : ''}`} onClick={() => setEditForm({ ...editForm, status: 'watchlist' })}>To Watch</button>
-                <button className={`tab ${editForm.status === 'completed' ? 'active' : ''}`} onClick={() => setEditForm({ ...editForm, status: 'completed' })}>Watched</button>
+        <div className="modal-overlay animate-fade" onClick={() => setEditItem(null)}>
+          <div className="modal-content glass-card animate-scale" style={{ maxWidth: '500px', padding: '40px' }} onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-gradient" style={{ marginBottom: 24 }}>Refine Entry</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>Updating records for: <strong>{editItem.title}</strong></p>
+            
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', marginBottom: 10, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Current Status</label>
+              <div className="tabs glass-card" style={{ padding: '4px' }}>
+                <button className={`tab ${editForm.status === 'watchlist' ? 'active' : ''}`} onClick={() => setEditForm({ ...editForm, status: 'watchlist' })}>Pending</button>
+                <button className={`tab ${editForm.status === 'completed' ? 'active' : ''}`} onClick={() => setEditForm({ ...editForm, status: 'completed' })}>Mastered</button>
               </div>
             </div>
-            <div className="form-group" style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>Rating (1–10)</label>
-              <input className="input" type="number" min="1" max="10"
+
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', marginBottom: 10, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Personal Score (1-10)</label>
+              <input 
+                className="input" 
+                type="number" 
+                min="1" max="10"
                 value={editForm.user_rating}
                 onChange={(e) => setEditForm({ ...editForm, user_rating: e.target.value })}
-                placeholder="Your rating out of 10" />
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '12px', borderRadius: '8px', width: '100%' }}
+              />
             </div>
-            <div className="form-group" style={{ marginBottom: 24 }}>
-              <label style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>Review</label>
-              <textarea className="input" rows={3}
+
+            <div className="form-group" style={{ marginBottom: 32 }}>
+              <label style={{ display: 'block', marginBottom: 10, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cinematic Review</label>
+              <textarea 
+                className="input" 
+                rows={3}
                 value={editForm.user_review}
                 onChange={(e) => setEditForm({ ...editForm, user_review: e.target.value })}
-                placeholder="What did you think?" style={{ resize: 'vertical' }} />
+                placeholder="Share your thoughts on this masterpiece..."
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '12px', borderRadius: '8px', width: '100%', resize: 'none' }}
+              />
             </div>
+
             <div style={{ display: 'flex', gap: 12 }}>
-              <button className="btn btn-primary" onClick={saveEdit} style={{ flex: 1, justifyContent: 'center' }}>Save</button>
-              <button className="btn btn-secondary" onClick={() => setEditItem(null)}>Cancel</button>
+              <button className="btn-nav-primary" onClick={saveEdit} style={{ flex: 1, padding: '12px', borderRadius: '8px' }}>Store Record</button>
+              <button className="btn-nav-secondary" onClick={() => setEditItem(null)} style={{ flex: 1, padding: '12px', borderRadius: '8px' }}>Discard</button>
             </div>
           </div>
         </div>
