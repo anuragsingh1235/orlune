@@ -136,32 +136,63 @@
   color: white;
 }
 
-.movie-status {
+.movie-status-badge {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: rgba(11, 14, 20, 0.85);
-  backdrop-filter: blur(8px);
-  color: white;
-  padding: 5px 12px;
-  border-radius: 8px;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(11, 20, 30, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  z-index: 20;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-watchlist { color: #81a1c1; }
+.status-watchlist .status-icon {
+  background: #81a1c1;
+  box-shadow: 0 0 10px #81a1c1;
+  animation: status-pulse 2s infinite;
+}
+
+.status-completed { color: #A3BE8C; }
+.status-completed .status-icon {
+  background: #A3BE8C;
+  box-shadow: 0 0 10px #A3BE8C;
+  animation: status-shimmer 2s infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes status-shimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.6) contrast(1.2); }
+}
+
+.time-meta {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  z-index: 10;
-  transition: all 0.3s ease;
-}
-
-.status-completed {
-    border-color: rgba(163, 190, 140, 0.3);
-    color: #a3be8c;
-}
-
-.status-watchlist {
-    border-color: rgba(94, 129, 172, 0.3);
-    color: #81a1c1;
+  white-space: nowrap;
+  padding-top: 4px;
 }
 
 .user-rating {

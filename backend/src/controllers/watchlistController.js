@@ -25,6 +25,7 @@ const ensureSchema = async () => {
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS heritage_score NUMERIC');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS user_review TEXT');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP');
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()');
     } catch(err) {
         console.warn("Schema check failed but proceeding:", err.message);
     }
@@ -82,8 +83,8 @@ exports.addItem = async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO watchlist_items 
-      (user_id, tmdb_id, media_type, title, poster_path, backdrop_path, overview, release_date, vote_average, genres, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, 'watchlist')
+      (user_id, tmdb_id, media_type, title, poster_path, backdrop_path, overview, release_date, vote_average, genres, status, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, 'watchlist', NOW())
       ON CONFLICT (user_id, tmdb_id, media_type) DO NOTHING RETURNING *`,
       [req.user.id, tmdb_id, media_type || 'movie', title, poster_path, backdrop_path, overview, release_date, parseFloat(vote_average) || 0, genres]
     );

@@ -6,6 +6,23 @@ import './MovieCard.css';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w342';
 
+const getTimeAgo = (date) => {
+  if (!date) return null;
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  if (seconds < 60) return "just now";
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + "y ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + "mo ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + "d ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + "h ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + "m ago";
+  return "just now";
+};
+
 export default function MovieCard({ item, onAdd, onClick, showStatus }) {
   const { user } = useAuth();
   const [adding, setAdding] = useState(false);
@@ -69,13 +86,21 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
           </div>
         )}
         {showStatus && item.status && (
-          <div className={`movie-status status-${item.status}`}>
-            {item.status === 'completed' ? '✅' : '📋'} {item.status}
+          <div className={`movie-status-badge status-${item.status}`}>
+            <span className="status-icon" />
+            {item.status === 'completed' ? 'Mastered' : 'Pending'}
           </div>
         )}
       </div>
       <div className="movie-info">
-        <p className="movie-title">{title}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+            <p className="movie-title">{title}</p>
+            {item.status === 'completed' && item.completed_at ? (
+               <span className="time-meta">Mastered {new Date(item.completed_at).toLocaleDateString()}</span>
+            ) : item.created_at ? (
+               <span className="time-meta">{getTimeAgo(item.created_at)}</span>
+            ) : null}
+        </div>
         <p className="movie-meta">{year} {mediaType === 'tv' ? '• TV' : ''}</p>
         {item.heritage_score && (
           <div className="user-rating">

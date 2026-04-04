@@ -5,7 +5,7 @@ import './GeminiOracle.css';
 export default function GeminiOracle() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'model', content: "I am the Orlune Oracle. Seek my wisdom on any cinematic masterpiece or hidden gem." }
+    { role: 'model', content: "Seek your wisdom from AURA. Ask me anything about the cinematic arts." }
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -29,8 +29,8 @@ export default function GeminiOracle() {
       const { data } = await api.post('/ai/oracle', { prompt: userMsg });
       setMessages(prev => [...prev, { role: 'model', content: data.response }]);
     } catch (error) {
-      console.error("Oracle fetch failed:", error);
-      setMessages(prev => [...prev, { role: 'model', content: "Our records are currently locked by the cinematic authorities." }]);
+      console.error("Aura fetch failed:", error);
+      setMessages(prev => [...prev, { role: 'model', content: "The archives are momentarily veiled. Ask again soon." }]);
     } finally {
       setIsTyping(false);
     }
@@ -40,11 +40,13 @@ export default function GeminiOracle() {
     <div className={`gemini-oracle-container ${isOpen ? 'open' : 'closed'}`}>
       {/* 🚀 FLOAT BOT ICON */}
       <div className="oracle-trigger glass-card" onClick={() => setIsOpen(!isOpen)}>
-        <div className="oracle-orb">
-          <div className="orb-inner" />
-          <div className="orb-glow" />
+        <div className="aura-icon">
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 21H22L12 2Z" stroke="#B48EAD" strokeWidth="2" strokeLinejoin="round"/>
+              <path d="M12 7L6 18H18L12 7Z" fill="#B48EAD" fillOpacity="0.2"/>
+           </svg>
         </div>
-        {!isOpen && <span className="oracle-badge">CINEMATIC ORACLE</span>}
+        {!isOpen && <span className="oracle-badge">AURA</span>}
       </div>
 
       {/* 🔮 CHAT WINDOW */}
@@ -53,7 +55,7 @@ export default function GeminiOracle() {
           <div className="oracle-header">
             <div className="oracle-title">
               <span className="oracle-dot" />
-              ORLUNE ORACLE
+              AURA
             </div>
             <button className="oracle-close" onClick={() => setIsOpen(false)}>&times;</button>
           </div>
