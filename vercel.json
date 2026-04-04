@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "cd backend && npm install && cd ../frontend && npm install",
+  "installCommand": "npm install && cd backend && npm install && cd ../frontend && npm install",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -14,14 +14,14 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "api/index.js"
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
+      "source": "/:path*",
+      "destination": "/index.html"
     }
   ]
 }
