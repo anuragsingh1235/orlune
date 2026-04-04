@@ -9,18 +9,10 @@ import React from 'react';
 export default function NavbarSpacer() {
   return (
     <div className="navbar-spacer" style={{ 
-      height: '80px', 
       width: '100%', 
       pointerEvents: 'none',
       display: 'block',
       position: 'relative'
-    }}>
-      {/* For desktop screens where the navbar might be taller, we adjust via media query in globals.css */}
-      <style>{`
-        @media (min-width: 900px) {
-          .navbar-spacer { height: 100px !important; }
-        }
-      `}</style>
-    </div>
+    }} />
   );
 }

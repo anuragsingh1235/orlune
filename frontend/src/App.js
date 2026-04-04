@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/layout/Navbar';
+import NavbarSpacer from './components/layout/NavbarSpacer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
