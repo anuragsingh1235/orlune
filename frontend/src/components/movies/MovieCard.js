@@ -45,38 +45,45 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
 
   const handleAdd = async (e) => {
     e.stopPropagation();
-    if (!user) { toast.error('Login to add to watchlist'); return; }
+    if (!user) { toast.error('Login to add to Vault'); return; }
     setAdding(true);
     try {
       await api.post('/watchlist', {
         tmdb_id: item.id,
         media_type: mediaType,
         title,
-        poster_path: isOmdb ? item.poster_path : item.poster_path,
+        poster_path: poster,
         backdrop_path: item.backdrop_path,
         overview: item.overview,
         release_date: item.release_date || item.first_air_date,
         vote_average: item.vote_average,
         genres: item.genre_ids?.join(',') || '',
       });
-      toast.success(`Added "${title}" to watchlist!`);
+      toast.success(`Vaulted "${title}"!`);
       if (onAdd) onAdd(item);
     } catch (err) {
-      if (err.response?.status === 409) toast('Already in your watchlist', { icon: '📋' });
-      else toast.error('Failed to add');
+      if (err.response?.status === 409) toast('Already in your Vault', { icon: '📦' });
+      else toast.error('Failed to vault');
     } finally {
       setAdding(false);
     }
   };
+
+  const statusLabel = item.status === 'completed' ? 'Mastered' : item.status === 'watching' ? 'Watching' : 'Found';
+  const timeInfo = item.status === 'completed' 
+    ? `Mastered ${new Date(item.completed_at).toLocaleDateString()}`
+    : item.status === 'watching'
+      ? `Started ${getTimeAgo(item.started_at)}`
+      : `Vaulted ${getTimeAgo(item.created_at)}`;
 
   return (
     <div className="movie-card" onClick={() => onClick && onClick(item)}>
       <div className="movie-poster-wrap">
         <img src={poster} alt={title} className="movie-poster" loading="lazy" />
         <div className="movie-overlay" onClick={(e) => e.stopPropagation()}>
-          {user && (
+          {user && !showStatus && (
             <button className="add-btn" onClick={handleAdd} disabled={adding}>
-              {adding ? '...' : '+ Watchlist'}
+              {adding ? '...' : '+ Vault'}
             </button>
           )}
         </div>
