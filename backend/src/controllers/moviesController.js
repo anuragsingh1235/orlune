@@ -47,21 +47,32 @@ async function getYoutubeTrailer(title, year = "") {
 async function getYoutubeScenes(title, year = "") {
   const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
   if (!apiKey) return [];
-
   try {
     const query = encodeURIComponent(`${title} ${year} iconic scenes movie moments`);
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=4&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
-    
     return (response.data.items || []).map(item => ({
       id: item.id.videoId,
       title: item.snippet.title,
       thumbnail: item.snippet.thumbnails?.medium?.url
     }));
-  } catch (err) {
-    console.error("YouTube Movie Scenes error:", err.message);
-  }
-  return [];
+  } catch (err) { return []; }
+}
+
+// Search YouTube for fan-made content (Edits, Analysis)
+async function getYoutubeFanMade(title, year = "") {
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
+  if (!apiKey) return [];
+  try {
+    const query = encodeURIComponent(`${title} ${year} movie fan edit analysis tribute`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=4&key=${apiKey}`;
+    const response = await axios.get(url, { timeout: 4000 });
+    return (response.data.items || []).map(item => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      thumbnail: item.snippet.thumbnails?.medium?.url
+    }));
+  } catch (err) { return []; }
 }
 
 /**
@@ -130,7 +141,7 @@ exports.search = async (req, res) => {
   res.json([]);
 };
 
-// ENHANCED DETAIL FETCH (Now includes Trailer + Related Scenes)
+// ENHANCED DETAIL FETCH (Now includes Trailer + Scenes + Fan Hub)
 exports.getDetails = async (req, res) => {
   const tmdbKey = process.env.TMDB_API_KEY;
   const omdbKey = process.env.OMDB_API_KEY;
@@ -172,19 +183,23 @@ exports.getDetails = async (req, res) => {
   const year = (data.release_date || data.first_air_date || "").slice(0, 4);
   let trailerId = null;
   
-  // A) Match from TMDB videos
   if (source === 'tmdb' && data.videos?.results) {
     const officialTrailer = data.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
     trailerId = officialTrailer?.key;
   }
 
-  // B) Power Search via YouTube API (Fallback for TMDB/Main for OMDB)
-  if (!trailerId) {
-    trailerId = await getYoutubeTrailer(title, year);
-  }
+  // Use allSettled for multi-source fetch
+  const [trailerRes, scenesRes, fanRes] = await Promise.allSettled([
+    !trailerId ? getYoutubeTrailer(title, year) : Promise.resolve(trailerId),
+    getYoutubeScenes(title, year),
+    getYoutubeFanMade(title, year)
+  ]);
 
-  // C) Fetch Iconic Scenes
-  const relatedScenes = await getYoutubeScenes(title, year);
-
-  res.json({ ...data, trailerId, relatedScenes, _api_source: source });
+  res.json({ 
+    ...data, 
+    trailerId: trailerRes.status === 'fulfilled' ? trailerRes.value : trailerId, 
+    relatedScenes: scenesRes.status === 'fulfilled' ? scenesRes.value : [],
+    fanVideos: fanRes.status === 'fulfilled' ? fanRes.value : [],
+    _api_source: source 
+  });
 };

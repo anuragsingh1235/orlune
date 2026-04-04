@@ -53,11 +53,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
             {/* 🎥 CINEMATIC PLAYER SECTION */}
             <div className="trailer-container">
-              {!details.hideTrailer && (details.activeVideoId || details.trailerId || (details.relatedScenes?.length > 0 && details.relatedScenes[0].id)) ? (
+              {!details.hideTrailer && (details.activeVideoId || details.trailerId || (details.relatedScenes?.length > 0 && details.relatedScenes[0].id) || (details.fanVideos?.length > 0 && details.fanVideos[0].id)) ? (
                 <iframe
-                  key={details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id}
+                  key={details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id}
                   className="trailer-iframe"
-                  src={`https://www.youtube.com/embed/${details.activeVideoId || details.trailerId || details.relatedScenes[0].id}?autoplay=1&rel=0`}
+                  src={`https://www.youtube.com/embed/${details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id}?autoplay=1&rel=0`}
                   title="Cinematic Discovery"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -68,39 +68,42 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   className="no-trailer"
                   style={{
                     backgroundImage: item.poster_path
-                      ? `url(${item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w780${item.poster_path}`})`
+                      ? `url(https://image.tmdb.org/t/p/w780${item.poster_path})`
                       : 'none',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
                   }}
                 >
                   <div className="no-trailer-overlay">
-                    <span>{details.hideTrailer ? 'Legacy Record Locked' : '🎬 Narrative Preview coming soon'}</span>
+                    <span>{details.hideTrailer ? 'Legacy Record Locked' : '🎬 Cinematic Preview coming soon'}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* 🎞️ RELATED CINEMATIC EXPLORATION */}
-            {!details.hideTrailer && (details.relatedScenes?.length > 0 || details.trailerId) && (
+            {/* 🎑 EXPLORATION TABS */}
+            {!details.hideTrailer && (details.relatedScenes?.length > 0 || details.fanVideos?.length > 0 || details.trailerId) && (
               <div className="scenes-selector animate-up">
                 <div className="scenes-header">
-                   <h4>Cinematic Moments</h4>
-                   <span>Discover iconic scenes & analysis</span>
+                   <h4>Cinematic Exploration</h4>
+                   <span>Official moments & Community tributes</span>
                 </div>
+                
                 <div className="scenes-grid">
                   {[ 
-                    ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', thumbnail: `https://img.youtube.com/vi/${details.trailerId}/mqdefault.jpg` }] : []), 
-                    ...details.relatedScenes.slice(0, 4)
-                  ].map((scene, idx) => (
+                    ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []), 
+                    ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic Moment' })),
+                    ...(details.fanVideos || []).map(s => ({ ...s, type: 'Creator Fan-Edit' }))
+                  ].slice(0, 5).map((scene, idx) => (
                     <div 
                       key={idx} 
-                      className={`scene-card ${ (details.activeVideoId || details.trailerId || (details.relatedScenes?.length > 0 && details.relatedScenes[0].id)) === scene.id ? 'active' : '' }`}
+                      className={`scene-card ${ (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id) === scene.id ? 'active' : '' }`}
                       onClick={() => setDetails({ ...details, activeVideoId: scene.id })}
                     >
-                      <img src={scene.thumbnail} alt={scene.title} />
+                      <img src={scene.thumbnail || `https://img.youtube.com/vi/${scene.id}/mqdefault.jpg`} alt={scene.title} />
                       <div className="scene-overlay">
-                         <p>{scene.title.length > 40 ? scene.title.slice(0, 40) + '...' : scene.title}</p>
+                         <span className="scene-type-tag">{scene.type}</span>
+                         <p>{scene.title.length > 35 ? scene.title.slice(0, 35) + '...' : scene.title}</p>
                       </div>
                     </div>
                   ))}

@@ -95,41 +95,84 @@ async function getYoutubeScenes(title, year = "") {
   return [];
 }
 
-// ─── ANIME DETAILS (Jikan + YouTube Trailer + Scenes) ────────────────────
+// Search YouTube for fan-made content (AMVs, Edits)
+async function getYoutubeFanMade(title) {
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
+  if (!apiKey) return [];
+  try {
+    const query = encodeURIComponent(`${title} anime AMV fan edit tribute`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=4&key=${apiKey}`;
+    const response = await axios.get(url, { timeout: 4000 });
+    return (response.data.items || []).map(item => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      thumbnail: item.snippet.thumbnails?.medium?.url
+    }));
+  } catch (err) { return []; }
+}
+
+// ─── ANIME DETAILS (Jikan + YouTube Trailer + Scenes + Fan Hub) ────────────────────
 exports.getDetails = async (req, res) => {
   const { id } = req.params;
+  const tmdbKey = process.env.TMDB_API_KEY;
   
   try {
-    const response = await axios.get(`https://api.jikan.moe/v4/anime/${id}/full`, { timeout: 6000 });
-    const a = response.data.data;
-    if (!a) return res.status(404).json({ error: "Anime not found." });
+    let a = null;
+    let title = "";
+    let baseData = {};
 
-    const title = a.title_english || a.title;
-    let trailerId = a.trailer?.youtube_id || null;
+    // 1) Primary: Jikan (MAL)
+    try {
+      const response = await axios.get(`https://api.jikan.moe/v4/anime/${id}/full`, { timeout: 5000 });
+      a = response.data.data;
+      if (a) {
+        title = a.title_english || a.title;
+        baseData = {
+          ...jikanToOrlune(a),
+          episodes: a.episodes,
+          status: a.status,
+          duration: a.duration,
+          rating: a.rating,
+          studios: a.studios?.map(s => s.name) || [],
+          genres: a.genres?.map(g => g.name) || [],
+        };
+      }
+    } catch (jikanErr) {
+      console.warn("Jikan Details Failed, checking TMDB...");
+    }
 
-    // Use Promise.allSettled to ensure YouTube failures don't block metadata
-    const [trailerRes, scenesRes] = await Promise.allSettled([
+    // 2) Fallback: TMDB (if Jikan is rate-limited)
+    if (!a && tmdbKey) {
+      try {
+        const tmdbSearch = await axios.get(`https://api.themoviedb.org/3/search/tv?api_key=${tmdbKey}&query=${id}`, { timeout: 4000 });
+        if (tmdbSearch.data.results?.length > 0) {
+           const t = tmdbSearch.data.results[0];
+           title = t.name;
+           baseData = { id, title, overview: t.overview, poster_path: t.poster_path, media_type: 'anime', vote_average: t.vote_average };
+        }
+      } catch (err) {}
+    }
+
+    if (!title) return res.status(404).json({ error: "Narrative lost in the archives." });
+
+    let trailerId = a?.trailer?.youtube_id || null;
+
+    // 3) Multi-Layered YouTube Discovery
+    const [trailerRes, scenesRes, fanRes] = await Promise.allSettled([
       !trailerId ? getYoutubeTrailer(title) : Promise.resolve(trailerId),
-      getYoutubeScenes(title)
+      getYoutubeScenes(title),
+      getYoutubeFanMade(title)
     ]);
 
-    const finalTrailerId = trailerRes.status === 'fulfilled' ? trailerRes.value : trailerId;
-    const finalScenes = scenesRes.status === 'fulfilled' ? scenesRes.value : [];
-
     res.json({
-      ...jikanToOrlune(a),
-      trailerId: finalTrailerId,
-      relatedScenes: finalScenes,
-      episodes: a.episodes,
-      status: a.status,
-      duration: a.duration,
-      rating: a.rating,
-      studios: a.studios?.map(s => s.name) || [],
-      genres: a.genres?.map(g => g.name) || [],
+      ...baseData,
+      trailerId: trailerRes.status === 'fulfilled' ? trailerRes.value : trailerId,
+      relatedScenes: scenesRes.status === 'fulfilled' ? scenesRes.value : [],
+      fanVideos: fanRes.status === 'fulfilled' ? fanRes.value : []
     });
+
   } catch (err) {
-    console.error("Anime detail error:", err.message);
-    // Return a skeleton if MAL is partially down but search worked
-    res.status(500).json({ error: "The series legacy is momentarily veiled. Try again shortly." });
+    console.error("Critical Anime error:", err.message);
+    res.status(500).json({ error: "The series legacy is momentarily veiled." });
   }
 };
