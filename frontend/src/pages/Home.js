@@ -50,9 +50,61 @@ export default function Home() {
   const openLogin = () => { setModalMode('login'); setModalOpen(true); };
   const openRegister = () => { setModalMode('register'); setModalOpen(true); };
 
-  return (
-    <div className="home-page">
+  if (user) {
+    // ── DASHBOARD VIEW (LOGGED IN) ──
+    return (
+      <div className="home-page dashboard-view">
+        <section className="container" style={{ paddingTop: '100px', paddingBottom: '20px' }}>
+          <div className="dashboard-header" style={{ marginBottom: '40px' }}>
+            <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '8px' }}>Dashboard</h1>
+            <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {user.username}. What are we watching today?</p>
+          </div>
+          
+          <div className="section-header">
+            <h2 className="section-title">Trending Now</h2>
+            <Link to="/search" className="btn btn-ghost btn-sm">See All →</Link>
+          </div>
 
+          {loading ? (
+            <div className="spinner" />
+          ) : (
+            <div className="movies-grid">
+              {trending?.map((item) => (
+                <MovieCard key={item.id} item={{ ...item, media_type: 'movie' }} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="container leaderboard-preview" style={{ paddingTop: '20px' }}>
+          <div className="section-header">
+            <h2 className="section-title">Top Members</h2>
+            <Link to="/leaderboard" className="btn btn-ghost btn-sm">Full Board →</Link>
+          </div>
+
+          <div className="lb-list">
+            {leaderboard?.map((u, i) => (
+              <div key={u.id} className="lb-row">
+                <span className={`lb-rank ${i < 3 ? 'top' : ''}`}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                </span>
+                <div className="lb-avatar">{u.username?.[0]?.toUpperCase()}</div>
+                <div className="lb-info">
+                  <span className="lb-name">{u.username}</span>
+                  <span className="lb-meta">{u.battle_wins}W · {u.watchlist_size} films</span>
+                </div>
+                <span className="lb-points">{u.total_points} pts</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // ── LANDING SPLASH VIEW (LOGGED OUT) ──
+  return (
+    <div className="home-page landing-view">
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="hero">
         <div className="hero-bg" />
@@ -71,37 +123,28 @@ export default function Home() {
             Share your taste with people who genuinely care about cinema.
           </p>
 
-          {user ? (
-            <div className="hero-actions">
-              <Link to="/search" className="btn btn-primary btn-lg">Discover Films</Link>
-              <Link to="/battles" className="btn btn-ghost btn-lg">Explore Battles</Link>
-            </div>
-          ) : (
-            <div className="hero-actions">
-              <button className="btn-join" onClick={openRegister}>
-                <span className="btn-join-orb" />
-                Join the Community
-              </button>
-              <button className="btn-signin" onClick={openLogin}>
-                Sign in
-              </button>
-            </div>
-          )}
+          <div className="hero-actions">
+            <button className="btn-join" onClick={openRegister}>
+              <span className="btn-join-orb" />
+              Join the Community
+            </button>
+            <button className="btn-signin" onClick={openLogin}>
+              Sign in
+            </button>
+          </div>
 
-          {!user && (
-            <div className="hero-proof">
-              <div className="proof-faces">
-                {['A','K','R','M','S'].map((l, i) => (
-                  <div key={i} className="proof-face" style={{ '--i': i }}>{l}</div>
-                ))}
-              </div>
-              <span>Joined by 500+ film lovers</span>
+          <div className="hero-proof">
+            <div className="proof-faces">
+              {['A','K','R','M','S'].map((l, i) => (
+                <div key={i} className="proof-face" style={{ '--i': i }}>{l}</div>
+              ))}
             </div>
-          )}
+            <span>Joined by 500+ film lovers</span>
+          </div>
         </div>
       </section>
 
-      {/* ── FEATURES (public, visible to everyone) ───────────── */}
+      {/* ── FEATURES ───────────── */}
       <section className="container features-section">
         <div className="features-grid">
           <div className="feature-card">
@@ -122,67 +165,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── TRENDING ─────────────────────────────────────────── */}
-      <section className="container trending-section">
-        <div className="section-header">
-          <h2 className="section-title">Trending Now</h2>
-          <Link to="/search" className="btn btn-ghost btn-sm">See All →</Link>
+      {/* ── SNEAK PEEK (GATED TRENDING) ─────────────────────────────────────────── */}
+      <section className="container trending-section" style={{ paddingBottom: '120px' }}>
+        <div className="section-header" style={{ justifyContent: 'center', marginBottom: '40px' }}>
+          <h2 className="section-title">See what the community is watching</h2>
         </div>
 
         {loading ? (
           <div className="spinner" />
         ) : (
-          <div className="movies-grid">
-            {trending?.map((item) => (
+          <div className="movies-grid" style={{ filter: 'blur(2px) grayscale(30%)', opacity: 0.6, pointerEvents: 'none' }}>
+            {trending?.slice(0, 4).map((item) => (
               <MovieCard key={item.id} item={{ ...item, media_type: 'movie' }} />
             ))}
           </div>
         )}
 
-        {/* Gate — prompt guests to join */}
-        {!user && trending?.length > 0 && (
-          <div className="content-gate">
-            <div className="gate-blur" />
-            <div className="gate-inner">
-              <p className="gate-title">See the full picture</p>
-              <p className="gate-sub">
-                Sign in to add films to your watchlist, rate them,
-                and discover what your community is watching.
-              </p>
-              <button className="btn-join" onClick={openRegister}>
-                <span className="btn-join-orb" />
-                Join — it's free
-              </button>
-              <p className="gate-hint">
-                Already a member?{' '}
-                <button className="am-link" onClick={openLogin}>Sign in</button>
-              </p>
-            </div>
+        <div className="content-gate" style={{ marginTop: '-200px' }}>
+          <div className="gate-blur" style={{ height: '220px' }} />
+          <div className="gate-inner">
+            <p className="gate-title">Ready to dive in?</p>
+            <p className="gate-sub">
+              Sign in to browse thousands of movies, discover hidden gems,
+              and build your ultimate watchlist.
+            </p>
+            <button className="btn-join" onClick={openRegister}>
+              <span className="btn-join-orb" />
+              Join — it's free
+            </button>
+            <p className="gate-hint">
+              Already a member?{' '}
+              <button className="am-link" onClick={openLogin}>Sign in</button>
+            </p>
           </div>
-        )}
-      </section>
-
-      {/* ── LEADERBOARD PREVIEW ──────────────────────────────── */}
-      <section className="container leaderboard-preview">
-        <div className="section-header">
-          <h2 className="section-title">Top Members</h2>
-          <Link to="/leaderboard" className="btn btn-ghost btn-sm">Full Board →</Link>
-        </div>
-
-        <div className="lb-list">
-          {leaderboard?.map((u, i) => (
-            <div key={u.id} className="lb-row">
-              <span className={`lb-rank ${i < 3 ? 'top' : ''}`}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-              </span>
-              <div className="lb-avatar">{u.username?.[0]?.toUpperCase()}</div>
-              <div className="lb-info">
-                <span className="lb-name">{u.username}</span>
-                <span className="lb-meta">{u.battle_wins}W · {u.watchlist_size} films</span>
-              </div>
-              <span className="lb-points">{u.total_points} pts</span>
-            </div>
-          ))}
         </div>
       </section>
 

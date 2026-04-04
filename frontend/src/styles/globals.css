@@ -21,7 +21,10 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--bg-primary);
+  background: radial-gradient(circle at top right, #1A1828, #0B0E14 40%),
+              radial-gradient(circle at bottom left, #0D1623, #0B0E14 40%),
+              var(--bg-primary);
+  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;

@@ -63,7 +63,7 @@ export default function MovieCard({ item, onAdd, showStatus }) {
         </div>
         {rating && (
           <div className="movie-rating">
-            <span>⭐</span> {rating}
+            <span>★</span> {rating}
           </div>
         )}
         {/* API source badge */}
