@@ -46,6 +46,13 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
   const handleAdd = async (e) => {
     e.stopPropagation();
     if (!user) { toast.error('Login to add to Vault'); return; }
+    
+    // 🛡️ Prevent re-adding masterpieces
+    if (item.status === 'completed') {
+      toast('This masterpiece is already in your archive.', { icon: '✨' });
+      return;
+    }
+
     setAdding(true);
     try {
       await api.post('/watchlist', {
@@ -81,10 +88,13 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
       <div className="movie-poster-wrap">
         <img src={poster} alt={title} className="movie-poster" loading="lazy" />
         <div className="movie-overlay" onClick={(e) => e.stopPropagation()}>
-          {user && !showStatus && (
+          {user && !showStatus && item.status !== 'completed' && (
             <button className="add-btn" onClick={handleAdd} disabled={adding}>
               {adding ? '...' : '+ Vault'}
             </button>
+          )}
+          {item.status === 'completed' && !showStatus && (
+            <div className="completed-check animate-fade">✨ Mastered</div>
           )}
         </div>
         {rating && (
@@ -92,7 +102,8 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
             <span>★</span> {rating}
           </div>
         )}
-        {showStatus && item.status && (
+        {/* 🔥 Always show status badge if it exists (for global awareness) */}
+        {item.status && (
           <div className={`movie-status-badge status-${item.status}`}>
             <span className="status-icon" />
             {statusLabel}
@@ -102,11 +113,13 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
       <div className="movie-info">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
             <p className="movie-title">{title}</p>
-            <span className="time-meta">
-              {item.status === 'completed' && item.completed_at ? `Mastered ${new Date(item.completed_at).toLocaleDateString()}` :
-               item.status === 'watching' && item.started_at ? `Watching for ${getTimeAgo(item.started_at)}` :
-               item.created_at ? `Vaulted ${getTimeAgo(item.created_at)}` : ''}
-            </span>
+            {item.status && (
+              <span className="time-meta">
+                {item.status === 'completed' && item.completed_at ? `Mastered ${new Date(item.completed_at).toLocaleDateString()}` :
+                 item.status === 'watching' && item.started_at ? `Watching for ${getTimeAgo(item.started_at)}` :
+                 item.created_at ? `Vaulted ${getTimeAgo(item.created_at)}` : ''}
+              </span>
+            )}
         </div>
         <p className="movie-meta">{year} {mediaType === 'tv' ? '• TV' : ''}</p>
         {item.heritage_score && (
