@@ -29,6 +29,7 @@
   align-items: center;
   justify-content: space-between;
   transition: height 0.3s ease;
+  padding: 0 48px; /* Increased padding from 40px */
 }
 
 .scrolled .navbar-inner {
@@ -57,9 +58,9 @@
 }
 
 .brand-text {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 2.5px;
+  font-size: 19px; /* Slightly reduced from 20px */
+  font-weight: 700; /* Slightly reduced from 800 */
+  letter-spacing: 1.8px; /* Reduced from 2.5px to save space */
   color: white;
   font-family: 'Inter', sans-serif;
   position: relative;
