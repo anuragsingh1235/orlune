@@ -28,15 +28,22 @@ export default function Home() {
   }, [location.search, navigate]);
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       api.get('/movies/trending'),
       api.get('/battles/leaderboard'),
     ])
-      .then(([t, l]) => {
-        if (Array.isArray(t.data)) setTrending(t.data);
-        if (Array.isArray(l.data)) setLeaderboard(l.data.slice(0, 5));
+      .then(([tResult, lResult]) => {
+        if (tResult.status === 'fulfilled' && Array.isArray(tResult.value.data)) {
+          setTrending(tResult.value.data);
+        } else if (tResult.status === 'rejected') {
+          console.error('Trending fetch failed:', tResult.reason);
+        }
+        if (lResult.status === 'fulfilled' && Array.isArray(lResult.value.data)) {
+          setLeaderboard(lResult.value.data.slice(0, 5));
+        } else if (lResult.status === 'rejected') {
+          console.error('Leaderboard fetch failed:', lResult.reason);
+        }
       })
-      .catch((err) => console.error('HOME ERROR:', err))
       .finally(() => setLoading(false));
   }, []);
 
