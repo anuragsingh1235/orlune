@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import api from '../../utils/api';
 import './GeminiOracle.css';
-
-const GEMINI_API_KEY = "AlzaSyC6iBa08j6iMrpY6bt9PvBsaRtJJy1bt8Q";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 export default function GeminiOracle() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,23 +26,11 @@ export default function GeminiOracle() {
     setIsTyping(true);
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: `You are the Orlune Oracle, a high-end cinematic AI. You help users find movies, discuss theories, and appreciate film history. Be professional, slightly mystical, and deeply knowledgeable. User says: ${userMsg}` }]
-          }]
-        })
-      });
-
-      const data = await response.json();
-      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "The stars are clouded. Ask again, cinephile.";
-      
-      setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
+      const { data } = await api.post('/ai/oracle', { prompt: userMsg });
+      setMessages(prev => [...prev, { role: 'model', content: data.response }]);
     } catch (error) {
       console.error("Oracle fetch failed:", error);
-      setMessages(prev => [...prev, { role: 'model', content: "My connection to the cinematic weave is weak right now." }]);
+      setMessages(prev => [...prev, { role: 'model', content: "Our records are currently locked by the cinematic authorities." }]);
     } finally {
       setIsTyping(false);
     }
@@ -54,12 +40,10 @@ export default function GeminiOracle() {
     <div className={`gemini-oracle-container ${isOpen ? 'open' : 'closed'}`}>
       {/* 🚀 FLOAT BOT ICON */}
       <div className="oracle-trigger glass-card" onClick={() => setIsOpen(!isOpen)}>
-        <lottie-player 
-          src="https://assets1.lottiefiles.com/packages/lf20_9aa8vbs6.json"
-          background="transparent" speed="1" 
-          style={{ width: '60px', height: '60px' }} 
-          loop autoplay>
-        </lottie-player>
+        <div className="oracle-orb">
+          <div className="orb-inner" />
+          <div className="orb-glow" />
+        </div>
         {!isOpen && <span className="oracle-badge">CINEMATIC ORACLE</span>}
       </div>
 

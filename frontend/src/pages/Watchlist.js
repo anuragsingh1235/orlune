@@ -19,7 +19,7 @@ export default function Watchlist() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('watchlist');
   const [view, setView] = useState('personal'); // 'personal' or 'community'
   const [activeMovie, setActiveMovie] = useState(null);
   const [masteringItem, setMasteringItem] = useState(null);
@@ -139,12 +139,7 @@ export default function Watchlist() {
       <header className="page-header" style={{ marginBottom: '48px', position: 'relative' }}>
         <h1 className="page-title text-gradient">📋 My <span>Cinematic Archive</span></h1>
         <div className="header-lottie hide-mobile">
-          <lottie-player 
-            src="https://assets10.lottiefiles.com/packages/lf20_sk5h17nd.json"
-            background="transparent" speed="1" 
-            style={{ width: '80px', height: '80px' }} 
-            loop autoplay>
-          </lottie-player>
+           <img src="/logo.png" alt="Orlune Logo" style={{ width: '60px', height: '60px', filter: 'drop-shadow(0 0 10px rgba(180, 142, 173, 0.4))' }} />
         </div>
       </header>
 
@@ -165,9 +160,9 @@ export default function Watchlist() {
 
         {view === 'personal' && (
           <div className="filter-tabs glass-card">
-            {['all', 'watchlist', 'completed'].map((f) => (
+            {['watchlist', 'completed'].map((f) => (
               <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-                {f === 'all' ? 'All Records' : f === 'watchlist' ? '📋 Pending' : '✅ Mastered'}
+                {f === 'watchlist' ? '📋 Pending' : '✨ Mastered Archive'}
               </button>
             ))}
           </div>

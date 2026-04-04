@@ -89,29 +89,23 @@ export default function Home() {
             <Link to="/search" className="btn btn-ghost btn-sm">Explore All →</Link>
           </div>
 
-          {/* 🔮 AI CINEMATIC ORACLE SECTION */}
-          <section className="oracle-section glass-card animate-up" style={{ marginBottom: '60px', padding: '40px', overflow: 'hidden', position: 'relative' }}>
+          <section className="oracle-section glass-card animate-up" style={{ marginBottom: '60px', padding: '60px 40px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(180, 142, 173, 0.2)' }}>
             <div className="oracle-bg-glow" />
-            <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '40px' }}>
-              <div className="oracle-lottie hide-mobile">
-                <lottie-player 
-                  src="https://assets1.lottiefiles.com/packages/lf20_9aa8vbs6.json"
-                  background="transparent" speed="1" 
-                  style={{ width: '180px', height: '180px' }} 
-                  loop autoplay>
-                </lottie-player>
-              </div>
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '24px' }}>
+              <img src="/logo.png" alt="Orlune Logo" style={{ width: '80px', height: '80px', marginBottom: '8px', filter: 'drop-shadow(0 0 15px rgba(180, 142, 173, 0.4))' }} />
               <div style={{ flex: 1 }}>
-                <span className="oracle-label">PREMIUM FEATURE</span>
-                <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '16px', color: '#fff', letterSpacing: '-1px' }}>
-                  The <span className="text-gradient">Cinematic Oracle</span> is active.
+                <span className="oracle-label" style={{ background: 'rgba(180, 142, 173, 0.2)', color: '#B48EAD', padding: '4px 12px', borderRadius: '4px', fontSize: '10px', fontWeight: '800', letterSpacing: '2px' }}>ORLUNE PREMIUM</span>
+                <h2 style={{ fontSize: '2.8rem', fontWeight: '900', marginTop: '16px', marginBottom: '16px', color: '#fff', letterSpacing: '-1.5px' }}>
+                  Your Cinematic <span className="text-gradient">Legacy</span>
                 </h2>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.2rem', marginBottom: '24px', maxWidth: '600px', lineHeight: '1.6' }}>
-                  Use our advanced Gemini-powered AI to discover hidden gems, analyze complex theories, or find your next favorite masterpiece. Click the floating bot below to begin your consultation.
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.2rem', marginBottom: '32px', maxWidth: '700px', lineHeight: '1.7', fontWeight: '500' }}>
+                  Orlune is more than a watchlist. It's a sanctuary for film lovers. Curate your history, share your heritage, and let our Oracle guide you with divine precision.
                 </p>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div className="oracle-pulse-dot" />
-                  <span style={{ fontSize: '0.9rem', color: '#B48EAD', fontWeight: '800', letterSpacing: '1px' }}>AI SYSTEM ONLINE</span>
+                <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="oracle-pulse-dot" />
+                        <span style={{ fontSize: '0.9rem', color: '#B48EAD', fontWeight: '800' }}>ORACLE ACTIVE</span>
+                    </div>
                 </div>
               </div>
             </div>

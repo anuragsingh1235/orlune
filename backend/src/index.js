@@ -8,6 +8,7 @@ const movieRoutes = require("./routes/movies");
 const watchlistRoutes = require("./routes/watchlist");
 const battleRoutes = require("./routes/battles");
 const animeRoutes = require("./routes/anime");
+const aiRoutes = require("./routes/ai");
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use("/api/movies", movieRoutes);
 app.use("/api/anime", animeRoutes);
 app.use("/api/battles", battleRoutes);
 app.use("/api/watchlist", watchlistRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Serve React build only when NOT on Vercel (Vercel handles frontend separately)
 if (!process.env.VERCEL) {
