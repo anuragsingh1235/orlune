@@ -17,6 +17,7 @@ app.use(express.json());
 // ✅ ALL ROUTES ADD KARO
 app.use("/api/auth", authRoutes);
 app.use("/api/movies", movieRoutes);
+app.use("/api/anime", animeRoutes);
 app.use("/api/battles", battleRoutes);
 app.use("/api/watchlist", watchlistRoutes);
 

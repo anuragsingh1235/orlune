@@ -60,12 +60,11 @@ export default function Anime() {
   return (
     <div className="anime-page container animate-fade" style={{ paddingBottom: '100px' }}>
       <header className="page-header" style={{ marginBottom: '40px', textAlign: 'center' }}>
-        <h1 className="page-title text-gradient">✨ The <span>Anime Archive</span></h1>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '16px auto' }}>
-          Explore acclaimed animated series and films from the Jikan archive.
+        <h1 className="page-title text-gradient">✨ The <span>Ancestral Sagas</span></h1>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '16px auto', fontSize: '1.1rem', fontStyle: 'italic' }}>
+          "Every legend has a beginning. Every hero has a story. Find yours in the archive of masterpieces."
         </p>
-
-        {/* 🔍 ANIME-ONLY SEARCH BAR */}
+      </header>   {/* 🔍 ANIME-ONLY SEARCH BAR */}
         <div className="anime-search-container" style={{ 
           maxWidth: '500px', 
           margin: '32px auto',
@@ -111,7 +110,6 @@ export default function Anime() {
             </button>
           )}
         </div>
-      </header>
 
       <div className="section-header" style={{ marginBottom: '24px' }}>
         <h2 className="section-title">
