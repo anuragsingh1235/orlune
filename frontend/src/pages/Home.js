@@ -5,6 +5,7 @@ import MovieCard from '../components/movies/MovieCard';
 import DetailsModal from '../components/movies/DetailsModal';
 import FactCard from '../components/dashboard/FactCard';
 import { useAuth } from '../context/AuthContext';
+import Footer from '../components/layout/Footer';
 import api from '../utils/api';
 import './Home.css';
 
@@ -20,7 +21,7 @@ export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('login');
 
-  // Open modal if redirected from /login or /register
+  // ... (keep search and effect logic)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const auth = params.get('auth');
@@ -63,11 +64,24 @@ export default function Home() {
           {/* 🔥 DYNAMIC TRIVIA CARD */}
           <FactCard />
 
-          <div className="dashboard-header animate-up" style={{ marginBottom: '60px' }}>
-            <h1 style={{ fontSize: '2.4rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-1.5px' }}>
-              Welcome back, <span className="text-gradient" style={{ display: 'inline' }}>{user.username}</span>
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your personal archive is awaiting further curation.</p>
+          <div className="dashboard-header animate-up" style={{ marginBottom: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1 }}>
+              <h1 style={{ fontSize: '2.4rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-1.5px' }}>
+                Welcome back, <span className="text-gradient" style={{ display: 'inline' }}>{user.username}</span>
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your personal archive is awaiting further curation.</p>
+            </div>
+            
+            <div className="dashboard-lottie hide-mobile" style={{ width: '150px' }}>
+              <lottie-player 
+                src="https://assets2.lottiefiles.com/packages/lf20_T6v6t6.json"
+                background="transparent"
+                speed="1"
+                style={{ width: '150px', height: '150px' }}
+                loop
+                autoplay>
+              </lottie-player>
+            </div>
           </div>
           
           <div className="section-header">
@@ -126,6 +140,8 @@ export default function Home() {
             ))}
           </div>
         </section>
+        
+        <Footer />
       </div>
     );
   }
@@ -138,36 +154,50 @@ export default function Home() {
         <div className="hero-bg" />
         <div className="hero-glow" />
 
-        <div className="container hero-content">
-          <p className="hero-eyebrow animate-up">Film · Series · Community</p>
+        <div className="container hero-content-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+          <div className="hero-content" style={{ flex: 1.2 }}>
+            <p className="hero-eyebrow animate-up" style={{ color: '#B48EAD', fontWeight: '700' }}>Film · Series · Community</p>
 
-          <h1 className="hero-title animate-up">
-            Your cinematic<br />
-            <span>universe,</span> curated.
-          </h1>
+            <h1 className="hero-title animate-up">
+              Your cinematic<br />
+              <span className="text-gradient">universe,</span> curated.
+            </h1>
 
-          <p className="hero-subtitle animate-up" style={{ animationDelay: '0.1s' }}>
-            Discover what to watch next. Track every film you've seen.
-            Share your taste with people who genuinely care about cinema.
-          </p>
+            <p className="hero-subtitle animate-up" style={{ animationDelay: '0.1s' }}>
+              Discover what to watch next. Track every film you've seen.
+              Share your taste with people who genuinely care about cinema.
+            </p>
 
-          <div className="hero-actions animate-up" style={{ animationDelay: '0.2s', marginTop: '10px' }}>
-            <button className="btn-join" onClick={openRegister} style={{ padding: '16px 36px', fontSize: '1rem' }}>
-              <span className="btn-join-orb" />
-              Join the Community
-            </button>
-            <button className="btn-signin" onClick={openLogin} style={{ marginLeft: '12px' }}>
-              Sign in
-            </button>
+            <div className="hero-actions animate-up" style={{ animationDelay: '0.2s', marginTop: '10px' }}>
+              <button className="btn-join" onClick={openRegister} style={{ padding: '16px 36px', fontSize: '1rem' }}>
+                <span className="btn-join-orb" />
+                Join the Community
+              </button>
+              <button className="btn-signin" onClick={openLogin} style={{ marginLeft: '12px' }}>
+                Sign in
+              </button>
+            </div>
+
+            <div className="hero-proof animate-up" style={{ animationDelay: '0.3s' }}>
+              <div className="proof-faces">
+                {['A','K','R','M','S'].map((l, i) => (
+                  <div key={i} className="proof-face" style={{ '--i': i }}>{l}</div>
+                ))}
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>Joined by 500+ film lovers</span>
+            </div>
           </div>
 
-          <div className="hero-proof animate-up" style={{ animationDelay: '0.3s' }}>
-            <div className="proof-faces">
-              {['A','K','R','M','S'].map((l, i) => (
-                <div key={i} className="proof-face" style={{ '--i': i }}>{l}</div>
-              ))}
-            </div>
-            <span>Joined by 500+ film lovers</span>
+          {/* 🔥 HERO LOTTIE ANIMATION */}
+          <div className="hero-animation hide-mobile animate-fade" style={{ flex: 0.8, display: 'flex', justifyContent: 'center' }}>
+            <lottie-player 
+              src="https://assets.lottiefiles.com/packages/lf20_x62chJ.json"
+              background="transparent"
+              speed="1"
+              style={{ width: '450px', height: '450px' }}
+              loop
+              autoplay>
+            </lottie-player>
           </div>
         </div>
       </section>
@@ -177,21 +207,36 @@ export default function Home() {
         <div className="features-grid">
           <div className="feature-card glass-card">
             <div className="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+              <lottie-player 
+                src="https://assets9.lottiefiles.com/packages/lf20_pucia9k5.json"
+                style={{ width: '60px', height: '60px', marginBottom: '20px' }}
+                loop
+                autoplay>
+              </lottie-player>
             </div>
             <h3>Curate Your Archive</h3>
             <p>Your cinematic journey, preserved. Build a living history of the films that moved you and the scenes you'll never forget.</p>
           </div>
           <div className="feature-card glass-card">
             <div className="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <lottie-player 
+                src="https://assets3.lottiefiles.com/packages/lf20_sk5h17nd.json"
+                style={{ width: '60px', height: '60px', marginBottom: '20px' }}
+                loop
+                autoplay>
+              </lottie-player>
             </div>
             <h3>Voice Your Perspective</h3>
             <p>Go beyond the star rating. Share nuanced reviews and thoughtful critiques that contribute to the global cinematic dialogue.</p>
           </div>
           <div className="feature-card glass-card">
             <div className="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <lottie-player 
+                src="https://assets10.lottiefiles.com/packages/lf20_jtS7n0.json"
+                style={{ width: '60px', height: '60px', marginBottom: '20px' }}
+                loop
+                autoplay>
+              </lottie-player>
             </div>
             <h3>Connect through Cinema</h3>
             <p>Exchange collections with fellow cinephiles. Discover new favorites through thoughtful comparisons and community insights.</p>
@@ -249,6 +294,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <Footer />
 
       {/* ── AUTH MODAL ───────────────────────────────────────── */}
       <AuthModal

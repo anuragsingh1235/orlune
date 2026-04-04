@@ -1,0 +1,132 @@
+.brand-footer {
+  background: #0a0a0f;
+  background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 15, 0.95) 100%);
+  padding: 80px 0 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  margin-top: 100px;
+  position: relative;
+  z-index: 10;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 60px;
+  margin-bottom: 60px;
+}
+
+.footer-brand-section {
+  flex: 1;
+  min-width: 250px;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 15px;
+}
+
+.logo-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: linear-gradient(to right, #B48EAD, #81A1C1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-dot {
+  font-size: 2.2rem;
+  color: #B48EAD;
+  margin-left: 2px;
+}
+
+.footer-tagline {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.footer-links-section {
+  display: flex;
+  gap: 80px;
+  flex-wrap: wrap;
+}
+
+.footer-group h4 {
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 25px;
+  opacity: 0.9;
+}
+
+.footer-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-group li {
+  margin-bottom: 12px;
+}
+
+.footer-group a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+}
+
+.footer-group a:hover {
+  color: #B48EAD;
+  transform: translateX(4px);
+}
+
+.support-email {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.9rem;
+  font-family: 'Space Mono', monospace;
+  margin-top: 15px;
+  display: block;
+  letter-spacing: -0.5px;
+}
+
+.footer-bottom {
+  padding-top: 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bottom-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bottom-inner p {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    gap: 40px;
+  }
+  
+  .footer-links-section {
+    gap: 40px;
+  }
+  
+  .brand-footer {
+    padding: 60px 20px 20px;
+  }
+}

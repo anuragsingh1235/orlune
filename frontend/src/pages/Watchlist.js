@@ -6,6 +6,7 @@ import MovieCard from '../components/movies/MovieCard';
 import DetailsModal from '../components/movies/DetailsModal';
 import MasteryQuestionModal from '../components/movies/MasteryQuestionModal';
 import CommunityRatings from '../components/movies/CommunityRatings';
+import Footer from '../components/layout/Footer';
 import api from '../utils/api';
 import './Watchlist.css';
 
@@ -25,6 +26,7 @@ export default function Watchlist() {
   const [editItem, setEditItem] = useState(null);
   const [editForm, setEditForm] = useState({ heritage_score: '', user_review: '', status: '' });
 
+  // ... (keep fetch and handlers)
   const fetchWatchlist = () => {
     setLoading(true);
     api.get('/watchlist')
@@ -126,6 +128,7 @@ export default function Watchlist() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 
@@ -164,10 +167,17 @@ export default function Watchlist() {
       {view === 'community' ? (
         <CommunityRatings />
       ) : loading ? <div className="spinner" style={{ margin: '60px auto' }} /> : filtered.length === 0 ? (
-        <div className="empty-state animate-fade">
-          <div className="icon">🎬</div>
-          <h3>The Archive is Empty</h3>
-          <p>Begin your journey by searching and adding titles.</p>
+        <div className="empty-state animate-fade" style={{ padding: '40px 0' }}>
+          <div className="empty-lottie">
+            <lottie-player 
+              src="https://assets5.lottiefiles.com/packages/lf20_t9gkkhz4.json"
+              background="transparent" speed="1" 
+              style={{ width: '280px', height: '280px', margin: '0 auto' }} 
+              loop autoplay>
+            </lottie-player>
+          </div>
+          <h3 style={{ marginTop: '20px', fontFamily: 'Outfit', fontSize: '1.5rem' }}>The Archive is Empty</h3>
+          <p style={{ color: 'rgba(255,255,255,0.4)' }}>Begin your journey by searching and adding titles to your legacy.</p>
         </div>
       ) : (
         <div className="movies-grid animate-up">
@@ -222,9 +232,10 @@ export default function Watchlist() {
               <input 
                 className="input" 
                 type="number" 
+                step="0.1"
                 min="1" max="10"
-                value={editForm.user_rating}
-                onChange={(e) => setEditForm({ ...editForm, user_rating: e.target.value })}
+                value={editForm.heritage_score}
+                onChange={(e) => setEditForm({ ...editForm, heritage_score: e.target.value })}
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '12px', borderRadius: '8px', width: '100%' }}
               />
             </div>
@@ -248,6 +259,8 @@ export default function Watchlist() {
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
   );
 }
