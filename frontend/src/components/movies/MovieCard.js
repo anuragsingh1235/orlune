@@ -11,9 +11,10 @@ export default function MovieCard({ item, onAdd, showStatus }) {
   const [adding, setAdding] = useState(false);
 
   const isOmdb = item._api_source === 'omdb';
+  const isJikan = item._api_source === 'jikan';
 
-  // OMDB returns full poster URL; TMDB returns a path fragment
-  const poster = isOmdb
+  // OMDB and JIKAN return full poster URLs; TMDB returns a path fragment
+  const poster = (isOmdb || isJikan)
     ? (item.poster_path || `https://via.placeholder.com/342x513/1a1a26/ffffff?text=${encodeURIComponent(item.title || item.name)}`)
     : item.poster_path
       ? `${TMDB_IMG}${item.poster_path}`

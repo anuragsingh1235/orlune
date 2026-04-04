@@ -61,8 +61,8 @@ export default function Anime() {
     <div className="anime-page container animate-fade" style={{ paddingBottom: '100px' }}>
       <header className="page-header" style={{ marginBottom: '40px', textAlign: 'center' }}>
         <h1 className="page-title text-gradient">✨ The <span>Ancestral Sagas</span></h1>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '16px auto', fontSize: '1.1rem', fontStyle: 'italic' }}>
-          "Every legend has a beginning. Every hero has a story. Find yours in the archive of masterpieces."
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '16px auto', fontSize: '1.2rem', fontWeight: '500', fontStyle: 'italic', letterSpacing: '0.2px' }}>
+          "Some legends are written in ink, others in stardust. Find the saga that speaks to your soul."
         </p>
       </header>   {/* 🔍 ANIME-ONLY SEARCH BAR */}
         <div className="anime-search-container" style={{ 
