@@ -195,20 +195,36 @@ export default function Watchlist() {
                />
                <div className="watchlist-actions-overlay">
                   {item.status === 'collection' && (
-                    <button className="btn-start" onClick={async (e) => { 
+                    <button className="btn-action btn-start-journey" onClick={async (e) => { 
                       e.stopPropagation(); 
                       try {
                         const { data } = await api.put(`/watchlist/${item.id}`, { status: 'watching' });
                         setItems((prev) => prev.map((i) => i.id === item.id ? data : i));
                         toast.success('Cinematic Journey Started 🎬');
                       } catch { toast.error('Failed to start journey'); }
-                    }} title="Start Watching">▶️ Start</button>
+                    }} title="Start Journey">
+                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M7 6V18L17 12L7 6Z" fill="currentColor" />
+                       </svg>
+                    </button>
                   )}
                   {item.status === 'watching' && (
-                    <button className="btn-master" onClick={(e) => { e.stopPropagation(); setMasteringItem(item); }} title="Master this record">✅ Master</button>
+                    <button className="btn-action btn-master-award" onClick={(e) => { e.stopPropagation(); setMasteringItem(item); }} title="Master this record">
+                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" />
+                       </svg>
+                    </button>
                   )}
-                  <button className="btn-edit" onClick={(e) => openEdit(e, item)} title="Edit record">✏️</button>
-                  <button className="btn-delete" onClick={(e) => remove(e, item.id)} title="Purge Record">🗑️</button>
+                  <button className="btn-action btn-edit-record" onClick={(e) => openEdit(e, item)} title="Edit record">
+                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04V7.04Z" fill="currentColor" />
+                     </svg>
+                  </button>
+                  <button className="btn-action btn-purge-record" onClick={(e) => remove(e, item.id)} title="Purge Record">
+                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor" />
+                     </svg>
+                  </button>
                </div>
             </div>
           ))}

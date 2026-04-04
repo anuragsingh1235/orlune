@@ -6,26 +6,34 @@ const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || process.env.GEMIN
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 router.post("/oracle", async (req, res) => {
-  const { prompt } = req.body;
-
-  if (!prompt) {
-    return res.status(400).json({ error: "Prompt is required" });
+  const { prompt, history } = req.body;
+  
+  if (!GEMINI_API_KEY || GEMINI_API_KEY.startsWith("REPLACE_ME")) {
+    console.error("AIRA ERROR: Gemini API Key is missing or invalid.");
+    return res.status(500).json({ error: "The archives are momentarily veiled." });
   }
 
   try {
+    const formattedHistory = (history || []).map(msg => ({
+      role: msg.role === "user" ? "user" : "model",
+      parts: [{ text: msg.content }]
+    }));
+
     const response = await axios.post(API_URL, {
-      contents: [{
-        parts: [{ text: `You are AIRA, a high-end cinematic AI. You help users find movies, discuss theories, and appreciate film history. Be professional, slightly mystical, and deeply knowledgeable. User says: ${prompt}` }]
-      }]
-    }, {
-      headers: { "Content-Type": "application/json" }
+      contents: [
+        ...formattedHistory,
+        { role: "user", parts: [{ text: prompt }] }
+      ],
+      systemInstruction: {
+        parts: [{ text: "You are AIRA, a mystical, cinematic AI companion for the Orlune Cinematic Vault. You speak with wisdom, professional depth, and a slight touch of archival mystery. You help users discover movies and anime, rate them, and build their legacy. Keep responses concise and deeply cinematic. Avoid brand names or generic assistant talk." }]
+      }
     });
 
-    const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "The archives are veiled. Seek me again when the light returns.";
-    res.json({ response: aiResponse });
-  } catch (error) {
-    console.error("AIRA Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "AIRA connection failed" });
+    const reply = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+    res.json({ reply });
+  } catch (err) {
+    console.error("AIRA DIAGNOSTIC:", err.response?.data || err.message);
+    res.status(500).json({ error: "The archives are shrouded in mist. Attempt the connection again." });
   }
 });
 

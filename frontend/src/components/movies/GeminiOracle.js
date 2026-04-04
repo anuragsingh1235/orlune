@@ -26,11 +26,11 @@ export default function GeminiOracle() {
     setIsTyping(true);
 
     try {
-      const { data } = await api.post('/ai/oracle', { prompt: userMsg });
-      setMessages(prev => [...prev, { role: 'model', content: data.response }]);
+      const { data } = await api.post('/ai/oracle', { prompt: userMsg, history: messages.slice(1) });
+      setMessages(prev => [...prev, { role: 'model', content: data.reply }]);
     } catch (error) {
       console.error("AIRA fetch failed:", error);
-      setMessages(prev => [...prev, { role: 'model', content: "The archives are veiled. Seek me again when the light returns." }]);
+      setMessages(prev => [...prev, { role: 'model', content: "The archives are shrouded in mist. Attempt the connection again." }]);
     } finally {
       setIsTyping(false);
     }
