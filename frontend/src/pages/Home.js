@@ -116,7 +116,7 @@ export default function Home() {
           )}
         </section>
 
-        {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
+        {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} hideTrailer={false} />}
 
         <section className="container leaderboard-preview animate-up" style={{ paddingTop: '60px', paddingBottom: '80px' }}>
           <div className="section-header" style={{ marginBottom: '32px' }}>

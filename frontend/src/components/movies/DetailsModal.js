@@ -3,12 +3,12 @@ import api from '../../utils/api';
 import './DetailsModal.css';
 
 /**
- * ─── DETAILS MODAL (Orlune Cinematic View) ───────────────────────
+ * ─── DETAILS MODAL (AIRA Cinematic View) ───────────────────────
  * Displays trailers, cast, and details for any title.
  * The backend already fetches the trailerId server-side via YouTube API,
  * so we just display what it returns.
  */
-export default function DetailsModal({ item, onClose }) {
+export default function DetailsModal({ item, onClose, hideTrailer }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ export default function DetailsModal({ item, onClose }) {
 
     api.get(endpoint)
       .then((res) => {
-        setDetails(res.data);
+        setDetails({ ...res.data, hideTrailer });
       })
       .catch((err) => {
         console.error('Details fetch failed:', err);
@@ -53,7 +53,7 @@ export default function DetailsModal({ item, onClose }) {
 
             {/* 🎥 TRAILER SECTION */}
             <div className="trailer-container">
-              {details.trailerId ? (
+              {!details.hideTrailer && details.trailerId ? (
                 <iframe
                   className="trailer-iframe"
                   src={`https://www.youtube.com/embed/${details.trailerId}?autoplay=1&rel=0`}
@@ -68,11 +68,13 @@ export default function DetailsModal({ item, onClose }) {
                   style={{
                     backgroundImage: item.poster_path
                       ? `url(${item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w780${item.poster_path}`})`
-                      : 'none'
+                      : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
                   }}
                 >
                   <div className="no-trailer-overlay">
-                    <span>🎬 Trailer coming soon</span>
+                    <span>{details.hideTrailer ? 'Legacy Record Locked' : '🎬 Trailer coming soon'}</span>
                   </div>
                 </div>
               )}

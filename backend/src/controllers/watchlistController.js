@@ -21,11 +21,15 @@ function omdbToTmdb(o) {
 // Ensure the table reflects our cinematic vision
 const ensureSchema = async () => {
     try {
-        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT \'watchlist\'');
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT \'collection\'');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS heritage_score NUMERIC');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS user_review TEXT');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()');
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS started_at TIMESTAMP');
+        // Backfill legacy statuses
+        await pool.query('UPDATE watchlist_items SET status = \'collection\' WHERE status = \'watchlist\'');
+        await pool.query('UPDATE watchlist_items SET created_at = NOW() WHERE created_at IS NULL');
     } catch(err) {
         console.warn("Schema check failed but proceeding:", err.message);
     }
@@ -84,7 +88,7 @@ exports.addItem = async (req, res) => {
     const result = await pool.query(
       `INSERT INTO watchlist_items 
       (user_id, tmdb_id, media_type, title, poster_path, backdrop_path, overview, release_date, vote_average, genres, status, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, 'watchlist', NOW())
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, 'collection', NOW())
       ON CONFLICT (user_id, tmdb_id, media_type) DO NOTHING RETURNING *`,
       [req.user.id, tmdb_id, media_type || 'movie', title, poster_path, backdrop_path, overview, release_date, parseFloat(vote_average) || 0, genres]
     );
@@ -126,6 +130,13 @@ exports.updateItem = async (req, res) => {
          SET heritage_score=$1, user_review=$2, status=$3, completed_at=NOW() 
          WHERE id=$4 AND user_id=$5 RETURNING *`,
         [ratingVal, user_review, status, req.params.id, req.user.id]
+      );
+    } else if (status === 'watching') {
+      result = await pool.query(
+        `UPDATE watchlist_items 
+         SET status=$1, started_at=NOW() 
+         WHERE id=$2 AND user_id=$3 RETURNING *`,
+        [status, req.params.id, req.user.id]
       );
     } else {
       result = await pool.query(

@@ -5,7 +5,7 @@ import './GeminiOracle.css';
 export default function GeminiOracle() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'model', content: "Seek your wisdom from AURA. Ask me anything about the cinematic arts." }
+    { role: 'model', content: "Seek your wisdom from AIRA. Ask me anything about the cinematic arts." }
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -29,8 +29,8 @@ export default function GeminiOracle() {
       const { data } = await api.post('/ai/oracle', { prompt: userMsg });
       setMessages(prev => [...prev, { role: 'model', content: data.response }]);
     } catch (error) {
-      console.error("Aura fetch failed:", error);
-      setMessages(prev => [...prev, { role: 'model', content: "The archives are momentarily veiled. Ask again soon." }]);
+      console.error("AIRA fetch failed:", error);
+      setMessages(prev => [...prev, { role: 'model', content: "The archives are veiled. Seek me again when the light returns." }]);
     } finally {
       setIsTyping(false);
     }
@@ -46,7 +46,7 @@ export default function GeminiOracle() {
               <path d="M12 7L6 18H18L12 7Z" fill="#B48EAD" fillOpacity="0.2"/>
            </svg>
         </div>
-        {!isOpen && <span className="oracle-badge">AURA</span>}
+        {!isOpen && <span className="oracle-badge">AIRA</span>}
       </div>
 
       {/* 🔮 CHAT WINDOW */}
@@ -55,7 +55,7 @@ export default function GeminiOracle() {
           <div className="oracle-header">
             <div className="oracle-title">
               <span className="oracle-dot" />
-              AURA
+              AIRA
             </div>
             <button className="oracle-close" onClick={() => setIsOpen(false)}>&times;</button>
           </div>

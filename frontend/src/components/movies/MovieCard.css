@@ -168,6 +168,19 @@
   animation: status-pulse 2s infinite;
 }
 
+.status-collection { color: #D8DEE9; }
+.status-collection .status-icon {
+  background: #D8DEE9;
+  box-shadow: 0 0 8px rgba(216, 222, 233, 0.4);
+}
+
+.status-watching { color: #EBCB8B; }
+.status-watching .status-icon {
+  background: #EBCB8B;
+  box-shadow: 0 0 10px #EBCB8B;
+  animation: status-pulse 1.5s infinite;
+}
+
 .status-completed { color: #A3BE8C; }
 .status-completed .status-icon {
   background: #A3BE8C;

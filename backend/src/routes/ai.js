@@ -15,17 +15,17 @@ router.post("/oracle", async (req, res) => {
   try {
     const response = await axios.post(API_URL, {
       contents: [{
-        parts: [{ text: `You are AURA, a high-end cinematic AI. You help users find movies, discuss theories, and appreciate film history. Be professional, slightly mystical, and deeply knowledgeable. User says: ${prompt}` }]
+        parts: [{ text: `You are AIRA, a high-end cinematic AI. You help users find movies, discuss theories, and appreciate film history. Be professional, slightly mystical, and deeply knowledgeable. User says: ${prompt}` }]
       }]
     }, {
       headers: { "Content-Type": "application/json" }
     });
 
-    const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "The archives are silent. Ask again, cinephile.";
+    const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "The archives are veiled. Seek me again when the light returns.";
     res.json({ response: aiResponse });
   } catch (error) {
-    console.error("Gemini Oracle Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Oracle connection failed" });
+    console.error("AIRA Error:", error.response?.data || error.message);
+    res.status(500).json({ error: "AIRA connection failed" });
   }
 });
 

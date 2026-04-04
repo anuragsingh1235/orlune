@@ -88,18 +88,14 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
         {showStatus && item.status && (
           <div className={`movie-status-badge status-${item.status}`}>
             <span className="status-icon" />
-            {item.status === 'completed' ? 'Mastered' : 'Pending'}
+            {statusLabel}
           </div>
         )}
       </div>
       <div className="movie-info">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
             <p className="movie-title">{title}</p>
-            {item.status === 'completed' && item.completed_at ? (
-               <span className="time-meta">Mastered {new Date(item.completed_at).toLocaleDateString()}</span>
-            ) : item.created_at ? (
-               <span className="time-meta">{getTimeAgo(item.created_at)}</span>
-            ) : null}
+            <span className="time-meta">{timeInfo}</span>
         </div>
         <p className="movie-meta">{year} {mediaType === 'tv' ? '• TV' : ''}</p>
         {item.heritage_score && (

@@ -19,7 +19,7 @@ export default function Watchlist() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('watchlist');
+  const [filter, setFilter] = useState('collection');
   const [view, setView] = useState('personal'); // 'personal' or 'community'
   const [activeMovie, setActiveMovie] = useState(null);
   const [masteringItem, setMasteringItem] = useState(null);
@@ -137,7 +137,7 @@ export default function Watchlist() {
   return (
     <div className="watchlist-page container animate-fade">
       <header className="page-header" style={{ marginBottom: '48px', position: 'relative' }}>
-        <h1 className="page-title text-gradient">📋 My <span>Cinematic Archive</span></h1>
+        <h1 className="page-title text-gradient">📋 The <span>Cinematic Vault</span></h1>
         <div className="header-lottie hide-mobile">
            <img src="/logo.png" alt="Orlune Logo" style={{ width: '60px', height: '60px', filter: 'drop-shadow(0 0 10px rgba(180, 142, 173, 0.4))' }} />
         </div>
@@ -160,9 +160,9 @@ export default function Watchlist() {
 
         {view === 'personal' && (
           <div className="filter-tabs glass-card">
-            {['watchlist', 'completed'].map((f) => (
+            {['collection', 'watching', 'completed'].map((f) => (
               <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-                {f === 'watchlist' ? '📋 Pending' : '✨ Mastered Archive'}
+                {f === 'collection' ? '📦 Vault' : f === 'watching' ? '⏳ Watching' : '✨ Mastered Archive'}
               </button>
             ))}
           </div>
@@ -194,8 +194,18 @@ export default function Watchlist() {
                   showStatus
                />
                <div className="watchlist-actions-overlay">
-                  {item.status !== 'completed' && (
-                    <button className="btn-master" onClick={(e) => { e.stopPropagation(); setMasteringItem(item); }} title="Master this record">✅</button>
+                  {item.status === 'collection' && (
+                    <button className="btn-start" onClick={async (e) => { 
+                      e.stopPropagation(); 
+                      try {
+                        const { data } = await api.put(`/watchlist/${item.id}`, { status: 'watching' });
+                        setItems((prev) => prev.map((i) => i.id === item.id ? data : i));
+                        toast.success('Cinematic Journey Started 🎬');
+                      } catch { toast.error('Failed to start journey'); }
+                    }} title="Start Watching">▶️ Start</button>
+                  )}
+                  {item.status === 'watching' && (
+                    <button className="btn-master" onClick={(e) => { e.stopPropagation(); setMasteringItem(item); }} title="Master this record">✅ Master</button>
                   )}
                   <button className="btn-edit" onClick={(e) => openEdit(e, item)} title="Edit record">✏️</button>
                   <button className="btn-delete" onClick={(e) => remove(e, item.id)} title="Purge Record">🗑️</button>
@@ -206,7 +216,7 @@ export default function Watchlist() {
       )}
 
       {/* Detail Modal */}
-      {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
+      {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} hideTrailer={true} />}
 
       {/* Mastery Question Modal */}
       {masteringItem && (
