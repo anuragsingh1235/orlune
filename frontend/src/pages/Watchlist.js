@@ -24,8 +24,11 @@ export default function Watchlist() {
   const fetchWatchlist = () => {
     setLoading(true);
     api.get('/watchlist')
-      .then((r) => setItems(r.data))
-      .catch(err => console.error(err))
+      .then((r) => setItems(Array.isArray(r.data) ? r.data : []))
+      .catch(err => {
+        console.error(err);
+        setItems([]);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -62,14 +65,15 @@ export default function Watchlist() {
     } catch { toast.error('Failed to update'); }
   };
 
-  const filtered = filter === 'all' ? items : items.filter((i) => i.status === filter);
+  const safeItems = Array.isArray(items) ? items : [];
+  const filtered = filter === 'all' ? safeItems : safeItems.filter((i) => i.status === filter);
   
   const stats = {
-    total: items.length,
-    completed: items.filter((i) => i.status === 'completed').length,
-    watchlist: items.filter((i) => i.status === 'watchlist').length,
-    avgRating: items.filter((i) => i.user_rating).length
-      ? (items.filter((i) => i.user_rating).reduce((s, i) => s + Number(i.user_rating), 0) / items.filter((i) => i.user_rating).length).toFixed(1)
+    total: safeItems.length,
+    completed: safeItems.filter((i) => i.status === 'completed').length,
+    watchlist: safeItems.filter((i) => i.status === 'watchlist').length,
+    avgRating: safeItems.filter((i) => i.user_rating).length
+      ? (safeItems.filter((i) => i.user_rating).reduce((s, i) => s + Number(i.user_rating), 0) / safeItems.filter((i) => i.user_rating).length).toFixed(1)
       : '—',
   };
 
