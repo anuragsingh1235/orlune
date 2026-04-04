@@ -23,7 +23,7 @@ export default function Watchlist() {
   const [activeMovie, setActiveMovie] = useState(null);
   const [masteringItem, setMasteringItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
-  const [editForm, setEditForm] = useState({ user_rating: '', user_review: '', status: '' });
+  const [editForm, setEditForm] = useState({ heritage_score: '', user_review: '', status: '' });
 
   const fetchWatchlist = () => {
     setLoading(true);
@@ -73,7 +73,7 @@ export default function Watchlist() {
     e.stopPropagation();
     setEditItem(item);
     setEditForm({ 
-      user_rating: item.user_rating || '', 
+      heritage_score: item.heritage_score || '', 
       user_review: item.user_review || '', 
       status: item.status || 'watchlist' 
     });
@@ -96,9 +96,9 @@ export default function Watchlist() {
     completed: safeItems.filter((i) => i.status === 'completed').length,
     watchlist: safeItems.filter((i) => i.status === 'watchlist').length,
     avgRating: (() => {
-      const rated = safeItems.filter((i) => i.user_rating != null && i.user_rating !== '');
+      const rated = safeItems.filter((i) => i.heritage_score != null && i.heritage_score !== '');
       if (!rated.length) return '—';
-      const sum = rated.reduce((s, i) => s + Number(i.user_rating), 0);
+      const sum = rated.reduce((s, i) => s + Number(i.heritage_score), 0);
       return (sum / rated.length).toFixed(1);
     })(),
   };

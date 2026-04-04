@@ -36,7 +36,7 @@ export default function MasteryQuestionModal({ item, onComplete, onClose }) {
 
   const handleSubmit = () => {
     onComplete({
-      user_rating: rating,
+      heritage_score: rating,
       user_review: review || "No thoughts shared.",
       status: 'completed'
     });

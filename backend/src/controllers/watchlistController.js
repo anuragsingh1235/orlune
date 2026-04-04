@@ -22,7 +22,7 @@ function omdbToTmdb(o) {
 const ensureSchema = async () => {
     try {
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT \'watchlist\'');
-        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS user_rating NUMERIC');
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS heritage_score NUMERIC');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS user_review TEXT');
         await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP');
     } catch(err) {
@@ -114,16 +114,26 @@ exports.getItems = async (req, res) => {
 // ✏️ UPDATE ITEM
 exports.updateItem = async (req, res) => {
   await ensureSchema();
-  const { user_rating, user_review, status } = req.body;
-  const ratingVal = user_rating != null ? parseFloat(user_rating) : null;
+  const { heritage_score, user_review, status } = req.body;
+  const ratingVal = heritage_score != null ? parseFloat(heritage_score) : null;
 
   try {
-    const result = await pool.query(
-      `UPDATE watchlist_items 
-       SET user_rating=$1, user_review=$2, status=$3, completed_at = CASE WHEN $3::varchar = 'completed' THEN NOW() ELSE completed_at END
-       WHERE id=$4 AND user_id=$5 RETURNING *`,
-      [ratingVal, user_review, status, req.params.id, req.user.id]
-    );
+    let result;
+    if (status === 'completed') {
+      result = await pool.query(
+        `UPDATE watchlist_items 
+         SET heritage_score=$1, user_review=$2, status=$3, completed_at=NOW() 
+         WHERE id=$4 AND user_id=$5 RETURNING *`,
+        [ratingVal, user_review, status, req.params.id, req.user.id]
+      );
+    } else {
+      result = await pool.query(
+        `UPDATE watchlist_items 
+         SET heritage_score=$1, user_review=$2, status=$3 
+         WHERE id=$4 AND user_id=$5 RETURNING *`,
+        [ratingVal, user_review, status, req.params.id, req.user.id]
+      );
+    }
 
     if (!result.rows.length) return res.status(404).json({ error: 'Item not found' });
     res.json(result.rows[0]);
@@ -164,12 +174,12 @@ exports.getCommunityRatings = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT title, poster_path, media_type, tmdb_id,
-              AVG(CAST(user_rating AS FLOAT)) as avg_community_rating,
-              COUNT(user_rating) as total_ratings
+              AVG(CAST(heritage_score AS FLOAT)) as avg_community_rating,
+              COUNT(heritage_score) as total_ratings
        FROM watchlist_items 
-       WHERE user_rating IS NOT NULL AND status='completed'
+       WHERE heritage_score IS NOT NULL AND status='completed'
        GROUP BY title, poster_path, media_type, tmdb_id
-       HAVING COUNT(user_rating) > 0
+       HAVING COUNT(heritage_score) > 0
        ORDER BY avg_community_rating DESC
        LIMIT 20`
     );

@@ -77,9 +77,9 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
       <div className="movie-info">
         <p className="movie-title">{title}</p>
         <p className="movie-meta">{year} {mediaType === 'tv' ? '• TV' : ''}</p>
-        {item.user_rating && (
+        {item.heritage_score && (
           <div className="user-rating">
-            {'★'.repeat(Math.round(item.user_rating / 2))} {item.user_rating}/10
+            {'★'.repeat(Math.round(item.heritage_score / 2))} {parseFloat(item.heritage_score).toFixed(1)}/10
           </div>
         )}
       </div>
