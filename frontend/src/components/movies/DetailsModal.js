@@ -53,7 +53,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
             {/* 🎥 CINEMATIC PLAYER SECTION */}
             <div className="trailer-container">
-              {!details.hideTrailer && (details.activeVideoId || details.trailerId || (details.relatedScenes?.length > 0 && details.relatedScenes[0].id) || (details.fanVideos?.length > 0 && details.fanVideos[0].id)) ? (
+              {!details.hideTrailer && (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id) ? (
                 <iframe
                   key={details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id}
                   className="trailer-iframe"
@@ -97,7 +97,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   ].slice(0, 5).map((scene, idx) => (
                     <div 
                       key={idx} 
-                      className={`scene-card ${ (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id) === scene.id ? 'active' : '' }`}
+                      className={`scene-card ${ (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id) === scene.id ? 'active' : '' }`}
                       onClick={() => setDetails({ ...details, activeVideoId: scene.id })}
                     >
                       <img src={scene.thumbnail || `https://img.youtube.com/vi/${scene.id}/mqdefault.jpg`} alt={scene.title} />

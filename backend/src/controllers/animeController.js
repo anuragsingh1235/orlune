@@ -170,7 +170,6 @@ exports.getDetails = async (req, res) => {
       relatedScenes: scenesRes.status === 'fulfilled' ? scenesRes.value : [],
       fanVideos: fanRes.status === 'fulfilled' ? fanRes.value : []
     });
-
   } catch (err) {
     console.error("Critical Anime error:", err.message);
     res.status(500).json({ error: "The series legacy is momentarily veiled." });
