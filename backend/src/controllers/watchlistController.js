@@ -103,7 +103,7 @@ exports.addItem = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || 'Server error' });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -154,7 +154,7 @@ exports.updateItem = async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || 'Server error' });
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
