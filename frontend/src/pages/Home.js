@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthModal from '../components/AuthModal';
 import MovieCard from '../components/movies/MovieCard';
-import FactCard from '../components/dashboard/FactCard'; // 🔥 NEW
+import DetailsModal from '../components/movies/DetailsModal';
+import FactCard from '../components/dashboard/FactCard';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import './Home.css';
