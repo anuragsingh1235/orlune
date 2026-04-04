@@ -64,7 +64,7 @@ export default function Home() {
             <h1 style={{ fontSize: '2.4rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-1.5px' }}>
               Welcome back, <span className="text-gradient" style={{ display: 'inline' }}>{user.username}</span>
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your cinematic world is ready. Check out the latest ranks.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your personal archive is awaiting further curation.</p>
           </div>
           
           <div className="section-header">
@@ -85,8 +85,8 @@ export default function Home() {
 
         <section className="container leaderboard-preview animate-up" style={{ paddingTop: '60px', paddingBottom: '80px' }}>
           <div className="section-header" style={{ marginBottom: '32px' }}>
-            <h2 className="section-title">The Honor Roll</h2>
-            <Link to="/leaderboard" className="btn btn-ghost btn-sm">Full Board →</Link>
+            <h2 className="section-title">Notable Collections</h2>
+            <Link to="/leaderboard" className="btn btn-ghost btn-sm">Full Rankings →</Link>
           </div>
 
           <div className="lb-list glass-card" style={{ padding: '8px' }}>
@@ -98,7 +98,7 @@ export default function Home() {
                 <div className="lb-avatar">{u.username?.[0]?.toUpperCase()}</div>
                 <div className="lb-info">
                   <span className="lb-name">{u.username}</span>
-                  <span className="lb-meta">{u.battle_wins}W · {u.watchlist_size} films</span>
+                  <span className="lb-meta">{u.battle_wins} Duels · {u.watchlist_size} Titles</span>
                 </div>
                 <span className="lb-points">{u.total_points} pts</span>
               </div>
@@ -155,19 +155,25 @@ export default function Home() {
       <section className="container features-section animate-up" style={{ animationDelay: '0.4s' }}>
         <div className="features-grid">
           <div className="feature-card glass-card">
-            <div className="feature-icon">◎</div>
-            <h3>Track Everything</h3>
-            <p>Build your personal watchlist. Log what you've seen, what's next, and what you want to remember.</p>
+            <div className="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+            </div>
+            <h3>Curate Your Archive</h3>
+            <p>Your cinematic journey, preserved. Build a living history of the films that moved you and the scenes you'll never forget.</p>
           </div>
           <div className="feature-card glass-card">
-            <div className="feature-icon">◈</div>
-            <h3>Rate & Review</h3>
-            <p>Give films the rating they deserve. Write honest reviews. Your opinion shapes your recommendations.</p>
+            <div className="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </div>
+            <h3>Voice Your Perspective</h3>
+            <p>Go beyond the star rating. Share nuanced reviews and thoughtful critiques that contribute to the global cinematic dialogue.</p>
           </div>
           <div className="feature-card glass-card">
-            <div className="feature-icon">⊹</div>
-            <h3>Battle It Out</h3>
-            <p>Challenge others to compare watchlists. Defend your taste. Discover films through friendly debate.</p>
+            <div className="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <h3>Connect through Cinema</h3>
+            <p>Exchange collections with fellow cinephiles. Discover new favorites through thoughtful comparisons and community insights.</p>
           </div>
         </div>
       </section>

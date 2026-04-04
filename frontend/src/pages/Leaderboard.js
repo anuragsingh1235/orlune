@@ -26,7 +26,7 @@ export default function Leaderboard() {
   if (!user) {
     return (
       <div className="leaderboard-page container animate-fade" style={{ textAlign: 'center', paddingBottom: '100px' }}>
-        <h1 className="page-title text-gradient">🏆 Member <span>Hall of Fame</span></h1>
+        <h1 className="page-title text-gradient">🏆 The <span>Collector's Circle</span></h1>
         
         <div className="lb-gate-hero glass-card animate-scale" style={{ 
           maxWidth: '600px', 
@@ -37,11 +37,11 @@ export default function Leaderboard() {
           alignItems: 'center',
           gap: '24px'
         }}>
-          <div className="lb-gate-icon" style={{ fontSize: '48px' }}>🔐</div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: '800' }}>Ranks are Reserved for Warriors</h2>
+          <div className="lb-gate-icon" style={{ fontSize: '48px' }}>✨</div>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: '800' }}>Exclusive for the Community</h2>
           <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            To protect our community's competitive integrity and view the full global rankings, 
-            you must be a registered member of Orlune.
+            To view the full global standings and history of our most dedicated collectors, 
+            you must be a part of the Orlune network.
           </p>
           
           <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
@@ -62,7 +62,7 @@ export default function Leaderboard() {
           {[1, 2, 3, 4, 5].map((_, i) => (
              <div key={i} className="lb-trow">
                <span className="lb-pos">#{i+1}</span>
-               <div className="lb-user-cell"><div className="lb-av">?</div><p className="lb-uname">Hidden Warrior</p></div>
+               <div className="lb-user-cell"><div className="lb-av">?</div><p className="lb-uname">Cinephile #001</p></div>
                <span className="lb-pts">???? pts</span>
              </div>
           ))}
@@ -73,9 +73,9 @@ export default function Leaderboard() {
 
   return (
     <div className="leaderboard-page container animate-fade">
-      <h1 className="page-title text-gradient">🏆 Global <span>Leaderboard</span></h1>
+      <h1 className="page-title text-gradient">🏆 Global <span>Standings</span></h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32, fontSize: '0.95rem' }}>
-        Top warriors ranked by points earned from battles and cinematic activity.
+        Top-tier members ranked by their cinematic contributions and community standing.
       </p>
 
       {loading ? (
@@ -84,8 +84,8 @@ export default function Leaderboard() {
         <div className="lb-table glass-card animate-up" style={{ padding: '8px' }}>
           <div className="lb-thead">
             <span>Rank</span>
-            <span>Warrior</span>
-            <span>Total Points</span>
+            <span>Cinephile</span>
+            <span>Contributions</span>
             <span>Record</span>
             <span>Archive</span>
           </div>
@@ -110,7 +110,7 @@ export default function Leaderboard() {
             </div>
           )) : (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No warriors found in the archive yet.
+              No members found in the archive yet.
             </div>
           )}
         </div>
