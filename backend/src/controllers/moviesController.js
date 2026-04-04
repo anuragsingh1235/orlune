@@ -26,7 +26,7 @@ function omdbToTmdb(o) {
 
 // Search YouTube for a trailer using the provided API Key
 async function getYoutubeTrailer(title, year = "") {
-  const apiKey = process.env.YOUTUBE_API_KEY;
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
   if (!apiKey) return null;
 
   try {

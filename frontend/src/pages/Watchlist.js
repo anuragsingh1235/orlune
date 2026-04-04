@@ -33,7 +33,11 @@ export default function Watchlist() {
   };
 
   useEffect(() => {
-    if (user) fetchWatchlist();
+    if (user) {
+      fetchWatchlist();
+    } else {
+      setLoading(false);
+    }
   }, [user]);
 
   const remove = async (e, id) => {
