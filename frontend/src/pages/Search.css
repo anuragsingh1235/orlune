@@ -6,7 +6,7 @@
 .search-hero {
   text-align: center;
   max-width: 800px;
-  margin: 130px auto 60px; /* Forced 130px margin-top to guarantee clearing the navbar */
+  margin: 40px auto 60px; /* Reduced from 130px to let NavbarSpacer handle it */
   animation: scaleIn 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

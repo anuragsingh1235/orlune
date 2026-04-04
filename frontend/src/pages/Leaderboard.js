@@ -25,7 +25,7 @@ export default function Leaderboard() {
   // 🔒 GATED VIEW FOR GUESTS
   if (!user) {
     return (
-      <div className="leaderboard-page container page-header-offset animate-fade" style={{ textAlign: 'center', paddingBottom: '100px' }}>
+      <div className="leaderboard-page container animate-fade" style={{ textAlign: 'center', paddingBottom: '100px' }}>
         <h1 className="page-title text-gradient">🏆 Member <span>Hall of Fame</span></h1>
         
         <div className="lb-gate-hero glass-card animate-scale" style={{ 
@@ -72,7 +72,7 @@ export default function Leaderboard() {
   }
 
   return (
-    <div className="leaderboard-page container page-header-offset animate-fade">
+    <div className="leaderboard-page container animate-fade">
       <h1 className="page-title text-gradient">🏆 Global <span>Leaderboard</span></h1>
       <p style={{ color: 'var(--text-muted)', marginBottom: 32, fontSize: '0.95rem' }}>
         Top warriors ranked by points earned from battles and cinematic activity.

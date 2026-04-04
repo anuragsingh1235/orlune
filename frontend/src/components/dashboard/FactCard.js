@@ -5,7 +5,23 @@ export default function FactCard() {
   const [fact, setFact] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const fetchFact = async () => {
+  useEffect(() => {
+    const fetchFact = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en');
+        setFact(res.data.text);
+      } catch (err) {
+        setFact('Movies are better when shared with friends.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFact();
+  }, []); // Standard fix: fetchFact inside effect requires no eslint-disable
+
+  const handleRefresh = async () => {
     setLoading(true);
     try {
       const res = await axios.get('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en');
@@ -16,11 +32,6 @@ export default function FactCard() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchFact();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="fact-card glass-card animate-scale" style={{ 
@@ -56,7 +67,7 @@ export default function FactCard() {
             fontWeight: '700'
           }}>Daily Cinematic Trivia</h3>
           <button 
-            onClick={fetchFact} 
+            onClick={handleRefresh} 
             disabled={loading}
             style={{
               background: 'rgba(255,255,255,0.05)',
