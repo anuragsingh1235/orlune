@@ -14,8 +14,21 @@ function omdbToTmdb(o) {
     genre_ids: [],
     media_type: "movie",
     _api_source: "omdb",
+    _id: `omdb_${o.imdbID}`
   };
 }
+
+// Ensure the table reflects our cinematic vision
+const ensureSchema = async () => {
+    try {
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT \'watchlist\'');
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS user_rating NUMERIC');
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS user_review TEXT');
+        await pool.query('ALTER TABLE watchlist_items ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP');
+    } catch(err) {
+        console.warn("Schema check failed but proceeding:", err.message);
+    }
+};
 
 // 🔍 SEARCH (TMDB → OMDB fallback)
 exports.search = async (req, res) => {
@@ -31,7 +44,7 @@ exports.search = async (req, res) => {
       "https://api.themoviedb.org/3/search/movie",
       { params: { api_key: tmdbKey, query }, timeout: 3000 }
     );
-    const results = (response.data.results || []).map((m) => ({ ...m, _api_source: "tmdb" }));
+    const results = (response.data.results || []).map((m) => ({ ...m, _api_source: "tmdb", _id: `tmdb_${m.id}` }));
     return res.json(results);
   } catch (tmdbErr) {
     console.warn("TMDB WATCHLIST SEARCH failed/timed out, trying OMDB:", tmdbErr.message);
@@ -63,141 +76,86 @@ exports.search = async (req, res) => {
 
 // ➕ ADD TO WATCHLIST
 exports.addItem = async (req, res) => {
-  const {
-    tmdb_id,
-    media_type,
-    title,
-    poster_path,
-    backdrop_path,
-    overview,
-    release_date,
-    vote_average,
-    genres
-  } = req.body;
+  await ensureSchema();
+  const { tmdb_id, media_type, title, poster_path, backdrop_path, overview, release_date, vote_average, genres } = req.body;
 
   try {
     const result = await pool.query(
       `INSERT INTO watchlist_items 
-      (user_id, tmdb_id, media_type, title, poster_path, backdrop_path, overview, release_date, vote_average, genres)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      (user_id, tmdb_id, media_type, title, poster_path, backdrop_path, overview, release_date, vote_average, genres, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, 'watchlist')
       ON CONFLICT (user_id, tmdb_id, media_type) DO NOTHING RETURNING *`,
-      [
-        req.user.id,
-        tmdb_id,
-        media_type || 'movie',
-        title,
-        poster_path,
-        backdrop_path,
-        overview,
-        release_date,
-        vote_average,
-        genres
-      ]
+      [req.user.id, tmdb_id, media_type || 'movie', title, poster_path, backdrop_path, overview, release_date, parseFloat(vote_average) || 0, genres]
     );
 
-    if (!result.rows.length) {
-      return res.status(409).json({ error: 'Already in watchlist' });
-    }
-
+    if (!result.rows.length) return res.status(409).json({ error: 'Already in watchlist' });
     res.status(201).json(result.rows[0]);
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("ADD ITEM ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
 // 📥 GET WATCHLIST
 exports.getItems = async (req, res) => {
+  await ensureSchema();
   try {
     const result = await pool.query(
       `SELECT * FROM watchlist_items WHERE user_id=$1 ORDER BY id DESC`,
       [req.user.id]
     );
-
     res.json(result.rows);
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("GET ITEMS ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
 // ✏️ UPDATE ITEM
 exports.updateItem = async (req, res) => {
+  await ensureSchema();
   const { user_rating, user_review, status } = req.body;
+  const ratingVal = user_rating != null ? parseFloat(user_rating) : null;
 
   try {
-    // Standardizing the update
-    let result;
-    if (status === 'completed') {
-      result = await pool.query(
-        `UPDATE watchlist_items 
-         SET user_rating=$1, user_review=$2, status=$3, completed_at=NOW() 
-         WHERE id=$4 AND user_id=$5 RETURNING *`,
-        [user_rating, user_review, status, req.params.id, req.user.id]
-      );
-    } else {
-      result = await pool.query(
-        `UPDATE watchlist_items 
-         SET user_rating=$1, user_review=$2, status=$3 
-         WHERE id=$4 AND user_id=$5 RETURNING *`,
-        [user_rating, user_review, status, req.params.id, req.user.id]
-      );
-    }
+    const result = await pool.query(
+      `UPDATE watchlist_items 
+       SET user_rating=$1, user_review=$2, status=$3, completed_at = CASE WHEN $3 = 'completed' THEN NOW() ELSE completed_at END
+       WHERE id=$4 AND user_id=$5 RETURNING *`,
+      [ratingVal, user_review, status, req.params.id, req.user.id]
+    );
 
-    if (!result.rows.length) {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-
+    if (!result.rows.length) return res.status(404).json({ error: 'Item not found' });
     res.json(result.rows[0]);
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("UPDATE ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
 // ❌ REMOVE ITEM
 exports.removeItem = async (req, res) => {
   try {
-    // Check if item is completed and when
     const checkQuery = await pool.query(
       "SELECT status, completed_at FROM watchlist_items WHERE id=$1 AND user_id=$2",
       [req.params.id, req.user.id]
     );
 
-    if (!checkQuery.rows.length) {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-
+    if (!checkQuery.rows.length) return res.status(404).json({ error: 'Item not found' });
     const item = checkQuery.rows[0];
 
-    // If it's a completed masterpiece, enforce the 2-day cooldown
     if (item.status === 'completed' && item.completed_at) {
-      const completionDate = new Date(item.completed_at);
-      const now = new Date();
-      const diffDays = (now - completionDate) / (1000 * 60 * 60 * 24);
-
+      const diffDays = (new Date() - new Date(item.completed_at)) / (1000 * 60 * 60 * 24);
       if (diffDays < 2) {
-        const remainingHours = Math.ceil((2 - diffDays) * 24);
-        return res.status(403).json({ 
-          error: `Great legacy takes time. Mastered records can only be removed after 48 hours of curation. (${remainingHours}h remaining)` 
-        });
+        return res.status(403).json({ error: `Great legacy takes time. Mastered records can only be removed after 48 hours. (${Math.ceil((2 - diffDays) * 24)}h left)` });
       }
     }
 
-    const result = await pool.query(
-      `DELETE FROM watchlist_items 
-       WHERE id=$1 AND user_id=$2 RETURNING id`,
-      [req.params.id, req.user.id]
-    );
-
+    await pool.query("DELETE FROM watchlist_items WHERE id=$1 AND user_id=$2", [req.params.id, req.user.id]);
     res.json({ message: 'Removed' });
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("REMOVE ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -215,10 +173,9 @@ exports.getCommunityRatings = async (req, res) => {
        ORDER BY avg_community_rating DESC
        LIMIT 20`
     );
-
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("COMMUNITY ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 };
