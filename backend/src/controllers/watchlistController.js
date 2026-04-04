@@ -120,7 +120,7 @@ exports.updateItem = async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE watchlist_items 
-       SET user_rating=$1, user_review=$2, status=$3, completed_at = CASE WHEN $3 = 'completed' THEN NOW() ELSE completed_at END
+       SET user_rating=$1, user_review=$2, status=$3, completed_at = CASE WHEN $3::varchar = 'completed' THEN NOW() ELSE completed_at END
        WHERE id=$4 AND user_id=$5 RETURNING *`,
       [ratingVal, user_review, status, req.params.id, req.user.id]
     );
