@@ -89,6 +89,34 @@ export default function Home() {
             <Link to="/search" className="btn btn-ghost btn-sm">Explore All →</Link>
           </div>
 
+          {/* 🔮 AI CINEMATIC ORACLE SECTION */}
+          <section className="oracle-section glass-card animate-up" style={{ marginBottom: '60px', padding: '40px', overflow: 'hidden', position: 'relative' }}>
+            <div className="oracle-bg-glow" />
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '40px' }}>
+              <div className="oracle-lottie hide-mobile">
+                <lottie-player 
+                  src="https://assets1.lottiefiles.com/packages/lf20_9aa8vbs6.json"
+                  background="transparent" speed="1" 
+                  style={{ width: '180px', height: '180px' }} 
+                  loop autoplay>
+                </lottie-player>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span className="oracle-label">PREMIUM FEATURE</span>
+                <h2 style={{ fontSize: '2.4rem', fontWeight: '800', marginBottom: '16px', color: '#fff', letterSpacing: '-1px' }}>
+                  The <span className="text-gradient">Cinematic Oracle</span> is active.
+                </h2>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.2rem', marginBottom: '24px', maxWidth: '600px', lineHeight: '1.6' }}>
+                  Use our advanced Gemini-powered AI to discover hidden gems, analyze complex theories, or find your next favorite masterpiece. Click the floating bot below to begin your consultation.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div className="oracle-pulse-dot" />
+                  <span style={{ fontSize: '0.9rem', color: '#B48EAD', fontWeight: '800', letterSpacing: '1px' }}>AI SYSTEM ONLINE</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {loading ? (
             <div className="spinner" />
           ) : (

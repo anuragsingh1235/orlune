@@ -91,13 +91,19 @@
   transform: translateX(4px);
 }
 
-.support-email {
+.support-email a {
   color: rgba(255, 255, 255, 0.3);
   font-size: 0.9rem;
   font-family: 'Space Mono', monospace;
   margin-top: 15px;
   display: block;
   letter-spacing: -0.5px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.support-email a:hover {
+  color: #B48EAD;
 }
 
 .footer-bottom {

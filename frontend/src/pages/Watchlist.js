@@ -91,12 +91,14 @@ export default function Watchlist() {
   };
 
   const safeItems = Array.isArray(items) ? items : [];
-  const filtered = filter === 'all' ? safeItems : safeItems.filter((i) => i.status === filter);
+  const filtered = filter === 'all' 
+    ? safeItems 
+    : safeItems.filter((i) => i.status?.toLowerCase() === filter.toLowerCase());
   
   const stats = {
     total: safeItems.length,
-    completed: safeItems.filter((i) => i.status === 'completed').length,
-    watchlist: safeItems.filter((i) => i.status === 'watchlist').length,
+    completed: safeItems.filter((i) => i.status?.toLowerCase() === 'completed').length,
+    watchlist: safeItems.filter((i) => i.status?.toLowerCase() === 'watchlist').length,
     avgRating: (() => {
       const rated = safeItems.filter((i) => i.heritage_score != null && i.heritage_score !== '');
       if (!rated.length) return '—';
@@ -134,8 +136,16 @@ export default function Watchlist() {
 
   return (
     <div className="watchlist-page container animate-fade">
-      <header className="page-header" style={{ marginBottom: '48px' }}>
+      <header className="page-header" style={{ marginBottom: '48px', position: 'relative' }}>
         <h1 className="page-title text-gradient">📋 My <span>Cinematic Archive</span></h1>
+        <div className="header-lottie hide-mobile">
+          <lottie-player 
+            src="https://assets10.lottiefiles.com/packages/lf20_sk5h17nd.json"
+            background="transparent" speed="1" 
+            style={{ width: '80px', height: '80px' }} 
+            loop autoplay>
+          </lottie-player>
+        </div>
       </header>
 
       {/* Stats Dashboard */}

@@ -31,8 +31,10 @@ const Footer = () => {
           <div className="footer-group">
             <h4>Support</h4>
             <ul>
-              <li><a href="mailto:orlune.support@gmail.com">Contact Us</a></li>
-              <li className="support-email">orlune.support@gmail.com</li>
+              <li><a href="mailto:orlune.support@gmail.com" className="contact-link">Contact Us</a></li>
+              <li className="support-email">
+                <a href="mailto:orlune.support@gmail.com">orlune.support@gmail.com</a>
+              </li>
             </ul>
           </div>
         </div>

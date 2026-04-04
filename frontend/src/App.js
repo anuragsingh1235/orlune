@@ -11,6 +11,7 @@ import Anime from './pages/Anime';
 import Watchlist from './pages/Watchlist';
 import Battles from './pages/Battles';
 import Leaderboard from './pages/Leaderboard';
+import GeminiOracle from './components/movies/GeminiOracle';
 import './styles/globals.css';
 
 function ProtectedRoute({ children }) {
@@ -35,6 +36,7 @@ function AppRoutes() {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      <GeminiOracle />
     </>
   );
 }
