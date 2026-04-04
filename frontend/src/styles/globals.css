@@ -1,20 +1,20 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-card: #1a1a26;
-  --bg-hover: #22223a;
-  --accent: #e50914;
-  --accent-hover: #ff1a24;
-  --accent-gold: #f5c518;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0b8;
-  --text-muted: #5a5a7a;
-  --border: #2a2a3e;
-  --border-light: #3a3a54;
-  --success: #22c55e;
-  --warning: #f59e0b;
+  --bg-primary: #0B0E14;
+  --bg-secondary: #11151E;
+  --bg-card: #151A25;
+  --bg-hover: #1D2331;
+  --accent: #5E81AC;
+  --accent-hover: #81A1C1;
+  --accent-gold: #B48EAD;
+  --text-primary: #E5E9F0;
+  --text-secondary: #A9B1D6;
+  --text-muted: #626D8A;
+  --border: #1E2433;
+  --border-light: #2B3347;
+  --success: #8FBCBB;
+  --warning: #EBCB8B;
   --radius: 12px;
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
 }
@@ -79,10 +79,10 @@ img { display: block; }
   display: inline-flex; align-items: center; gap: 4px;
   padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
 }
-.badge-red { background: rgba(229,9,20,0.2); color: var(--accent); }
-.badge-gold { background: rgba(245,197,24,0.15); color: var(--accent-gold); }
-.badge-green { background: rgba(34,197,94,0.15); color: var(--success); }
-.badge-blue { background: rgba(99,102,241,0.15); color: #818cf8; }
+.badge-red { background: rgba(94, 129, 172, 0.2); color: var(--accent); }
+.badge-gold { background: rgba(180, 142, 173, 0.15); color: var(--accent-gold); }
+.badge-green { background: rgba(143, 188, 187, 0.15); color: var(--success); }
+.badge-blue { background: rgba(129, 161, 193, 0.15); color: #81A1C1; }
 
 /* Star rating */
 .stars { display: flex; gap: 3px; }

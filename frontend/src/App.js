@@ -51,7 +51,7 @@ export default function App() {
               fontSize: '14px',
             },
             success: { iconTheme: { primary: '#22c55e', secondary: '#fff' } },
-            error: { iconTheme: { primary: '#e50914', secondary: '#fff' } },
+            error: { iconTheme: { primary: '#BF616A', secondary: '#fff' } },
           }}
         />
       </BrowserRouter>
