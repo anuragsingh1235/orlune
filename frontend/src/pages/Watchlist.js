@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import MovieCard from '../components/movies/MovieCard';
@@ -73,10 +74,28 @@ export default function Watchlist() {
   };
 
   if (!user) return (
-    <div className="container" style={{ padding: '100px 24px', textAlign: 'center' }}>
-      <div style={{ fontSize: 64, marginBottom: 24 }}>🔒</div>
-      <h2 className="text-gradient" style={{ marginBottom: 12 }}>Archive Locked</h2>
-      <p style={{ color: 'var(--text-muted)' }}>Sign in to access your personal cinematic archive.</p>
+    <div className="watchlist-page container animate-fade">
+      <header className="page-header" style={{ marginBottom: '48px' }}>
+        <h1 className="page-title text-gradient">📋 My <span>Cinematic Archive</span></h1>
+      </header>
+
+      <div style={{ position: 'relative' }}>
+        <div className="wl-stats animate-up" style={{ filter: 'blur(4px) grayscale(30%)', opacity: 0.5, pointerEvents: 'none' }}>
+          <div className="wl-stat"><span>142</span><label>Total Sagas</label></div>
+          <div className="wl-stat"><span>89</span><label>Mastered</label></div>
+          <div className="wl-stat"><span>53</span><label>Pending</label></div>
+          <div className="wl-stat"><span>★ 8.4</span><label>Heritage Score</label></div>
+        </div>
+
+        <div className="content-gate" style={{ marginTop: '-150px' }}>
+          <div className="gate-blur" style={{ height: '300px' }} />
+          <div className="gate-inner">
+            <h2 className="gate-title" style={{ fontSize: '2rem', marginBottom: '8px' }}>Archive Locked</h2>
+            <p className="gate-sub">Sign in to access and manage your personal cinematic archive.</p>
+            <Link to="/login" className="btn-join">Sign In to View</Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 

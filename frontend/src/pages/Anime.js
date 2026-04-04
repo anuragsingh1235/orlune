@@ -124,48 +124,27 @@ export default function Anime() {
       </div>
 
       <div style={{ position: 'relative' }}>
-        <div style={{ 
-          filter: !user ? 'blur(8px)' : 'none', 
-          opacity: !user ? 0.6 : 1,
-          pointerEvents: !user ? 'none' : 'auto',
-          transition: 'all 0.3s ease'
-        }}>
-          {loading || searching ? (
-            <div className="spinner" style={{ margin: '60px auto' }} />
-          ) : (
-            <div className="movies-grid animate-up">
-              {anime.map((item) => (
-                <MovieCard key={item.id} item={item} onClick={setActiveMovie} />
-              ))}
-            </div>
-          )}
+        <div className="movies-grid animate-up" style={!user ? { filter: 'blur(4px) grayscale(30%)', opacity: 0.5, pointerEvents: 'none' } : {}}>
+          {anime.slice(0, user ? anime.length : 8).map((item) => (
+            <MovieCard key={item.id} item={item} onClick={user ? setActiveMovie : undefined} />
+          ))}
         </div>
 
         {!user && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center',
-            zIndex: 10,
-            background: 'rgba(0,0,0,0.7)',
-            padding: '30px',
-            borderRadius: '16px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-          }}>
-            <h3 className="text-gradient" style={{ fontSize: '1.8rem', marginBottom: '16px' }}>Unlock the full Archive</h3>
-            <p style={{ color: '#ccc', marginBottom: '24px', fontSize: '1.1rem' }}>Log in to view details and trailers for this ancestral saga.</p>
-            <Link to="/login" className="btn-nav-primary" style={{ padding: '12px 32px', fontSize: '1.1rem' }}>Sign In</Link>
+          <div className="content-gate" style={{ marginTop: '-250px' }}>
+            <div className="gate-blur" style={{ height: '300px' }} />
+            <div className="gate-inner">
+              <p className="gate-title">Ready to dive in?</p>
+              <p className="gate-sub">Sign in to browse thousands of anime entries and build your ultimate watchlist.</p>
+              <Link to="/login" className="btn-join">Join — it's free</Link>
+            </div>
           </div>
         )}
       </div>
 
       {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
 
-      {anime.length === 0 && !(loading || searching) && (
+      {user && anime.length === 0 && !(loading || searching) && (
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
           No entries found in the archive matching your request.
         </div>

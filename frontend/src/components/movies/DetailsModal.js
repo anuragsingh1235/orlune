@@ -27,7 +27,8 @@ export default function DetailsModal({ item, onClose }) {
           const title = detailsData.title || detailsData.name || item.title || item.name;
           try {
             const q = encodeURIComponent(`${title} official trailer`);
-            const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&key=AIzaSyDqbhKLXam6nnY9pzSMwhj89ZpocCEzZrY&maxResults=1&type=video`);
+            const ytApi = process.env.REACT_APP_YOUTUBE_API_KEY;
+            const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&key=${ytApi}&maxResults=1&type=video`);
             const ytData = await ytRes.json();
             if (ytData.items && ytData.items.length > 0) {
               detailsData.trailerId = ytData.items[0].id.videoId;
