@@ -21,7 +21,23 @@ export default function DetailsModal({ item, onClose }) {
       : `/movies/details/${item.id}?type=${item.media_type || 'movie'}`;
 
     api.get(endpoint)
-      .then(res => setDetails(res.data))
+      .then(async (res) => {
+        let detailsData = res.data;
+        if (!detailsData.trailerId) {
+          const title = detailsData.title || detailsData.name || item.title || item.name;
+          try {
+            const q = encodeURIComponent(`${title} official trailer`);
+            const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&key=AIzaSyDqbhKLXam6nnY9pzSMwhj89ZpocCEzZrY&maxResults=1&type=video`);
+            const ytData = await ytRes.json();
+            if (ytData.items && ytData.items.length > 0) {
+              detailsData.trailerId = ytData.items[0].id.videoId;
+            }
+          } catch(err) {
+            console.error('Youtube fetch error:', err);
+          }
+        }
+        setDetails(detailsData);
+      })
       .catch(err => console.error('Details fetch fail:', err))
       .finally(() => setLoading(false));
 
@@ -47,7 +63,7 @@ export default function DetailsModal({ item, onClose }) {
               {details.trailerId ? (
                 <iframe
                   className="trailer-iframe"
-                  src={`https://www.youtube.com/embed/${details.trailerId}?autoplay=1&mute=1`}
+                  src={`https://www.youtube.com/embed/${details.trailerId}?autoplay=1`}
                   title="Official Trailer"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

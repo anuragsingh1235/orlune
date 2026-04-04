@@ -4,6 +4,7 @@ import DetailsModal from '../components/movies/DetailsModal';
 import api from '../utils/api';
 import FactCard from '../components/dashboard/FactCard';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * ─── ANIME ARCHIVE (Jikan High-End Integration) ──────────────────
@@ -11,6 +12,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
  * and a specific anime-only search engine. 
  */
 export default function Anime() {
+  const { user } = useAuth();
   const [anime, setAnime] = useState([]);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -121,15 +123,45 @@ export default function Anime() {
         </h2>
       </div>
 
-      {loading || searching ? (
-        <div className="spinner" style={{ margin: '60px auto' }} />
-      ) : (
-        <div className="movies-grid animate-up">
-          {anime.map((item) => (
-            <MovieCard key={item.id} item={item} onClick={setActiveMovie} />
-          ))}
+      <div style={{ position: 'relative' }}>
+        <div style={{ 
+          filter: !user ? 'blur(8px)' : 'none', 
+          opacity: !user ? 0.6 : 1,
+          pointerEvents: !user ? 'none' : 'auto',
+          transition: 'all 0.3s ease'
+        }}>
+          {loading || searching ? (
+            <div className="spinner" style={{ margin: '60px auto' }} />
+          ) : (
+            <div className="movies-grid animate-up">
+              {anime.map((item) => (
+                <MovieCard key={item.id} item={item} onClick={setActiveMovie} />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        {!user && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            zIndex: 10,
+            background: 'rgba(0,0,0,0.7)',
+            padding: '30px',
+            borderRadius: '16px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+          }}>
+            <h3 className="text-gradient" style={{ fontSize: '1.8rem', marginBottom: '16px' }}>Unlock the full Archive</h3>
+            <p style={{ color: '#ccc', marginBottom: '24px', fontSize: '1.1rem' }}>Log in to view details and trailers for this ancestral saga.</p>
+            <Link to="/login" className="btn-nav-primary" style={{ padding: '12px 32px', fontSize: '1.1rem' }}>Sign In</Link>
+          </div>
+        )}
+      </div>
 
       {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} />}
 
