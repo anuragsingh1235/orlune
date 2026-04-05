@@ -371,11 +371,29 @@
   gap: 16px;
 }
 
-/* 🎙️ HOLOGRAPHIC CAST REGISTRY */
-.visual-cast-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px; padding-top: 10px;
+/* 🎞️ SECTION-SPECIFIC VISUAL ARCHIVAL STRIP */
+.section-images-strip {
+  display: flex; gap: 16px; margin: 16px 0 24px 0;
+  overflow-x: auto; padding-bottom: 12px;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
 }
+
+.strip-img {
+  flex: 0 0 140px; height: 180px; object-fit: cover;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.strip-img:hover {
+  transform: scale(1.05) translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 10px var(--accent);
+}
+
+.section-images-strip::-webkit-scrollbar { height: 4px; }
+.section-images-strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+.section-images-strip::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 .cast-profile-card {
   display: flex; flex-direction: column; padding: 12px; border-radius: 16px;

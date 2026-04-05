@@ -261,6 +261,15 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                           <div className="section-article animate-slide-right" key={activeWikiSection}>
                              <h3 className="section-h">{wikiData?.sections?.[activeWikiSection]?.title}</h3>
                              
+                             {/* 🎞️ SECTION-SPECIFIC VISUAL ARCHIVE STRIP */}
+                             {wikiData?.sections?.[activeWikiSection]?.sectionImages?.length > 0 && (
+                               <div className="section-images-strip custom-scrollbar">
+                                  {wikiData.sections[activeWikiSection].sectionImages.map((src, idx) => (
+                                    <img key={idx} src={src} alt="archive-still" className="strip-img glass-card" />
+                                  ))}
+                               </div>
+                             )}
+
                              {wikiData?.sections?.[activeWikiSection]?.members?.length > 0 ? (
                                <div className="visual-cast-grid">
                                   {wikiData.sections[activeWikiSection].members.map((m, i) => (
@@ -282,7 +291,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                                    __html: wikiData?.sections?.[activeWikiSection]?.content
                                      ?.replace(/id="[^"]*"/g, '')
                                      ?.replace(/class="[^"]*"/g, '')
+                                     ?.replace(/<span[^>]*>\[edit\]<\/span>/g, '')
                                      ?.replace(/\[edit\]/g, '')
+                                     ?.replace(/>\w+\[edit\]/g, '>')
+                                     ?.replace(/\[\d+\]/g, '')
+                                     ?.replace(/\[note \d+\]/g, '')
                                  }} 
                                />
                              )}

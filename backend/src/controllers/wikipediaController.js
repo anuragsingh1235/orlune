@@ -37,12 +37,35 @@ exports.getWikiData = async (req, res) => {
         const parsed = await Promise.all(sections.map(async (s, i) => {
             const start = fullHtml.indexOf(`id="${s.anchor}"`);
             const end = i < sections.length - 1 ? fullHtml.indexOf(`id="${sections[i+1].anchor}"`) : undefined;
-            const body = fullHtml.slice(start, end);
+            let body = fullHtml.slice(start, end);
+            
+            // 📸 VISUAL ARCHIVE HUNT: Extract every image from the section
+            const sectionImages = [];
+            const imgMatch = body.match(/src="([^"]+)"/g);
+            if (imgMatch) {
+                imgMatch.forEach(src => {
+                    const cleanSrc = src.replace('src="', '').replace('"', '');
+                    if (cleanSrc.includes('wikipedia') || cleanSrc.includes('wikimedia')) {
+                       sectionImages.push(cleanSrc.startsWith('//') ? `https:${cleanSrc}` : cleanSrc);
+                    }
+                });
+            }
+
+            // 🏛️ DEEP SANITIZATION: Vaporize Digital Junk
+            body = body
+                .replace(/id="[^"]*"/g, '')
+                .replace(/class="[^"]*"/g, '')
+                .replace(/<span[^>]*>\[edit\]<\/span>/g, '')
+                .replace(/\[\d+\]/g, '') // remove [1], [2] etc
+                .replace(/\[note \d+\]/g, '') // remove [note 1] etc
+                .replace(/>\w+\[edit\]/g, '>') // fix things like >Plot[edit]
+                .replace(/\[edit\]/g, '');
+
             const isCast = s.line.toLowerCase().includes('cast');
             const members = [];
             if (isCast) {
                 const li = body.match(/<li>(.*?)<\/li>/g);
-                if (li) for (const item of li.slice(0, 10)) {
+                if (li) for (const item of li.slice(0, 15)) {
                     const txt = item.replace(/<[^>]*>?/gm, '');
                     const pts = txt.split(/ as |: /);
                     if (pts.length >= 2) {
@@ -51,7 +74,7 @@ exports.getWikiData = async (req, res) => {
                     }
                 }
             }
-            return { title: s.line, content: body, members };
+            return { title: s.line, content: body, members, sectionImages: sectionImages.slice(0, 5) };
         }));
 
         res.json({ title: pTitle, summary: sum.data.extract, thumbnail: sum.data.thumbnail?.source, sections: parsed, wikiUrl: `https://${lang}.wikipedia.org/wiki/${pTitle}` });
