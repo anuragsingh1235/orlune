@@ -41,9 +41,24 @@ exports.getWikiData = async (req, res) => {
         if (pLinks) pLinks.forEach(l => { localizedTitles[l.lang] = l['*']; });
 
         const parsed = await Promise.all(sections.map(async (s, i) => {
-            const rawStart = fullHtml.indexOf(`id="${s.anchor}"`);
-            const end = i < sections.length - 1 ? fullHtml.indexOf(`id="${sections[i+1].anchor}"`) : undefined;
-            const start = fullHtml.indexOf('>', rawStart) + 1; // 🛠️ SURGICAL CUT: Start after attributes
+            const startMarker = `id="${s.anchor}"`;
+            const endMarker = i < sections.length - 1 ? `id="${sections[i+1].anchor}"` : null;
+            
+            const rawStartIndex = fullHtml.indexOf(startMarker);
+            if (rawStartIndex === -1) return { title: s.line, content: '', members: [], sectionImages: [] };
+
+            // Find end of current header tag (e.g. </h2>)
+            const headerClosingJump = fullHtml.indexOf('</h', rawStartIndex);
+            const start = fullHtml.indexOf('>', headerClosingJump) + 1;
+
+            let end;
+            if (endMarker) {
+                const nextIdIndex = fullHtml.indexOf(endMarker);
+                // Backtrack to find the start of the next header tag (e.g. <h2...)
+                const nextHeaderStartIndex = fullHtml.lastIndexOf('<h', nextIdIndex);
+                end = nextHeaderStartIndex !== -1 ? nextHeaderStartIndex : nextIdIndex;
+            }
+
             let body = fullHtml.slice(start, end);
             
             const sectionImages = [];
@@ -64,15 +79,16 @@ exports.getWikiData = async (req, res) => {
                 .replace(/\[\d+\]/g, '')
                 .replace(/\[note \d+\]/g, '')
                 .replace(/>\w+\[edit\]/g, '>')
-                .replace(/\[edit\]/g, '');
+                .replace(/\[edit\]/g, '')
+                .trim();
 
-            const isCast = s.line.toLowerCase().includes('cast');
+            const isCast = /cast|starring|कलाकार|पात्र|reparto|casting|besetzung/i.test(s.line);
             const members = [];
             if (isCast) {
                 const li = body.match(/<li>(.*?)<\/li>/g);
                 if (li) for (const item of li.slice(0, 15)) {
                     const txt = item.replace(/<[^>]*>?/gm, '');
-                    const pts = txt.split(/ as |: /);
+                    const pts = txt.split(/ as |: | - | – /);
                     if (pts.length >= 2) {
                         const photo = await getActorHeadshot(pts[0].trim());
                         members.push({ name: pts[0].trim(), character: pts[1].trim(), photo });
@@ -88,6 +104,7 @@ exports.getWikiData = async (req, res) => {
             thumbnail: sum.data.thumbnail?.source, 
             sections: parsed, 
             localizedTitles, // ⚓ Anchor for global sync
+            lang: lang,
             wikiUrl: `https://${lang}.wikipedia.org/wiki/${pTitle}` 
         });
     } catch { res.status(500).send(); }

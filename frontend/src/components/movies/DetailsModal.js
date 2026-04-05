@@ -52,8 +52,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
   }, [item]);
 
   useEffect(() => {
-    if (activeTab === 'encyclopedia' && !wikiData && !isSearchingWiki && details) {
-      fetchWiki();
+    if (activeTab === 'encyclopedia' && !isSearchingWiki && details) {
+      // If language changed or wikiData is missing, fetch
+      if (!wikiData || (wikiData && wikiData.lang !== wikiLang)) {
+        fetchWiki();
+      }
     }
   }, [activeTab, wikiLang, details]);
 
@@ -221,7 +224,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                           key={lang.id} 
                           className={`lang-pill ${wikiLang === lang.id ? 'active-emerald' : ''} animate-stagger`} 
                           style={{ animationDelay: `${idx * 0.05}s` }}
-                          onClick={() => setWikiLang(lang.id)}
+                          onClick={() => { 
+                            setWikiLang(lang.id); 
+                            setWikiData(null); 
+                            fetchWiki(null, lang.id); 
+                          }}
                         >
                           {lang.label}
                         </button>
@@ -262,7 +269,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                       <div className="ency-section-content custom-scrollbar">
                         {activeWikiSection === -1 || !wikiData?.sections?.[activeWikiSection] ? (
                           <div className="section-article animate-slide-right">
-                             <h3 className="section-h">{wikiData?.title} Archive</h3>
+                              <h3 className="section-h">{wikiData?.title} {wikiLang === 'hi' ? 'संग्रह' : 'Archive'}</h3>
                              {wikiData?.originalImage && <img src={wikiData.originalImage} className="section-poster glass-card" alt="poster" />}
                              <p className="section-p">{wikiData?.summary}</p>
                              
@@ -301,18 +308,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                              ) : (
                                <div 
                                  className={`wiki-parsed-html ${wikiLoading ? 'animate-pulse opacity-50' : 'animate-fade'}`} 
-                                 dangerouslySetInnerHTML={{ 
-                                   __html: wikiData?.sections?.[activeWikiSection]?.content
-                                     ?.replace(/id="[^"]*"/g, '')
-                                     ?.replace(/class="[^"]*"/g, '')
-                                     ?.replace(/\[edit\]/g, '')
-                                     ?.replace(/>\w+\[edit\]/g, '>')
-                                     ?.replace(/>[^<]*\[edit\]/g, '>') // More aggressive match
-                                     ?.replace(/\[\d+\]/g, '')
-                                     ?.replace(/\[note \d+\]/g, '')
-                                     ?.replace(/>\w+\[Edit\]/g, '>')
-                                     ?.replace(/>[^<]*\[Edit\]/g, '>')
-                                 }} 
+                                 dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} 
                                />
                              )}
                           </div>
