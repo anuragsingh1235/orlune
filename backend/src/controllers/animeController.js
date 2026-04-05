@@ -79,7 +79,7 @@ async function getYoutubeScenes(title, year = "") {
 
   try {
     const query = encodeURIComponent(`${title} anime iconic moments epic scenes`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=6&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=10&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     
     return (response.data.items || []).map(item => ({
@@ -96,13 +96,29 @@ async function getYoutubeFanMade(title) {
   if (!apiKey) return [];
   try {
     const query = encodeURIComponent(`${title} anime AMV fan edit tribute compilation`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=6&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=10&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     return (response.data.items || []).map(item => ({
       id: item.id.videoId,
       title: item.snippet.title,
       thumbnail: item.snippet.thumbnails?.medium?.url
     }));
+  } catch (err) { return []; }
+}
+
+// Search YouTube for general related content
+async function getYoutubeGeneralSearch(title) {
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
+  if (!apiKey) return [];
+  try {
+     const query = encodeURIComponent(`${title} anime full episodes clips related`);
+     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=10&key=${apiKey}`;
+     const response = await axios.get(url, { timeout: 4000 });
+     return (response.data.items || []).map(item => ({
+       id: item.id.videoId,
+       title: item.snippet.title,
+       thumbnail: item.snippet.thumbnails?.medium?.url
+     }));
   } catch (err) { return []; }
 }
 
@@ -153,17 +169,19 @@ exports.getDetails = async (req, res) => {
     let trailerId = a?.trailer?.youtube_id || null;
 
     // 3) Multi-Layered YouTube Discovery
-    const [trailerRes, scenesRes, fanRes] = await Promise.allSettled([
+    const [trailerRes, scenesRes, fanRes, generalRes] = await Promise.allSettled([
       !trailerId ? getYoutubeTrailer(title) : Promise.resolve(trailerId),
       getYoutubeScenes(title),
-      getYoutubeFanMade(title)
+      getYoutubeFanMade(title),
+      getYoutubeGeneralSearch(title)
     ]);
 
     res.json({
       ...baseData,
       trailerId: trailerRes.status === 'fulfilled' ? trailerRes.value : trailerId,
       relatedScenes: scenesRes.status === 'fulfilled' ? scenesRes.value : [],
-      fanVideos: fanRes.status === 'fulfilled' ? fanRes.value : []
+      fanVideos: fanRes.status === 'fulfilled' ? fanRes.value : [],
+      generalVideos: generalRes.status === 'fulfilled' ? generalRes.value : []
     });
   } catch (err) {
     console.error("Critical Anime error:", err.message);

@@ -49,7 +49,7 @@ async function getYoutubeScenes(title, year = "") {
   if (!apiKey) return [];
   try {
     const query = encodeURIComponent(`${title} ${year} iconic scenes movie moments`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=6&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoEmbeddable=true&maxResults=10&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     return (response.data.items || []).map(item => ({
       id: item.id.videoId,
@@ -65,13 +65,29 @@ async function getYoutubeFanMade(title, year = "") {
   if (!apiKey) return [];
   try {
     const query = encodeURIComponent(`${title} ${year} movie fan edit analysis tribute best scenes`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=6&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=10&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     return (response.data.items || []).map(item => ({
       id: item.id.videoId,
       title: item.snippet.title,
       thumbnail: item.snippet.thumbnails?.medium?.url
     }));
+  } catch (err) { return []; }
+}
+
+// Search YouTube for general related content
+async function getYoutubeGeneralSearch(title, year = "") {
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
+  if (!apiKey) return [];
+  try {
+     const query = encodeURIComponent(`${title} ${year} related scenes clips`);
+     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=10&key=${apiKey}`;
+     const response = await axios.get(url, { timeout: 4000 });
+     return (response.data.items || []).map(item => ({
+       id: item.id.videoId,
+       title: item.snippet.title,
+       thumbnail: item.snippet.thumbnails?.medium?.url
+     }));
   } catch (err) { return []; }
 }
 
@@ -189,10 +205,11 @@ exports.getDetails = async (req, res) => {
   }
 
   // Use allSettled for multi-source fetch
-  const [trailerRes, scenesRes, fanRes] = await Promise.allSettled([
+  const [trailerRes, scenesRes, fanRes, generalRes] = await Promise.allSettled([
     !trailerId ? getYoutubeTrailer(title, year) : Promise.resolve(trailerId),
     getYoutubeScenes(title, year),
-    getYoutubeFanMade(title, year)
+    getYoutubeFanMade(title, year),
+    getYoutubeGeneralSearch(title, year)
   ]);
 
   res.json({ 
@@ -200,6 +217,7 @@ exports.getDetails = async (req, res) => {
     trailerId: trailerRes.status === 'fulfilled' ? trailerRes.value : trailerId, 
     relatedScenes: scenesRes.status === 'fulfilled' ? scenesRes.value : [],
     fanVideos: fanRes.status === 'fulfilled' ? fanRes.value : [],
+    generalVideos: generalRes.status === 'fulfilled' ? generalRes.value : [],
     _api_source: source 
   });
 };

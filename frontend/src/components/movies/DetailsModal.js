@@ -53,11 +53,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
             {/* 🎥 CINEMATIC PLAYER SECTION */}
             <div className="trailer-container">
-              {!details.hideTrailer && (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id) ? (
+              {!details.hideTrailer && (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id) ? (
                 <iframe
-                  key={details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id}
+                  key={details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id}
                   className="trailer-iframe"
-                  src={`https://www.youtube.com/embed/${details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id}?autoplay=1&rel=0`}
+                  src={`https://www.youtube.com/embed/${details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id}?autoplay=1&rel=0`}
                   title="Cinematic Discovery"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -81,8 +81,10 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
               )}
             </div>
 
-            {/* 🎑 EXPLORATION TABS */}
-            {!details.hideTrailer && (details.relatedScenes?.length > 0 || details.fanVideos?.length > 0 || details.trailerId) && (
+            {/* 🎑 EXPLORATION TABS (Enhanced YouTube-like Discovery) */}
+            {!details.hideTrailer && (
+              (details.trailerId || (details.relatedScenes || []).length > 0 || (details.fanVideos || []).length > 0 || (details.generalVideos || []).length > 0)
+            ) && (
               <div className="scenes-selector animate-up">
                 <div className="scenes-header">
                    <h4>Cinematic Exploration</h4>
@@ -93,17 +95,21 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   {[ 
                     ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []), 
                     ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic Moment' })),
-                    ...(details.fanVideos || []).map(s => ({ ...s, type: 'Creator Fan-Edit' }))
+                    ...(details.fanVideos || []).map(s => ({ ...s, type: 'Creator Fan-Edit' })),
+                    ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
                   ].map((scene, idx) => (
                     <div 
                       key={idx} 
-                      className={`scene-card ${ (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id) === scene.id ? 'active' : '' }`}
-                      onClick={() => setDetails({ ...details, activeVideoId: scene.id })}
+                      className={`scene-card ${ (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id) === scene.id ? 'active' : '' }`}
+                      onClick={() => {
+                        setDetails({ ...details, activeVideoId: scene.id });
+                        document.querySelector('.details-layout')?.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
                     >
                       <img src={scene.thumbnail || `https://img.youtube.com/vi/${scene.id}/mqdefault.jpg`} alt={scene.title} />
                       <div className="scene-overlay">
                          <span className="scene-type-tag">{scene.type}</span>
-                         <p>{scene.title.length > 35 ? scene.title.slice(0, 35) + '...' : scene.title}</p>
+                         <p>{scene.title.length > 45 ? scene.title.slice(0, 45) + '...' : scene.title}</p>
                       </div>
                     </div>
                   ))}
