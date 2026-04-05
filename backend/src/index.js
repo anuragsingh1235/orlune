@@ -9,6 +9,8 @@ const watchlistRoutes = require("./routes/watchlist");
 const battleRoutes = require("./routes/battles");
 const animeRoutes = require("./routes/anime");
 const aiRoutes = require("./routes/ai");
+const socialRoutes = require("./routes/social");
+const chatRoutes = require("./routes/chat");
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/movies", movieRoutes);
 app.use("/api/anime", animeRoutes);
+app.use("/api/social", socialRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/api/battles", battleRoutes);
 app.use("/api/watchlist", watchlistRoutes);
 app.use("/api/ai", aiRoutes);

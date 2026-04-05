@@ -1,0 +1,132 @@
+const pool = require('../config/database');
+
+// ─── SEARCH USERS ──────────────────────────────────────────
+exports.searchUsers = async (req, res) => {
+  const { query } = req.query;
+  const userId = req.user.id;
+
+  if (!query) return res.json([]);
+
+  try {
+    const result = await pool.query(
+      `SELECT id, username, avatar_url, bio 
+       FROM users 
+       WHERE (username ILIKE $1 OR email ILIKE $1) AND id != $2
+       LIMIT 10`,
+      [`%${query}%`, userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to search users" });
+  }
+};
+
+// ─── FRIEND REQUESTS ──────────────────────────────────────────
+exports.sendFriendRequest = async (req, res) => {
+  const sender_id = req.user.id;
+  const { receiver_id } = req.body;
+
+  if (sender_id === receiver_id) return res.status(400).json({ error: "Cannot add yourself" });
+
+  try {
+    // Check if already friends
+    const friendCheck = await pool.query(
+      "SELECT 1 FROM friendships WHERE (user_id1=$1 AND user_id2=$2) OR (user_id1=$2 AND user_id2=$1)",
+      [sender_id, receiver_id]
+    );
+    if (friendCheck.rows.length > 0) return res.status(400).json({ error: "Already friends" });
+
+    // Send request
+    await pool.query(
+      "INSERT INTO friend_requests (sender_id, receiver_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [sender_id, receiver_id]
+    );
+    res.json({ message: "Friend request sent" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to send request" });
+  }
+};
+
+exports.getPendingRequests = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      `SELECT fr.id, u.username, u.id as user_id, u.avatar_url 
+       FROM friend_requests fr
+       JOIN users u ON fr.sender_id = u.id
+       WHERE fr.receiver_id = $1 AND fr.status = 'pending'`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch requests" });
+  }
+};
+
+exports.respondToRequest = async (req, res) => {
+  const userId = req.user.id;
+  const { requestId, status } = req.body; // 'accepted' or 'rejected'
+
+  try {
+    const request = await pool.query(
+      "SELECT * FROM friend_requests WHERE id=$1 AND receiver_id=$2",
+      [requestId, userId]
+    );
+    if (!request.rows.length) return res.status(404).json({ error: "Request not found" });
+
+    const { sender_id } = request.rows[0];
+
+    if (status === 'accepted') {
+      const u1 = Math.min(sender_id, userId);
+      const u2 = Math.max(sender_id, userId);
+      
+      await pool.query(
+        "INSERT INTO friendships (user_id1, user_id2, status) VALUES ($1, $2, 'accepted') ON CONFLICT DO NOTHING",
+        [u1, u2]
+      );
+    }
+
+    await pool.query("DELETE FROM friend_requests WHERE id=$1", [requestId]);
+    res.json({ message: `Request ${status}` });
+  } catch (err) {
+    res.status(500).json({ error: "Action failed" });
+  }
+};
+
+// ─── FRIENDS LIST ──────────────────────────────────────────
+exports.getFriends = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.username, u.avatar_url, f.status, f.blocked_by
+       FROM friendships f
+       JOIN users u ON (f.user_id1 = u.id OR f.user_id2 = u.id)
+       WHERE (f.user_id1 = $1 OR f.user_id2 = $1) AND u.id != $1`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch friends" });
+  }
+};
+
+// ─── BLOCK USER ──────────────────────────────────────────
+exports.blockUser = async (req, res) => {
+  const userId = req.user.id;
+  const { friendId } = req.body;
+
+  try {
+    const u1 = Math.min(userId, friendId);
+    const u2 = Math.max(userId, friendId);
+
+    await pool.query(
+      `INSERT INTO friendships (user_id1, user_id2, status, blocked_by) 
+       VALUES ($1, $2, 'blocked', $3)
+       ON CONFLICT (user_id1, user_id2) DO UPDATE SET status='blocked', blocked_by=$3`,
+      [u1, u2, userId]
+    );
+    res.json({ message: "User blocked" });
+  } catch (err) {
+    res.status(500).json({ error: "Block failed" });
+  }
+};
