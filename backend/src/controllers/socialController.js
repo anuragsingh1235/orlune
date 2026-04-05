@@ -9,12 +9,11 @@ exports.searchUsers = async (req, res) => {
 
   try {
     // Split query like "Aayush kumar" into ["%Aayush%", "%kumar%"]
-    const searchTerms = query.split(' ').filter(t => t.length > 0).map(term => `%${term}%`);
+    const searchTerms = query.split(' ').filter(t => t.trim().length > 0).map(term => `%${term}%`);
     const result = await pool.query(
       `SELECT id, username, avatar_url, bio 
        FROM users 
-       WHERE username ILIKE ANY($1::text[]) 
-         OR email ILIKE ANY($1::text[])
+       WHERE (username ILIKE ANY($1::text[]) OR email ILIKE ANY($1::text[]))
          AND id != $2
        LIMIT 10`,
       [searchTerms, userId]
