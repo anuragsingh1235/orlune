@@ -8,8 +8,8 @@ const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-
 router.post("/oracle", async (req, res) => {
   const { prompt, history } = req.body;
   
-  if (!GEMINI_API_KEY || GEMINI_API_KEY.startsWith("REPLACE_ME")) {
-    console.warn("AIRA: KEY MISSING. Using Limited Oracle Access.");
+  if (!GEMINI_API_KEY) {
+    return res.json({ reply: "The AIRA key is missing in the Vercel vault. Please ensure GEMINI_API_KEY is set." });
   }
 
   try {
@@ -19,13 +19,13 @@ router.post("/oracle", async (req, res) => {
     }));
 
     const response = await axios.post(API_URL, {
+      system_instruction: { 
+        parts: [{ text: "You are AIRA, a mystical cinematic assistant for the Orlune platform. Speak with atmospheric, professional depth. Keep responses concise and focused on movies, series, or anime." }] 
+      },
       contents: [
         ...formattedHistory,
         { role: "user", parts: [{ text: prompt }] }
-      ],
-      systemInstruction: {
-        parts: [{ text: "You are AIRA, a mystical, cinematic AI companion for the Orlune Cinematic Vault. You speak with high-fidelity professional depth and archival mystery. You are a curator of legends—movies, series, and anime. Help the seeker discover masterpieces. Keep responses concise, professional, and atmospheric. Never mention generic AI talk." }]
-      }
+      ]
     }, { timeout: 10000 });
 
     const reply = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -33,7 +33,7 @@ router.post("/oracle", async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error("AIRA ERROR:", err.response?.data || err.message);
-    res.json({ reply: "The connection to the archives is momentarily veiled. Seek your answer again, traveler." });
+    res.json({ reply: "The connection to the archives is momentarily veiled. Verify your API key has enough quota or try again." });
   }
 });
 

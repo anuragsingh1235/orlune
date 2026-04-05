@@ -8,15 +8,20 @@ exports.searchUsers = async (req, res) => {
   if (!query) return res.json([]);
 
   try {
+    // Split query like "Aayush kumar" into ["%Aayush%", "%kumar%"]
+    const searchTerms = query.split(' ').filter(t => t.length > 0).map(term => `%${term}%`);
     const result = await pool.query(
       `SELECT id, username, avatar_url, bio 
        FROM users 
-       WHERE (username ILIKE $1 OR email ILIKE $1) AND id != $2
+       WHERE username ILIKE ANY($1::text[]) 
+         OR email ILIKE ANY($1::text[])
+         AND id != $2
        LIMIT 10`,
-      [`%${query}%`, userId]
+      [searchTerms, userId]
     );
     res.json(result.rows);
   } catch (err) {
+    console.error("SEARCH ERROR:", err);
     res.status(500).json({ error: "Failed to search users" });
   }
 };
