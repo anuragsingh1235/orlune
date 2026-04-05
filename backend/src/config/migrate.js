@@ -94,12 +94,14 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
-    console.log('✅ Migration complete!');
-    process.exit(0);
+    console.log('✅ Migration check complete!');
   } catch (err) {
     console.error('❌ Migration failed:', err);
-    process.exit(1);
   }
 }
 
-migrate();
+if (require.main === module) {
+  migrate();
+} else {
+  module.exports = migrate;
+}

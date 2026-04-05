@@ -12,6 +12,10 @@ const aiRoutes = require("./routes/ai");
 const socialRoutes = require("./routes/social");
 const chatRoutes = require("./routes/chat");
 
+// 🛠️ AUTO MIGRATION (Ensures Social/Chat tables exist)
+const migrate = require("./config/migrate");
+migrate();
+
 const app = express();
 
 app.use(cors());
