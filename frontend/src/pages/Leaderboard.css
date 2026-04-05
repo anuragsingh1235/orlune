@@ -4,7 +4,7 @@
 
 .lb-thead, .lb-trow {
   display: grid;
-  grid-template-columns: 64px 1fr 100px 100px 80px;
+  grid-template-columns: 64px 1fr 100px 100px 140px;
   align-items: center; padding: 14px 20px; gap: 16px;
 }
 .lb-thead {
@@ -43,4 +43,44 @@
 @media (max-width: 600px) {
   .lb-thead, .lb-trow { grid-template-columns: 44px 1fr 80px 70px; }
   .lb-films { display: none; }
+}
+
+/* SOCIAL CONNECT STYLES */
+.btn-social {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+.btn-social:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-social.sent {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  cursor: default;
+  border-color: transparent;
+}
+
+.btn-social.sent:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.lb-social-cell {
+  display: flex !important;
+  justify-content: flex-end;
+  min-width: 120px;
 }

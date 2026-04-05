@@ -20,9 +20,20 @@ export default function Leaderboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  const [sentRequests, setSentRequests] = useState([]);
+
+  const sendRequest = async (targetId) => {
+    try {
+      await api.post('/social/request', { receiverId: targetId });
+      setSentRequests(prev => [...prev, targetId]);
+    } catch (err) {
+      console.error("Failed to send request:", err);
+    }
+  };
+
   const medals = ['🥇', '🥈', '🥉'];
 
-  // 🔒 GATED VIEW FOR GUESTS
+  // ... (Gated view logic remains the same inside original file)
   if (!user) {
     return (
       <div className="leaderboard-page container animate-fade" style={{ textAlign: 'center', paddingBottom: '100px' }}>
@@ -49,24 +60,6 @@ export default function Leaderboard() {
             <Link to="/login" className="btn btn-secondary btn-lg">Sign In</Link>
           </div>
         </div>
-
-        {/* Blurred Teaser */}
-        <div className="lb-table" style={{ filter: 'blur(8px) grayscale(50%)', opacity: 0.3, pointerEvents: 'none' }}>
-          <div className="lb-thead">
-            <span>#</span>
-            <span>User</span>
-            <span>Points</span>
-            <span>W / L</span>
-            <span>Films</span>
-          </div>
-          {[1, 2, 3, 4, 5].map((_, i) => (
-             <div key={i} className="lb-trow">
-               <span className="lb-pos">#{i+1}</span>
-               <div className="lb-user-cell"><div className="lb-av">?</div><p className="lb-uname">Cinephile #001</p></div>
-               <span className="lb-pts">???? pts</span>
-             </div>
-          ))}
-        </div>
       </div>
     );
   }
@@ -87,7 +80,7 @@ export default function Leaderboard() {
             <span>Cinephile</span>
             <span>Contributions</span>
             <span>Record</span>
-            <span>Archive</span>
+            <span>Social</span>
           </div>
           {data.length > 0 ? data.map((u, i) => (
             <div key={u.id} className={`lb-trow ${u.id === user?.id ? 'is-me' : ''}`}>
@@ -106,7 +99,15 @@ export default function Leaderboard() {
               <span className="lb-wl">
                 <span className="win">{u.battle_wins}W</span> / <span className="loss">{u.battle_losses}L</span>
               </span>
-              <span className="lb-films">{u.watchlist_size} <span style={{ opacity: 0.5, fontSize: '0.8rem' }}>titles</span></span>
+              <div className="lb-social-cell" style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '12px' }}>
+                {u.id !== user?.id && (
+                  sentRequests.includes(u.id) ? (
+                    <button className="btn-social sent" disabled>Requested</button>
+                  ) : (
+                    <button className="btn-social" onClick={() => sendRequest(u.id)}>+ Connect</button>
+                  )
+                )}
+              </div>
             </div>
           )) : (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
