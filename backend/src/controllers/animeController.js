@@ -152,21 +152,29 @@ exports.getDetails = async (req, res) => {
       console.warn("Jikan Details Failed, checking TMDB...");
     }
 
-    // 2) Fallback: TMDB (if Jikan is rate-limited)
-    if (!a && tmdbKey) {
+    // 2) Fallback: TMDB (if Jikan is rate-limited or missing trailer)
+    if (tmdbKey) {
       try {
-        const tmdbSearch = await axios.get(`https://api.themoviedb.org/3/search/tv?api_key=${tmdbKey}&query=${id}`, { timeout: 4000 });
+        const tmdbSearch = await axios.get(`https://api.themoviedb.org/3/search/tv?api_key=${tmdbKey}&query=${encodeURIComponent(title)}`, { timeout: 4000 });
         if (tmdbSearch.data.results?.length > 0) {
            const t = tmdbSearch.data.results[0];
-           title = t.name;
-           baseData = { id, title, overview: t.overview, poster_path: t.poster_path, media_type: 'anime', vote_average: t.vote_average };
+           // If we didn't have base data yet, use this
+           if (!baseData.overview) baseData.overview = t.overview;
+           if (!baseData.poster_path) baseData.poster_path = t.poster_path;
+           
+           // Fetch full TMDB details to get videos
+           const tFull = await axios.get(`https://api.themoviedb.org/3/tv/${t.id}?api_key=${tmdbKey}&append_to_response=videos`, { timeout: 4000 });
+           const tmdbTrailer = tFull.data.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+           if (tmdbTrailer && !a?.trailer?.youtube_id) {
+             baseData.trailerId = tmdbTrailer.key;
+           }
         }
       } catch (err) {}
     }
 
     if (!title) return res.status(404).json({ error: "Narrative lost in the archives." });
 
-    let trailerId = a?.trailer?.youtube_id || null;
+    let trailerId = a?.trailer?.youtube_id || baseData.trailerId || null;
 
     // 3) Multi-Layered YouTube Discovery
     const [trailerRes, scenesRes, fanRes, generalRes] = await Promise.allSettled([
