@@ -83,20 +83,26 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
       ? `Started ${getTimeAgo(item.started_at)}`
       : `Vaulted ${getTimeAgo(item.created_at)}`;
 
-  const handleImageError = (e) => {
-    e.target.src = `https://via.placeholder.com/342x513/1a1a26/ffffff?text=${encodeURIComponent(title || 'Archive Record')}`;
-  };
+  const [imgError, setImgError] = useState(false);
+  const handleImageError = () => setImgError(true);
 
   return (
     <div className="movie-card" onClick={() => onClick && onClick(item)}>
       <div className="movie-poster-wrap">
-        <img 
-          src={poster} 
-          alt={title} 
-          className="movie-poster" 
-          loading="lazy" 
-          onError={handleImageError}
-        />
+        {!imgError ? (
+          <img 
+            src={poster} 
+            alt={title} 
+            className="movie-poster" 
+            loading="lazy" 
+            onError={handleImageError}
+          />
+        ) : (
+          <div className="poster-placeholder-text">
+             <span>ARCHIVE RECORD</span>
+             <p>{title}</p>
+          </div>
+        )}
         <div className="movie-overlay" onClick={(e) => e.stopPropagation()}>
           {user && !showStatus && item.status !== 'completed' && (
             <button className="add-btn" onClick={handleAdd} disabled={adding}>
