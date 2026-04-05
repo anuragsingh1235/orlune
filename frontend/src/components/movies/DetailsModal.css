@@ -326,14 +326,23 @@
 }
 
 .lang-pill.active {
-  background: var(--accent); color: #000; border-color: var(--accent);
-  font-weight: 700; box-shadow: 0 0 20px var(--accent);
+  background: linear-gradient(135deg, #ffd700, #ff8c00); 
+  color: #000 !important; 
+  border-color: #ffd700;
+  font-weight: 800; 
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255,255,255,0.3);
+  animation: pulse-gold 2s infinite ease-in-out;
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+  50% { box-shadow: 0 0 35px rgba(255, 215, 0, 0.6); }
 }
 
 .lang-pill.active::after {
   content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation: shine 2s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shine 3s infinite;
 }
 
 @keyframes shine {
@@ -537,17 +546,36 @@
 }
 
 .wiki-parsed-html { color: var(--text-primary); line-height: 1.8; }
-.wiki-parsed-html h2, .wiki-parsed-html h3 { margin: 32px 0 16px; color: var(--accent); }
-.wiki-parsed-html p { margin-bottom: 16px; }
-
-.wiki-btn-link {
-  display: block; width: 100%; text-align: center;
-  padding: 16px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px; margin-top: 40px; color: var(--text-muted);
-  text-decoration: none; font-weight: 700; transition: 0.3s;
+/* 📜 PREMIUM NARRATIVE HEADERS */
+.section-h {
+  font-size: 1.8rem; font-weight: 800; margin-bottom: 20px;
+  background: linear-gradient(135deg, #fff 30%, #ffd700 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-shadow: 0 5px 15px rgba(255,215,0,0.2);
+  letter-spacing: -0.5px;
 }
 
-.wiki-btn-link:hover { background: var(--accent); color: #fff; }
+.section-p {
+  line-height: 1.7; font-size: 1.05rem; color: rgba(255,255,255,0.85);
+  margin-bottom: 24px; animation: slideInContent 0.6s ease-out forwards;
+}
+
+@keyframes slideInContent {
+  from { opacity: 0; transform: translateY(15px); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.wiki-btn-link {
+  display: inline-block; margin-top: 30px; padding: 12px 24px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; color: #fff; text-decoration: none;
+  font-weight: 600; transition: all 0.4s;
+}
+
+.wiki-btn-link:hover {
+  background: var(--accent); color: #000;
+  box-shadow: 0 0 20px var(--accent);
+}
 
 /* 🔮 AIRA ORACLE TAB */
 .ai-modal-tab {
