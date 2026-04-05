@@ -10,9 +10,10 @@ export default function Social() {
   const [searchResults, setSearchResults] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [friendWatchlist, setFriendWatchlist] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function Social() {
     let interval;
     if (activeChat) {
       fetchMessages(activeChat.id);
+      fetchFriendWatchlist(activeChat.id);
       interval = setInterval(() => fetchMessages(activeChat.id), 3000);
     }
     return () => clearInterval(interval);
@@ -53,6 +55,18 @@ export default function Social() {
       setMessages(res.data);
     } catch (err) {
       console.error("Chat sync failed");
+    }
+  };
+
+  const fetchFriendWatchlist = async (friendId) => {
+    setWatchlistLoading(true);
+    try {
+      const res = await api.get(`/watchlist/user/${friendId}`);
+      setFriendWatchlist(res.data);
+    } catch (err) {
+      console.error("Failed to fetch friend archive");
+    } finally {
+      setWatchlistLoading(false);
     }
   };
 
@@ -222,7 +236,28 @@ export default function Social() {
                     <p style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Secure Link Established</p>
                   </div>
                </div>
-               <button className="btn btn-sm btn-ghost" onClick={() => blockUser(activeChat.id)}>Block</button>
+               <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn btn-sm btn-ghost" onClick={() => blockUser(activeChat.id)}>Block</button>
+               </div>
+            </div>
+
+            {/* Friend's Watchlist Preview */}
+            <div className="friend-watchlist-preview">
+               <div className="preview-header">
+                  <span>WATCHLIST ARCHIVE</span>
+                  {watchlistLoading ? <div className="mini-spinner" /> : <span>{friendWatchlist.length} Records</span>}
+               </div>
+               <div className="preview-grid">
+                  {friendWatchlist.length > 0 ? (
+                    friendWatchlist.map(item => (
+                      <div key={item.id} className="preview-item">
+                         <img src={item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : 'https://via.placeholder.com/92x138'} alt={item.title} />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="empty-preview">No records discovered in this vault.</div>
+                  )}
+               </div>
             </div>
 
             <div className="chat-messages">

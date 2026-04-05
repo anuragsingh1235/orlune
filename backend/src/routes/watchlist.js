@@ -7,6 +7,9 @@ const auth = require("../middleware/auth");
 // 📥 GET all watchlist items
 router.get("/", auth, c.getItems);
 
+// 👤 GET another user's watchlist
+router.get("/user/:id", auth, c.getUserWatchlist);
+
 // ➕ ADD item
 router.post("/", auth, c.addItem);
 

@@ -103,16 +103,28 @@ exports.addItem = async (req, res) => {
 
 // 📥 GET WATCHLIST
 exports.getItems = async (req, res) => {
-  await ensureSchema();
+  const userId = req.user.id;
   try {
     const result = await pool.query(
-      `SELECT * FROM watchlist_items WHERE user_id=$1 ORDER BY id DESC`,
-      [req.user.id]
+      "SELECT * FROM watchlist_items WHERE user_id=$1 ORDER BY created_at DESC",
+      [userId]
     );
     res.json(result.rows);
   } catch (err) {
-    console.error("GET ITEMS ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to fetch archive" });
+  }
+};
+
+exports.getUserWatchlist = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT w.*, u.username FROM watchlist_items w JOIN users u ON w.user_id = u.id WHERE u.id=$1 ORDER BY w.created_at DESC",
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Access to seeker archives failed" });
   }
 };
 
