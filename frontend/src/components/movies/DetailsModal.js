@@ -207,12 +207,25 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                        <button type="submit">🔍</button>
                     </form>
                     <div className="ency-lang-bar">
-                      {['en', 'hi', 'ja'].map(l => (
-                        <button key={l} className={wikiLang === l ? 'active' : ''} onClick={() => { setWikiData(null); setWikiLang(l); }}>
-                          {l === 'en' ? 'English' : l === 'hi' ? 'हिंदी' : '日本語'}
+                      {[
+                        { id: 'en', label: 'English' },
+                        { id: 'hi', label: 'हिंदी' },
+                        { id: 'ja', label: '日本語' },
+                        { id: 'fr', label: 'Français' },
+                        { id: 'es', label: 'Español' },
+                        { id: 'ko', label: '한국어' },
+                        { id: 'de', label: 'Deutsch' }
+                      ].map((lang, idx) => (
+                        <button 
+                          key={lang.id} 
+                          className={`lang-pill ${wikiLang === lang.id ? 'active' : ''} animate-stagger`} 
+                          style={{ animationDelay: `${idx * 0.05}s` }}
+                          onClick={() => { setWikiData(null); setWikiLang(lang.id); }}
+                        >
+                          {lang.label}
                         </button>
                       ))}
-                      {isSearchingWiki && <button className="btn-back-wiki" onClick={() => fetchWiki()}>Back to {item.title || item.name}</button>}
+                      {isSearchingWiki && <button className="btn-back-wiki animate-fade" onClick={() => fetchWiki()}>Back to {item.title || item.name}</button>}
                     </div>
                   </div>
 
@@ -286,16 +299,17 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                                </div>
                              ) : (
                                <div 
-                                 className="wiki-parsed-html" 
+                                 className="wiki-parsed-html animate-fade" 
                                  dangerouslySetInnerHTML={{ 
                                    __html: wikiData?.sections?.[activeWikiSection]?.content
                                      ?.replace(/id="[^"]*"/g, '')
                                      ?.replace(/class="[^"]*"/g, '')
                                      ?.replace(/<span[^>]*>\[edit\]<\/span>/g, '')
                                      ?.replace(/\[edit\]/g, '')
-                                     ?.replace(/>\w+\[edit\]/g, '>')
+                                     ?.replace(/>\w+\[edit\]/g, '>') // fix things like >Plot[edit]
                                      ?.replace(/\[\d+\]/g, '')
                                      ?.replace(/\[note \d+\]/g, '')
+                                     ?.replace(/>\w+\[Edit\]/g, '>')
                                  }} 
                                />
                              )}
