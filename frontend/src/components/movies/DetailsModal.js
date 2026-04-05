@@ -16,6 +16,12 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
   const [wikiData, setWikiData] = useState(null);
   const [wikiLang, setWikiLang] = useState('en');
   const [wikiLoading, setWikiLoading] = useState(false);
+  const [activeWikiSection, setActiveWikiSection] = useState(-1);
+
+  // AIRA State
+  const [airaInput, setAiraInput] = useState('');
+  const [airaChat, setAiraChat] = useState([]);
+  const [airaLoading, setAiraLoading] = useState(false);
 
   useEffect(() => {
     // Lock scroll when modal is open
