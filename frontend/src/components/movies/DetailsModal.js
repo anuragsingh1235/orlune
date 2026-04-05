@@ -52,7 +52,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
       const title = details?.title || details?.name || item.title || item.name;
       const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(title)}&lang=${wikiLang}`);
       setWikiData(res.data);
-      setActiveWikiSection(0);
+      setActiveWikiSection(-1);
     } catch (err) {
       console.error("Wiki fetch failed");
     } finally {
@@ -192,11 +192,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
                       {/* Right: Section Content */}
                       <div className="ency-section-content custom-scrollbar">
-                        {activeWikiSection === -1 ? (
+                        {activeWikiSection === -1 || !wikiData?.sections?.[activeWikiSection] ? (
                           <div className="section-article animate-slide-right">
-                             <h3 className="section-h">{wikiData.title}</h3>
-                             {wikiData.originalImage && <img src={wikiData.originalImage} className="section-poster glass-card" alt="poster" />}
-                             <p className="section-p">{wikiData.summary}</p>
+                             <h3 className="section-h">{wikiData?.title} Archive Overview</h3>
+                             {wikiData?.originalImage && <img src={wikiData.originalImage} className="section-poster glass-card" alt="poster" />}
+                             <p className="section-p">{wikiData?.summary}</p>
                           </div>
                         ) : (
                           <div className="section-article animate-slide-right" key={activeWikiSection}>
