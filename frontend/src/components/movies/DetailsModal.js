@@ -177,13 +177,13 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   {wikiLoading ? (
                     <div className="ency-loading"><div className="spinner" /></div>
                   ) : wikiData?.error ? (
-                    <div className="ency-error">Archive Entry Not Found</div>
-                  ) : (
+                    <div className="ency-error">{wikiData.error}</div>
+                  ) : wikiData ? (
                     <div className="ency-workspace">
                       {/* Left: Section Menu */}
                       <div className="ency-section-menu custom-scrollbar">
                         <button className={activeWikiSection === -1 ? 'active' : ''} onClick={() => setActiveWikiSection(-1)}>📜 Overview</button>
-                        {wikiData.sections?.map((s, i) => (
+                        {wikiData?.sections?.map((s, i) => (
                           <button key={i} className={activeWikiSection === i ? 'active' : ''} onClick={() => setActiveWikiSection(i)}>
                             {s.title}
                           </button>
@@ -200,16 +200,18 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                           </div>
                         ) : (
                           <div className="section-article animate-slide-right" key={activeWikiSection}>
-                             <h3 className="section-h">{wikiData.sections[activeWikiSection].title}</h3>
-                             <div className="wiki-parsed-html" dangerouslySetInnerHTML={{ __html: wikiData.sections[activeWikiSection].content }} />
+                             <h3 className="section-h">{wikiData?.sections?.[activeWikiSection]?.title}</h3>
+                             <div className="wiki-parsed-html" dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} />
                           </div>
                         )}
 
-                        <a href={wikiData.wikiUrl} target="_blank" rel="noreferrer" className="wiki-btn-link">
+                        <a href={wikiData?.wikiUrl} target="_blank" rel="noreferrer" className="wiki-btn-link">
                           Explore Full Wikipedia Original Archive 🏛️
                         </a>
                       </div>
                     </div>
+                  ) : (
+                    <div className="ency-loading"><div className="spinner" /></div>
                   )}
                 </div>
               )}
