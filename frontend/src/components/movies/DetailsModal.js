@@ -249,7 +249,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                              
                              {/* Gallery artifacts */}
                              <div className="wiki-gallery">
-                                {wikiData.images?.map((img, i) => ( <img key={i} src={img} alt="artifact" className="gallery-img glass-card" /> ))}
+                                {wikiData?.images?.map((img, i) => ( <img key={i} src={img} alt="artifact" className="gallery-img glass-card" /> ))}
                              </div>
                           </div>
                         ) : (
@@ -257,6 +257,12 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                              <h3 className="section-h">{wikiData?.sections?.[activeWikiSection]?.title}</h3>
                              <div className={`wiki-parsed-html ${wikiData?.sections?.[activeWikiSection]?.type === 'cast' ? 'visual-cast' : ''}`} dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} />
                           </div>
+                        )}
+                        
+                        {wikiData?.wikiUrl && (
+                          <a href={wikiData.wikiUrl} target="_blank" rel="noreferrer" className="wiki-btn-link">
+                            Explore Full Wikipedia Original Archive 🏛️
+                          </a>
                         )}
                       </div>
                     </div>
