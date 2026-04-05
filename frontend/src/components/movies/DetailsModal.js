@@ -3,21 +3,24 @@ import api from '../../utils/api';
 import './DetailsModal.css';
 
 /**
- * ─── DETAILS MODAL (AIRA Cinematic View) ───────────────────────
- * Displays trailers, cast, and details for any title.
- * The backend already fetches the trailerId server-side via YouTube API,
- * so we just display what it returns.
+ * ─── DETAILS MODAL (Premium Encyclopedia View) ─────────────────────
+ * A cinematic hub for trailers, wikipedia deep-dives, and AI insights.
  */
 export default function DetailsModal({ item, onClose, hideTrailer }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('preview'); // 'preview', 'encyclopedia', 'ai'
+  
+  // Wikipedia State
+  const [wikiData, setWikiData] = useState(null);
+  const [wikiLang, setWikiLang] = useState('en');
+  const [wikiLoading, setWikiLoading] = useState(false);
 
   useEffect(() => {
     // Lock scroll when modal is open
     document.body.style.overflow = 'hidden';
 
-    // Choose the right backend endpoint
     const endpoint = item.media_type === 'anime'
       ? `/anime/details/${item.id}`
       : `/movies/details/${item.id}?type=${item.media_type || 'movie'}`;
@@ -28,7 +31,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
       })
       .catch((err) => {
         console.error('Details fetch failed:', err);
-        setError('Could not load details. Please try again.');
+        setError('Could not load details.');
       })
       .finally(() => setLoading(false));
 
@@ -37,7 +40,28 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     };
   }, [item]);
 
+  useEffect(() => {
+    if (activeTab === 'encyclopedia' && !wikiData && details) {
+      fetchWiki();
+    }
+  }, [activeTab, wikiLang, details]);
+
+  const fetchWiki = async () => {
+    setWikiLoading(true);
+    try {
+      const title = details?.title || details?.name || item.title || item.name;
+      const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(title)}&lang=${wikiLang}`);
+      setWikiData(res.data);
+    } catch (err) {
+      console.error("Wiki fetch failed");
+    } finally {
+      setWikiLoading(false);
+    }
+  };
+
   if (!item) return null;
+
+  const currentVideoId = details?.activeVideoId || details?.trailerId || details?.relatedScenes?.[0]?.id || details?.fanVideos?.[0]?.id || details?.generalVideos?.[0]?.id;
 
   return (
     <div className="modal-overlay animate-fade" onClick={onClose}>
@@ -49,138 +73,125 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
         ) : error ? (
           <div className="modal-error">{error}</div>
         ) : details ? (
-          <div className="details-layout">
+          <div className="details-container custom-scrollbar">
+            
+            {/* 🎥 NAVIGATION TABS */}
+            <div className="modal-nav">
+              <button className={activeTab === 'preview' ? 'active' : ''} onClick={() => setActiveTab('preview')}>
+                Cinematic Preview
+              </button>
+              <button className={activeTab === 'encyclopedia' ? 'active' : ''} onClick={() => setActiveTab('encyclopedia')}>
+                Encyclopedia 📜
+              </button>
+              <button className={activeTab === 'ai' ? 'active' : ''} onClick={() => {
+                setActiveTab('ai');
+                // AIRA integration handled here or via specialized component
+              }}>
+                Ask AIRA 🔮
+              </button>
+            </div>
 
-            {/* 🎥 CINEMATIC PLAYER SECTION */}
-            <div className="trailer-container">
-              {!details.hideTrailer && (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id) ? (
-                <iframe
-                  key={details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id}
-                  className="trailer-iframe"
-                  src={`https://www.youtube.com/embed/${details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id}?autoplay=1&rel=0`}
-                  title="Cinematic Discovery"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <div
-                  className="no-trailer"
-                  style={{
-                    backgroundImage: item.poster_path
-                      ? `url(https://image.tmdb.org/t/p/w780${item.poster_path})`
-                      : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                >
-                  <div className="no-trailer-overlay">
-                    <span>{details.hideTrailer ? 'Legacy Record Locked' : '🎬 Cinematic Preview coming soon'}</span>
+            <div className="modal-body-content">
+              {activeTab === 'preview' && (
+                <div className="preview-tab animate-fade">
+                  {/* YouTube Player */}
+                  <div className="player-wrapper">
+                    {currentVideoId && !details.hideTrailer ? (
+                      <iframe
+                        className="main-iframe"
+                        src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
+                        title="Discovery"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <div className="no-video-placeholder" style={{ backgroundImage: `url(https://image.tmdb.org/t/p/w780${item.poster_path})` }}>
+                        <div className="no-video-overlay"><span>Artifact Record Locked</span></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scene Selector */}
+                  <div className="discovery-grid animate-up">
+                    {[
+                      ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Trailer' }] : []),
+                      ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Moment' })),
+                      ...(details.fanVideos || []).map(s => ({ ...s, type: 'Fan-Edit' })),
+                      ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
+                    ].map((v, i) => (
+                      <div 
+                        key={i} 
+                        className={`discovery-card ${currentVideoId === v.id ? 'active' : ''}`}
+                        onClick={() => setDetails({ ...details, activeVideoId: v.id })}
+                      >
+                        <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} alt="thumb" />
+                        <div className="card-info">
+                          <span className="tag">{v.type}</span>
+                          <p>{v.title}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="info-panel">
+                    <h2 className="title-display">{details.title || details.name}</h2>
+                    <div className="meta-info">
+                       <span className="rating">⭐ {details.vote_average?.toFixed(1)}</span>
+                       <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
+                    </div>
+                    <p className="description-text">{details.overview}</p>
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* 🎑 EXPLORATION TABS (Enhanced YouTube-like Discovery) */}
-            {!details.hideTrailer && (
-              (details.trailerId || (details.relatedScenes || []).length > 0 || (details.fanVideos || []).length > 0 || (details.generalVideos || []).length > 0)
-            ) && (
-              <div className="scenes-selector animate-up">
-                <div className="scenes-header">
-                   <h4>Cinematic Exploration</h4>
-                   <span>Discover Trailers, Iconic Moments & Community Hub</span>
-                </div>
-                
-                <div className="scenes-grid">
-                  {[ 
-                    ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []), 
-                    ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic Moment' })),
-                    ...(details.fanVideos || []).map(s => ({ ...s, type: 'Creator Fan-Edit' })),
-                    ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
-                  ].map((scene, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`scene-card ${ (details.activeVideoId || details.trailerId || details.relatedScenes?.[0]?.id || details.fanVideos?.[0]?.id || details.generalVideos?.[0]?.id) === scene.id ? 'active' : '' }`}
-                      onClick={() => {
-                        setDetails({ ...details, activeVideoId: scene.id });
-                        document.querySelector('.details-layout')?.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                    >
-                      <img src={scene.thumbnail || `https://img.youtube.com/vi/${scene.id}/mqdefault.jpg`} alt={scene.title} />
-                      <div className="scene-overlay">
-                         <span className="scene-type-tag">{scene.type}</span>
-                         <p>{scene.title.length > 45 ? scene.title.slice(0, 45) + '...' : scene.title}</p>
+              {activeTab === 'encyclopedia' && (
+                <div className="encyclopedia-tab animate-fade">
+                  <div className="ency-controls">
+                    {['en', 'hi', 'ja'].map(l => (
+                      <button key={l} className={wikiLang === l ? 'active' : ''} onClick={() => { setWikiData(null); setWikiLang(l); }}>
+                        {l === 'en' ? 'English' : l === 'hi' ? 'हिंदी' : '日本語'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {wikiLoading ? (
+                    <div className="ency-loading"><div className="spinner" /></div>
+                  ) : wikiData?.error ? (
+                    <div className="ency-error">Archives for this title are currently sealed.</div>
+                  ) : (
+                    <div className="ency-article">
+                      {wikiData?.thumbnail && <img src={wikiData.thumbnail} className="article-poster" alt="Wiki" />}
+                      <h3 className="article-title">{wikiData.title}</h3>
+                      <p className="article-summary">{wikiData.summary}</p>
+                      
+                      <div className="article-content" dangerouslySetInnerHTML={{ __html: wikiData.content }} />
+                      
+                      <div className="article-footer">
+                        <h4>External References</h4>
+                        <div className="links-row">
+                          <a href={wikiData.wikiUrl} target="_blank" rel="noreferrer" className="btn-wiki">Wikipedia Entry 🏛️</a>
+                          {wikiData.externalLinks?.map((link, i) => (
+                            <a key={i} href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer" className="btn-wiki secondary">
+                              Reference {i + 1}
+                            </a>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 📝 INFO SECTION */}
-            <div className="details-body">
-              <h2 className="details-title">{details.title || details.name || item.title || item.name}</h2>
-
-              <div className="details-meta">
-                {details.vote_average > 0 && (
-                  <span className="rating-badge">★ {Number(details.vote_average).toFixed(1)}</span>
-                )}
-                {(details.release_date || details.first_air_date) && (
-                  <span className="year-badge">
-                    {(details.release_date || details.first_air_date || '').slice(0, 4)}
-                  </span>
-                )}
-                {details.status && <span className="status-badge">{details.status}</span>}
-                {details.episodes && <span className="status-badge">{details.episodes} eps</span>}
-                {details.runtime && <span className="status-badge">{details.runtime}</span>}
-              </div>
-
-              {/* Genres */}
-              {(details.genres || details.genre_ids || []).length > 0 && (
-                <div className="details-genres">
-                  {(details.genres || details.genre_ids || []).map((g, i) => (
-                    <span key={i} className="genre-tag">
-                      {typeof g === 'object' ? g.name : g}
-                    </span>
-                  ))}
+                  )}
                 </div>
               )}
 
-              <p className="details-overview">{details.overview || 'No overview available.'}</p>
-
-              {/* Cast / Studio */}
-              <div className="details-grid">
-                {details.credits?.cast?.length > 0 && (
-                  <div className="grid-item">
-                    <h4>Leading Cast</h4>
-                    <p>{details.credits.cast.slice(0, 4).map((c) => c.name).join(', ')}</p>
-                  </div>
-                )}
-                {details.director && details.director !== 'N/A' && (
-                  <div className="grid-item">
-                    <h4>Director</h4>
-                    <p>{details.director}</p>
-                  </div>
-                )}
-                {details.studios?.length > 0 && (
-                  <div className="grid-item">
-                    <h4>Studio</h4>
-                    <p>{details.studios.join(', ')}</p>
-                  </div>
-                )}
-                {details.actors && details.actors !== 'N/A' && (
-                  <div className="grid-item">
-                    <h4>Actors</h4>
-                    <p>{details.actors}</p>
-                  </div>
-                )}
-              </div>
+              {activeTab === 'ai' && (
+                <div className="ai-tab animate-fade">
+                   <p className="ai-teaser">Ask AIRA for mystical cinematic insights about {details?.title || details?.name}...</p>
+                   {/* GeminiOracle component should be integrated here or logic triggered */}
+                </div>
+              )}
             </div>
-
           </div>
-        ) : (
-          <div className="modal-error">Title not found in the archive.</div>
-        )}
+        ) : null}
       </div>
     </div>
   );
