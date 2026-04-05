@@ -276,7 +276,15 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                                   ))}
                                </div>
                              ) : (
-                               <div className="wiki-parsed-html" dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} />
+                               <div 
+                                 className="wiki-parsed-html" 
+                                 dangerouslySetInnerHTML={{ 
+                                   __html: wikiData?.sections?.[activeWikiSection]?.content
+                                     ?.replace(/id="[^"]*"/g, '')
+                                     ?.replace(/class="[^"]*"/g, '')
+                                     ?.replace(/\[edit\]/g, '')
+                                 }} 
+                               />
                              )}
                           </div>
                         )}
