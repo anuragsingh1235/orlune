@@ -5,7 +5,7 @@ exports.getWikiData = async (req, res) => {
   if (!title) return res.status(400).json({ error: 'Title required' });
 
   try {
-    // 1. Precise Search
+    // 📡 1. Parallel Search for the Archive Entry
     const searchRes = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
       params: {
         action: 'query',
@@ -13,7 +13,8 @@ exports.getWikiData = async (req, res) => {
         srsearch: `${title} film series anime`,
         format: 'json',
         origin: '*'
-      }
+      },
+      timeout: 5000 // 🚀 Speed up the failure if not found
     });
 
     const searchResults = searchRes.data.query.search;
@@ -21,25 +22,26 @@ exports.getWikiData = async (req, res) => {
 
     const pageTitle = searchResults[0].title;
 
-    // 2. Fetch Summary & High-Res Artifacts
-    const summaryRes = await axios.get(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`);
-    
-    // 3. Fetch Advanced Sections & Metadata
-    const contentRes = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
-      params: {
-        action: 'parse',
-        page: pageTitle,
-        prop: 'sections|text|images|templates',
-        format: 'json',
-        disabletoc: 1
-      }
-    });
+    // 📡 2. MULTI-THREADED FETCH (Simultaneous Summary & Detailed Sections)
+    const [summaryRes, contentRes] = await Promise.all([
+      axios.get(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`, { timeout: 8000 }),
+      axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
+        params: {
+          action: 'parse',
+          page: pageTitle,
+          prop: 'sections|text',
+          format: 'json',
+          disabletoc: 1
+        },
+        timeout: 8000
+      })
+    ]);
 
+    // 🎯 3. Advanced Article Splicing
     const sections = contentRes.data.parse.sections.filter(s => 
       !['References', 'External links', 'See also', 'Notes', 'Bibliography'].includes(s.line) && s.toclevel === 1
     );
 
-    // 4. Extract Section Content (More Precise Parsing)
     const fullHtml = contentRes.data.parse.text['*'];
     const parsedSections = sections.map((s, i) => {
       const nextSection = sections[i + 1];
@@ -50,16 +52,12 @@ exports.getWikiData = async (req, res) => {
       const endIndex = fullHtml.indexOf(endTag);
       
       let sectionContent = fullHtml.slice(startIndex, endIndex === -1 ? undefined : endIndex);
-      // Clean up the sliced HTML
       sectionContent = sectionContent.substring(sectionContent.indexOf('</h2>') + 5);
 
-      return {
-        title: s.line,
-        anchor: s.anchor,
-        content: sectionContent.trim()
-      };
+      return { title: s.line, content: sectionContent.trim() };
     });
 
+    // 🏁 4. Deliver the Archives
     res.json({
       title: pageTitle,
       summary: summaryRes.data.extract,
@@ -70,7 +68,7 @@ exports.getWikiData = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('WIKI PARSE ERROR:', err.message);
-    res.status(500).json({ error: 'Archive failure. Seek later, seeker.' });
+    console.error('WIKI FAILED:', err.message);
+    res.status(err.response?.status || 500).json({ error: 'Archives momentarily veiled. Seek again.' });
   }
 };
