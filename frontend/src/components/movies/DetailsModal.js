@@ -71,7 +71,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     try {
       const localizedTitle = wikiData?.localizedTitles?.[wikiLang];
       const titleStr = specificTitle || localizedTitle || details?.title || details?.name || item.title || item.name;
-      const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(titleStr)}&lang=${wikiLang}`);
+      const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(titleStr)}&lang=${wikiLang}&_cb=${Date.now()}`);
       clearTimeout(watchdog);
       setWikiData(res.data);
       setActiveWikiSection(-1);
@@ -300,16 +300,18 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                                </div>
                              ) : (
                                <div 
-                                 className="wiki-parsed-html animate-fade" 
+                                 className={`wiki-parsed-html ${wikiLoading ? 'animate-pulse opacity-50' : 'animate-fade'}`} 
                                  dangerouslySetInnerHTML={{ 
                                    __html: wikiData?.sections?.[activeWikiSection]?.content
                                      ?.replace(/id="[^"]*"/g, '')
                                      ?.replace(/class="[^"]*"/g, '')
                                      ?.replace(/\[edit\]/g, '')
                                      ?.replace(/>\w+\[edit\]/g, '>')
+                                     ?.replace(/>[^<]*\[edit\]/g, '>') // More aggressive match
                                      ?.replace(/\[\d+\]/g, '')
                                      ?.replace(/\[note \d+\]/g, '')
                                      ?.replace(/>\w+\[Edit\]/g, '>')
+                                     ?.replace(/>[^<]*\[Edit\]/g, '>')
                                  }} 
                                />
                              )}

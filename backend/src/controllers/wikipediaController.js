@@ -41,9 +41,9 @@ exports.getWikiData = async (req, res) => {
         if (pLinks) pLinks.forEach(l => { localizedTitles[l.lang] = l['*']; });
 
         const parsed = await Promise.all(sections.map(async (s, i) => {
-            // ... (rest of the existing section parsing logic remains the same)
-            const start = fullHtml.indexOf(`id="${s.anchor}"`);
+            const rawStart = fullHtml.indexOf(`id="${s.anchor}"`);
             const end = i < sections.length - 1 ? fullHtml.indexOf(`id="${sections[i+1].anchor}"`) : undefined;
+            const start = fullHtml.indexOf('>', rawStart) + 1; // 🛠️ SURGICAL CUT: Start after attributes
             let body = fullHtml.slice(start, end);
             
             const sectionImages = [];
