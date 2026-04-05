@@ -2,14 +2,14 @@ const express = require("express");
 const axios = require("axios");
 const router = express.Router();
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY?.trim().replace(/^['"](.*)['"]$/, '$1');
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 router.post("/oracle", async (req, res) => {
   const { prompt, history } = req.body;
   
   if (!GEMINI_API_KEY) {
-    return res.json({ reply: "The AIRA key is missing in the Vercel vault." });
+    return res.json({ reply: "The AIRA key is not detected. Please verify your Vercel settings." });
   }
 
   try {
