@@ -47,23 +47,24 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
   }, [item]);
 
   useEffect(() => {
-    if (activeTab === 'encyclopedia' && !wikiData && details) {
+    if (activeTab === 'encyclopedia' && !wikiData && !isSearchingWiki && details) {
       fetchWiki();
     }
   }, [activeTab, wikiLang, details]);
 
-  const fetchWiki = async () => {
+  const fetchWiki = async (specificTitle = null) => {
     setWikiLoading(true);
+    setIsSearchingWiki(false);
     // 🛡️ WATCHDOG TIMER: Stop spinning after 12s no matter what
     const watchdog = setTimeout(() => {
         if (wikiLoading) {
             setWikiLoading(false);
-            setWikiData({ error: "The connection to the archives is momentarily veiled." });
+            setWikiData({ error: "Archives veiled." });
         }
     }, 12000);
 
     try {
-      const titleStr = details?.title || details?.name || item.title || item.name;
+      const titleStr = specificTitle || details?.title || details?.name || item.title || item.name;
       const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(titleStr)}&lang=${wikiLang}`);
       clearTimeout(watchdog);
       setWikiData(res.data);
@@ -71,6 +72,21 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     } catch (err) {
       clearTimeout(watchdog);
       console.error("Wiki fetch failed");
+    } finally {
+      setWikiLoading(false);
+    }
+  };
+
+  const searchGlobalWiki = async (e) => {
+    e.preventDefault();
+    if (!wikiSearch.trim()) return;
+    setWikiLoading(true);
+    setIsSearchingWiki(true);
+    try {
+      const res = await api.get(`/wiki/search?query=${encodeURIComponent(wikiSearch)}&lang=${wikiLang}`);
+      setWikiSearchResults(res.data.results || []);
+    } catch (err) {
+      console.error("Wiki search failed");
     } finally {
       setWikiLoading(false);
     }
@@ -92,7 +108,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
         });
         setAiraChat(prev => [...prev, { role: 'aira', content: res.data.reply }]);
     } catch (err) {
-        setAiraChat(prev => [...prev, { role: 'aira', content: "The connection to the archives is momentarily veiled." }]);
+        setAiraChat(prev => [...prev, { role: 'aira', content: "Archives veiled." }]);
     } finally {
         setAiraLoading(false);
     }
@@ -122,7 +138,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   className={activeTab === t ? 'active' : ''} 
                   onClick={() => setActiveTab(t)}
                 >
-                  {t === 'preview' ? 'Cinematic Archive 🎥' : t === 'encyclopedia' ? 'Encyclopedia 📜' : 'Ask AIRA 🔮'}
+                  {t === 'preview' ? 'Discovery 🎥' : t === 'encyclopedia' ? 'Encyclopedia 📜' : 'Ask AIRA 🔮'}
                 </button>
               ))}
             </div>
@@ -181,17 +197,34 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
               {activeTab === 'encyclopedia' && (
                 <div className="encyclopedia-tab animate-fade">
                   <div className="ency-header">
+                    <form className="wiki-search-bar" onSubmit={searchGlobalWiki}>
+                       <input type="text" placeholder="Search Global Archives (any film in history)..." value={wikiSearch} onChange={(e) => setWikiSearch(e.target.value)} />
+                       <button type="submit">🔍</button>
+                    </form>
                     <div className="ency-lang-bar">
                       {['en', 'hi', 'ja'].map(l => (
                         <button key={l} className={wikiLang === l ? 'active' : ''} onClick={() => { setWikiData(null); setWikiLang(l); }}>
                           {l === 'en' ? 'English' : l === 'hi' ? 'हिंदी' : '日本語'}
                         </button>
                       ))}
+                      {isSearchingWiki && <button className="btn-back-wiki" onClick={() => fetchWiki()}>Back to {item.title || item.name}</button>}
                     </div>
                   </div>
 
                   {wikiLoading ? (
                     <div className="ency-loading"><div className="spinner" /></div>
+                  ) : isSearchingWiki ? (
+                    <div className="wiki-search-results animate-up custom-scrollbar">
+                       {wikiSearchResults.map(res => (
+                         <div key={res.id} className="wiki-res-card glass-card" onClick={() => fetchWiki(res.title)}>
+                            {res.thumbnail && <img src={res.thumbnail} alt="thumb" />}
+                            <div className="res-info">
+                               <h4>{res.title}</h4>
+                               <p>{res.overview?.slice(0, 120)}...</p>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
                   ) : wikiData?.error ? (
                     <div className="ency-error">{wikiData.error}</div>
                   ) : wikiData ? (
@@ -210,20 +243,21 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                       <div className="ency-section-content custom-scrollbar">
                         {activeWikiSection === -1 || !wikiData?.sections?.[activeWikiSection] ? (
                           <div className="section-article animate-slide-right">
-                             <h3 className="section-h">{wikiData?.title} Archive Overview</h3>
+                             <h3 className="section-h">{wikiData?.title} Archive</h3>
                              {wikiData?.originalImage && <img src={wikiData.originalImage} className="section-poster glass-card" alt="poster" />}
                              <p className="section-p">{wikiData?.summary}</p>
+                             
+                             {/* Gallery artifacts */}
+                             <div className="wiki-gallery">
+                                {wikiData.images?.map((img, i) => ( <img key={i} src={img} alt="artifact" className="gallery-img glass-card" /> ))}
+                             </div>
                           </div>
                         ) : (
                           <div className="section-article animate-slide-right" key={activeWikiSection}>
                              <h3 className="section-h">{wikiData?.sections?.[activeWikiSection]?.title}</h3>
-                             <div className="wiki-parsed-html" dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} />
+                             <div className={`wiki-parsed-html ${wikiData?.sections?.[activeWikiSection]?.type === 'cast' ? 'visual-cast' : ''}`} dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} />
                           </div>
                         )}
-
-                        <a href={wikiData?.wikiUrl} target="_blank" rel="noreferrer" className="wiki-btn-link">
-                          Explore Full Wikipedia Original Archive 🏛️
-                        </a>
                       </div>
                     </div>
                   ) : (
