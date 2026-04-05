@@ -18,6 +18,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
   const [wikiLoading, setWikiLoading] = useState(false);
   const [activeWikiSection, setActiveWikiSection] = useState(-1);
 
+  // Global Wiki Search
+  const [wikiSearch, setWikiSearch] = useState('');
+  const [wikiSearchResults, setWikiSearchResults] = useState([]);
+  const [isSearchingWiki, setIsSearchingWiki] = useState(false);
+
   // AIRA State
   const [airaInput, setAiraInput] = useState('');
   const [airaChat, setAiraChat] = useState([]);
