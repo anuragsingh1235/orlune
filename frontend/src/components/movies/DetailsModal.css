@@ -664,13 +664,19 @@
 .main-iframe { width: 100%; height: 100%; }
 
 .discovery-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px; margin-bottom: 40px;
+  display: flex; gap: 12px; padding: 16px 0;
+  overflow-x: auto; overflow-y: hidden;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: var(--accent) transparent;
 }
 
+.discovery-grid::-webkit-scrollbar { height: 4px; }
+.discovery-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
 .discovery-card {
-  background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 10px; cursor: pointer; overflow: hidden; transition: 0.3s;
+  flex: 0 0 160px; aspect-ratio: 16/9; position: relative;
+  cursor: pointer; border-radius: 8px; overflow: hidden;
+  border: 2px solid transparent; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .discovery-card img { width: 100%; height: auto; transition: 0.5s; }

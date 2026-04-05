@@ -64,8 +64,8 @@ async function getYoutubeFanMade(title, year = "") {
   const apiKey = process.env.YOUTUBE_API_KEY || process.env.REACT_APP_YOUTUBE_API_KEY;
   if (!apiKey) return [];
   try {
-    const query = encodeURIComponent(`${title} ${year} movie fan edit analysis tribute best scenes`);
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=10&key=${apiKey}`;
+    const query = encodeURIComponent(`${title} ${year} official trailer trailer review breakdown hindi english japanese movie breakdown recap`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=25&key=${apiKey}`;
     const response = await axios.get(url, { timeout: 4000 });
     return (response.data.items || []).map(item => ({
       id: item.id.videoId,

@@ -108,12 +108,12 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     try {
         const titleName = details?.title || details?.name || item.title || item.name;
         const res = await api.post('/ai/oracle', { 
-            prompt: `About ${titleName}: ${prompt}`,
+            prompt: `(Response Style: Natural Hinglish/Hindustani, cool and engaging, avoid formal article style). About ${titleName}: ${prompt}`,
             history: airaChat
         });
         setAiraChat(prev => [...prev, { role: 'aira', content: res.data.reply }]);
     } catch (err) {
-        setAiraChat(prev => [...prev, { role: 'aira', content: "Archives veiled." }]);
+        setAiraChat(prev => [...prev, { role: 'aira', content: "Archives veiled. Thoda wait karo, network issue lag raha hai." }]);
     } finally {
         setAiraLoading(false);
     }
