@@ -4,46 +4,53 @@ exports.getWikiData = async (req, res) => {
   let { title, lang = 'en' } = req.query;
   if (!title) return res.status(400).json({ error: 'Title required' });
 
-  // 🧪 CLEAN TITLE (Remove colons/subtitles for better matching)
-  const cleanTitle = title.split(':')[0].trim();
+  // 🧪 CLEAN TITLE (Remove years and colons)
+  const cleanTitle = title.split(':')[0].replace(/\(\d{4}\)/g, '').trim();
+  
+  // 📡 WIKI-AGENT HEADERS (Essential to prevent blocking)
+  const headers = { 'User-Agent': 'OrluneCinematicHub/1.0 (anuragsingh1235@gmail.com) Axios/1.6.0' };
 
   try {
-    // 📡 1. Aggressive Search
+    // 📡 1. Aggressive Search with User-Agent
     const searchRes = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
       params: {
         action: 'query',
         list: 'search',
-        srsearch: `${title} film series anime` || `${cleanTitle} film`,
+        srsearch: `${title} film series anime`,
         format: 'json',
         origin: '*'
       },
-      timeout: 5000
+      headers,
+      timeout: 8000
     });
 
     let searchResults = searchRes.data.query.search;
     
     // Backup search if exact title fails
-    if (!searchResults.length) {
+    if (!searchResults || !searchResults.length) {
         const backupRes = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
-            params: { action: 'query', list: 'search', srsearch: cleanTitle, format: 'json', origin: '*' }
+            params: { action: 'query', list: 'search', srsearch: cleanTitle, format: 'json', origin: '*' },
+            headers,
+            timeout: 8000
         });
         searchResults = backupRes.data.query.search;
     }
 
-    if (!searchResults.length) return res.json({ error: 'Archive Entry Not Found in this sector.' });
+    if (!searchResults || !searchResults.length) return res.json({ error: 'Archive Entry Not Found in this sector.' });
 
     const pageTitle = searchResults[0].title;
 
     // 📡 2. MULTI-THREADED FETCH (Summary & Content)
     const [summaryRes, contentRes] = await Promise.all([
-      axios.get(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`, { timeout: 8000 }).catch(() => ({ data: {} })),
+      axios.get(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`, { headers, timeout: 10000 }).catch(() => ({ data: {} })),
       axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
         params: { action: 'parse', page: pageTitle, prop: 'sections|text', format: 'json', disabletoc: 1 },
-        timeout: 8000
+        headers,
+        timeout: 10000
       }).catch(() => null)
     ]);
 
-    if (!contentRes) return res.json({ error: 'Archive data is currently encrypted.' });
+    if (!contentRes || !contentRes.data.parse) return res.json({ error: 'Archive data is currently encrypted.' });
 
     // 🎯 3. Advanced Article Splicing
     const sections = contentRes.data.parse.sections.filter(s => 
@@ -60,7 +67,9 @@ exports.getWikiData = async (req, res) => {
       const endIndex = fullHtml.indexOf(endTag);
       
       let sectionContent = fullHtml.slice(startIndex, endIndex === -1 ? undefined : endIndex);
-      sectionContent = sectionContent.substring(sectionContent.indexOf('</h2>') + 5);
+      if (sectionContent.includes('</h2>')) {
+        sectionContent = sectionContent.substring(sectionContent.indexOf('</h2>') + 5);
+      }
 
       return { title: s.line, content: sectionContent.trim() };
     });
@@ -76,6 +85,6 @@ exports.getWikiData = async (req, res) => {
 
   } catch (err) {
     console.error('WIKI CRITICAL ERROR:', err.message);
-    res.json({ error: 'The connection to the archives is momentarily veiled. Seek again later.' });
+    res.json({ error: `The archives are currently veiled (Signal Error: ${err.message}). Seek again.` });
   }
 };
