@@ -260,7 +260,24 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                         ) : (
                           <div className="section-article animate-slide-right" key={activeWikiSection}>
                              <h3 className="section-h">{wikiData?.sections?.[activeWikiSection]?.title}</h3>
-                             <div className={`wiki-parsed-html ${wikiData?.sections?.[activeWikiSection]?.type === 'cast' ? 'visual-cast' : ''}`} dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} />
+                             
+                             {wikiData?.sections?.[activeWikiSection]?.members?.length > 0 ? (
+                               <div className="visual-cast-grid">
+                                  {wikiData.sections[activeWikiSection].members.map((m, i) => (
+                                    <div key={i} className="cast-profile-card glass-card animate-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                                       <div className="actor-photo-wrap">
+                                          {m.photo ? <img src={m.photo} alt={m.name} /> : <div className="photo-placeholder">👤</div>}
+                                       </div>
+                                       <div className="cast-info">
+                                          <h4 className="actor-name">{m.name}</h4>
+                                          <span className="char-tag">as {m.character}</span>
+                                       </div>
+                                    </div>
+                                  ))}
+                               </div>
+                             ) : (
+                               <div className="wiki-parsed-html" dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} />
+                             )}
                           </div>
                         )}
                         
