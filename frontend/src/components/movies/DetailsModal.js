@@ -48,12 +48,22 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
   const fetchWiki = async () => {
     setWikiLoading(true);
+    // 🛡️ WATCHDOG TIMER: Stop spinning after 12s no matter what
+    const watchdog = setTimeout(() => {
+        if (wikiLoading) {
+            setWikiLoading(false);
+            setWikiData({ error: "The connection to the archives is momentarily veiled." });
+        }
+    }, 12000);
+
     try {
-      const title = details?.title || details?.name || item.title || item.name;
-      const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(title)}&lang=${wikiLang}`);
+      const titleStr = details?.title || details?.name || item.title || item.name;
+      const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(titleStr)}&lang=${wikiLang}`);
+      clearTimeout(watchdog);
       setWikiData(res.data);
       setActiveWikiSection(-1);
     } catch (err) {
+      clearTimeout(watchdog);
       console.error("Wiki fetch failed");
     } finally {
       setWikiLoading(false);

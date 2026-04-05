@@ -305,6 +305,31 @@
   font-size: 0.85rem;
   background: rgba(94, 129, 172, 0.05);
 }
+/* 📜 ENCYCLOPEDIA HEADER & LANG BAR */
+.ency-header {
+  margin-bottom: 24px; padding-bottom: 16px; 
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ency-lang-bar { display: flex; gap: 10px; }
+
+.ency-lang-bar button {
+  background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted); padding: 8px 18px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+  backdrop-filter: blur(10px);
+}
+
+.ency-lang-bar button:hover {
+  background: rgba(255, 255, 255, 0.08); color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.ency-lang-bar button.active {
+  background: var(--text-primary); color: var(--bg-dark);
+  border-color: var(--text-primary);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
 /* 🏛️ ENCYCLOPEDIA V2 WORKSPACE */
 .ency-workspace {
   display: flex; gap: 24px; min-height: 400px;
