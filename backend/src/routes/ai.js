@@ -13,15 +13,12 @@ router.post("/oracle", async (req, res) => {
   }
 
   try {
-    const formattedHistory = (history || []).map(msg => ({
-      role: msg.role === "user" ? "user" : "model",
-      parts: [{ text: msg.content }]
-    }));
-
     const response = await axios.post(API_URL, {
       contents: [
-        ...formattedHistory,
-        { role: "user", parts: [{ text: `System Instruction: You are AIRA, a mystical cinematic guide. Answer clearly and concisely. \n\n User Query: ${prompt}` }] }
+        { 
+          role: "user", 
+          parts: [{ text: `You are AIRA, a mystical cinematic assistant. Answer this query atmosphericly: ${prompt}` }] 
+        }
       ]
     }, { timeout: 10000 });
 
@@ -29,8 +26,9 @@ router.post("/oracle", async (req, res) => {
     if (!reply) throw new Error("The archives are silent.");
     res.json({ reply });
   } catch (err) {
-    console.error("AIRA ERROR:", err.response?.data || err.message);
-    res.json({ reply: "The connection to the archives is momentarily veiled. Seek your answer again, traveler." });
+    const googleError = err.response?.data?.error?.message || err.message;
+    console.error("AIRA ERROR:", googleError);
+    res.json({ reply: `AIRA LINK ERROR: ${googleError}. Ensure you hit 'REDEPLOY' on Vercel after adding the key.` });
   }
 });
 
