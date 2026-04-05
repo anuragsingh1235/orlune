@@ -325,19 +325,19 @@
   transform: translateY(-2px);
 }
 
-.lang-pill.active {
-  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%) !important; 
+.lang-pill.active-emerald {
+  background: linear-gradient(135deg, #00ff88 0%, #00bc7d 100%) !important; 
   color: #000 !important; 
-  border-color: #ffd700 !important;
+  border-color: #00ff88 !important;
   font-weight: 800 !important; 
-  box-shadow: 0 0 25px rgba(255, 215, 0, 0.5), inset 0 0 10px rgba(255,255,255,0.4) !important;
-  animation: pulse-gold 2s infinite ease-in-out;
+  box-shadow: 0 0 25px rgba(0, 255, 136, 0.5), inset 0 0 10px rgba(255,255,255,0.4) !important;
+  animation: pulse-emerald 2s infinite ease-in-out;
   opacity: 1 !important;
 }
 
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); opacity: 0.9; }
-  50% { box-shadow: 0 0 45px rgba(255, 215, 0, 1); opacity: 1; }
+@keyframes pulse-emerald {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); opacity: 0.9; }
+  50% { box-shadow: 0 0 45px rgba(0, 255, 136, 1); opacity: 1; }
 }
 
 .lang-pill.active::after {

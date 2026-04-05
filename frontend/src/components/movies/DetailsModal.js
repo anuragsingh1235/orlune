@@ -219,9 +219,9 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                       ].map((lang, idx) => (
                         <button 
                           key={lang.id} 
-                          className={`lang-pill ${wikiLang === lang.id ? 'active' : ''} animate-stagger`} 
+                          className={`lang-pill ${wikiLang === lang.id ? 'active-emerald' : ''} animate-stagger`} 
                           style={{ animationDelay: `${idx * 0.05}s` }}
-                          onClick={() => { setWikiData(null); setWikiLang(lang.id); }}
+                          onClick={() => setWikiLang(lang.id)}
                         >
                           {lang.label}
                         </button>
