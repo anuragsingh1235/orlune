@@ -5,7 +5,7 @@ exports.getWikiData = async (req, res) => {
   if (!title) return res.status(400).json({ error: 'Title required' });
 
   try {
-    // 1. Search for the most relevant wikipedia page
+    // 1. Precise Search
     const searchRes = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
       params: {
         action: 'query',
@@ -17,40 +17,60 @@ exports.getWikiData = async (req, res) => {
     });
 
     const searchResults = searchRes.data.query.search;
-    if (!searchResults.length) return res.json({ error: 'No archive found' });
+    if (!searchResults.length) return res.json({ error: 'Archive Entry Not Found' });
 
     const pageTitle = searchResults[0].title;
 
-    // 2. Get Summary and Thumbnail via REST API
+    // 2. Fetch Summary & High-Res Artifacts
     const summaryRes = await axios.get(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`);
     
-    // 3. Get Full Sections (Plot, Production, Reception, Cast)
+    // 3. Fetch Advanced Sections & Metadata
     const contentRes = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, {
       params: {
         action: 'parse',
         page: pageTitle,
-        prop: 'sections|text|images|externallinks',
-        format: 'json'
+        prop: 'sections|text|images|templates',
+        format: 'json',
+        disabletoc: 1
       }
     });
 
-    const sections = contentRes.data.parse.sections;
-    const fullText = contentRes.data.parse.text['*'];
+    const sections = contentRes.data.parse.sections.filter(s => 
+      !['References', 'External links', 'See also', 'Notes', 'Bibliography'].includes(s.line) && s.toclevel === 1
+    );
+
+    // 4. Extract Section Content (More Precise Parsing)
+    const fullHtml = contentRes.data.parse.text['*'];
+    const parsedSections = sections.map((s, i) => {
+      const nextSection = sections[i + 1];
+      const startTag = `id="${s.anchor}"`;
+      const endTag = nextSection ? `id="${nextSection.anchor}"` : '<!--';
+      
+      const startIndex = fullHtml.indexOf(startTag);
+      const endIndex = fullHtml.indexOf(endTag);
+      
+      let sectionContent = fullHtml.slice(startIndex, endIndex === -1 ? undefined : endIndex);
+      // Clean up the sliced HTML
+      sectionContent = sectionContent.substring(sectionContent.indexOf('</h2>') + 5);
+
+      return {
+        title: s.line,
+        anchor: s.anchor,
+        content: sectionContent.trim()
+      };
+    });
 
     res.json({
       title: pageTitle,
       summary: summaryRes.data.extract,
       thumbnail: summaryRes.data.thumbnail?.source,
       originalImage: summaryRes.data.originalimage?.source,
-      description: summaryRes.data.description,
-      sections: sections.map(s => ({ index: s.index, title: s.line })),
-      content: fullText,
-      wikiUrl: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`,
-      externalLinks: contentRes.data.parse.externallinks.slice(0, 5)
+      sections: parsedSections,
+      wikiUrl: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`
     });
 
   } catch (err) {
-    console.error('WIKI ERROR:', err.message);
-    res.status(500).json({ error: 'Failed to access the archives' });
+    console.error('WIKI PARSE ERROR:', err.message);
+    res.status(500).json({ error: 'Archive failure. Seek later, seeker.' });
   }
 };

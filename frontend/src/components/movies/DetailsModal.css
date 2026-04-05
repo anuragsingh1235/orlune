@@ -305,6 +305,124 @@
   font-size: 0.85rem;
   background: rgba(94, 129, 172, 0.05);
 }
+/* 🏛️ ENCYCLOPEDIA V2 WORKSPACE */
+.ency-workspace {
+  display: flex; gap: 24px; min-height: 400px;
+  margin-top: 20px;
+}
+
+.ency-section-menu {
+  width: 220px; display: flex; flex-direction: column; gap: 8px;
+  max-height: 500px; overflow-y: auto; padding-right: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ency-section-menu button {
+  text-align: left; background: none; border: 1px solid transparent;
+  color: var(--text-muted); padding: 12px 16px; border-radius: 10px;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: 0.3s;
+}
+
+.ency-section-menu button:hover {
+  background: rgba(255, 255, 255, 0.03); color: var(--text-primary);
+}
+
+.ency-section-menu button.active {
+  background: rgba(229, 9, 20, 0.1); border-color: rgba(229, 9, 20, 0.3);
+  color: var(--accent);
+}
+
+.ency-section-content {
+  flex: 1; max-height: 500px; overflow-y: auto; padding-right: 16px;
+}
+
+.section-article { animation: animate-slide-right 0.5s ease-out; }
+
+.section-h { font-size: 1.8rem; font-weight: 800; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; color: var(--text-primary); }
+
+.section-p { font-size: 1.05rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: 24px; }
+
+.section-poster {
+  width: 200px; float: right; margin: 0 0 20px 24px;
+  border-radius: 12px;
+}
+
+.wiki-parsed-html { color: var(--text-primary); line-height: 1.8; }
+.wiki-parsed-html h2, .wiki-parsed-html h3 { margin: 32px 0 16px; color: var(--accent); }
+.wiki-parsed-html p { margin-bottom: 16px; }
+
+.wiki-btn-link {
+  display: block; width: 100%; text-align: center;
+  padding: 16px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; margin-top: 40px; color: var(--text-muted);
+  text-decoration: none; font-weight: 700; transition: 0.3s;
+}
+
+.wiki-btn-link:hover { background: var(--accent); color: #fff; }
+
+/* 🔮 AIRA ORACLE TAB */
+.ai-modal-tab {
+  display: flex; flex-direction: column; height: 500px;
+  background: rgba(0, 0, 0, 0.2); border-radius: 16px; overflow: hidden;
+}
+
+.ai-oracle-header {
+  padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex; align-items: center; gap: 16px;
+}
+
+.oracle-aura {
+  width: 44px; height: 44px; background: var(--accent);
+  border-radius: 50%; box-shadow: 0 0 20px var(--accent);
+}
+
+.oracle-info h3 { font-size: 1.1rem; font-weight: 800; }
+.oracle-info p { font-size: 0.8rem; color: var(--text-muted); }
+
+.ai-modal-chat { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+.ai-empty-state { text-align: center; margin-top: 80px; }
+.ai-icon { font-size: 40px; margin-bottom: 12px; }
+
+.ai-msg { max-width: 80%; }
+.ai-msg.user { align-self: flex-end; }
+.ai-msg.aira { align-self: flex-start; }
+
+.ai-msg .msg-content {
+  padding: 12px 18px; border-radius: 16px; font-size: 0.95rem; line-height: 1.5;
+}
+
+.ai-msg.user .msg-content { background: var(--accent); color: #fff; }
+.ai-msg.aira .msg-content { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+
+.aira-writing { font-size: 0.8rem; color: var(--accent); margin-top: 8px; font-style: italic; animation: animate-pulse 1s infinite; }
+
+.ai-modal-input {
+  padding: 16px; background: rgba(0,0,0,0.4); display: flex; gap: 12px;
+}
+
+.ai-modal-input input {
+  flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  padding: 12px 20px; border-radius: 20px; color: #fff; outline: none;
+}
+
+.ai-modal-input button {
+  background: var(--accent); border: none; color: #fff;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer; transition: 0.3s;
+}
+
+.ai-modal-input button:hover { transform: scale(1.1) rotate(15deg); }
+
+@keyframes animate-slide-right {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 768px) {
+  .ency-workspace { flex-direction: column; }
+  .ency-section-menu { width: 100%; max-height: 120px; flex-direction: row; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+}
+
 .details-container { height: 100%; overflow-y: auto; padding: 20px; }
 
 /* 🧭 NAVIGATION TABS */

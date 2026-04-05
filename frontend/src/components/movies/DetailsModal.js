@@ -52,10 +52,33 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
       const title = details?.title || details?.name || item.title || item.name;
       const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(title)}&lang=${wikiLang}`);
       setWikiData(res.data);
+      setActiveWikiSection(0);
     } catch (err) {
       console.error("Wiki fetch failed");
     } finally {
       setWikiLoading(false);
+    }
+  };
+
+  const askAIRA = async (e) => {
+    e.preventDefault();
+    if (!airaInput.trim()) return;
+    const prompt = airaInput;
+    setAiraChat(prev => [...prev, { role: 'user', content: prompt }]);
+    setAiraInput('');
+    setAiraLoading(true);
+
+    try {
+        const titleName = details?.title || details?.name || item.title || item.name;
+        const res = await api.post('/ai/oracle', { 
+            prompt: `About ${titleName}: ${prompt}`,
+            history: airaChat
+        });
+        setAiraChat(prev => [...prev, { role: 'aira', content: res.data.reply }]);
+    } catch (err) {
+        setAiraChat(prev => [...prev, { role: 'aira', content: "The connection to the archives is momentarily veiled." }]);
+    } finally {
+        setAiraLoading(false);
     }
   };
 
@@ -77,25 +100,22 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
             
             {/* 🎥 NAVIGATION TABS */}
             <div className="modal-nav">
-              <button className={activeTab === 'preview' ? 'active' : ''} onClick={() => setActiveTab('preview')}>
-                Cinematic Preview
-              </button>
-              <button className={activeTab === 'encyclopedia' ? 'active' : ''} onClick={() => setActiveTab('encyclopedia')}>
-                Encyclopedia 📜
-              </button>
-              <button className={activeTab === 'ai' ? 'active' : ''} onClick={() => {
-                setActiveTab('ai');
-                // AIRA integration handled here or via specialized component
-              }}>
-                Ask AIRA 🔮
-              </button>
+              {['preview', 'encyclopedia', 'ai'].map(t => (
+                <button 
+                  key={t}
+                  className={activeTab === t ? 'active' : ''} 
+                  onClick={() => setActiveTab(t)}
+                >
+                  {t === 'preview' ? 'Cinematic Archive 🎥' : t === 'encyclopedia' ? 'Encyclopedia 📜' : 'Ask AIRA 🔮'}
+                </button>
+              ))}
             </div>
 
             <div className="modal-body-content">
               {activeTab === 'preview' && (
                 <div className="preview-tab animate-fade">
                   {/* YouTube Player */}
-                  <div className="player-wrapper">
+                  <div className="player-wrapper glass-card">
                     {currentVideoId && !details.hideTrailer ? (
                       <iframe
                         className="main-iframe"
@@ -107,7 +127,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                       />
                     ) : (
                       <div className="no-video-placeholder" style={{ backgroundImage: `url(https://image.tmdb.org/t/p/w780${item.poster_path})` }}>
-                        <div className="no-video-overlay"><span>Artifact Record Locked</span></div>
+                        <div className="no-video-overlay"><span>Record Encrypted</span></div>
                       </div>
                     )}
                   </div>
@@ -115,9 +135,9 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   {/* Scene Selector */}
                   <div className="discovery-grid animate-up">
                     {[
-                      ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Trailer' }] : []),
-                      ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Moment' })),
-                      ...(details.fanVideos || []).map(s => ({ ...s, type: 'Fan-Edit' })),
+                      ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []),
+                      ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic' })),
+                      ...(details.fanVideos || []).map(s => ({ ...s, type: 'Edit' })),
                       ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
                     ].map((v, i) => (
                       <div 
@@ -126,18 +146,15 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                         onClick={() => setDetails({ ...details, activeVideoId: v.id })}
                       >
                         <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} alt="thumb" />
-                        <div className="card-info">
-                          <span className="tag">{v.type}</span>
-                          <p>{v.title}</p>
-                        </div>
+                        <div className="card-info"><span className="tag">{v.type}</span></div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="info-panel">
+                  <div className="info-panel glass-card">
                     <h2 className="title-display">{details.title || details.name}</h2>
                     <div className="meta-info">
-                       <span className="rating">⭐ {details.vote_average?.toFixed(1)}</span>
+                       <span className="rating gold">⭐ {details.vote_average?.toFixed(1)}</span>
                        <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
                     </div>
                     <p className="description-text">{details.overview}</p>
@@ -147,36 +164,50 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
               {activeTab === 'encyclopedia' && (
                 <div className="encyclopedia-tab animate-fade">
-                  <div className="ency-controls">
-                    {['en', 'hi', 'ja'].map(l => (
-                      <button key={l} className={wikiLang === l ? 'active' : ''} onClick={() => { setWikiData(null); setWikiLang(l); }}>
-                        {l === 'en' ? 'English' : l === 'hi' ? 'हिंदी' : '日本語'}
-                      </button>
-                    ))}
+                  <div className="ency-header">
+                    <div className="ency-lang-bar">
+                      {['en', 'hi', 'ja'].map(l => (
+                        <button key={l} className={wikiLang === l ? 'active' : ''} onClick={() => { setWikiData(null); setWikiLang(l); }}>
+                          {l === 'en' ? 'English' : l === 'hi' ? 'हिंदी' : '日本語'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {wikiLoading ? (
                     <div className="ency-loading"><div className="spinner" /></div>
                   ) : wikiData?.error ? (
-                    <div className="ency-error">Archives for this title are currently sealed.</div>
+                    <div className="ency-error">Archive Entry Not Found</div>
                   ) : (
-                    <div className="ency-article">
-                      {wikiData?.thumbnail && <img src={wikiData.thumbnail} className="article-poster" alt="Wiki" />}
-                      <h3 className="article-title">{wikiData.title}</h3>
-                      <p className="article-summary">{wikiData.summary}</p>
-                      
-                      <div className="article-content" dangerouslySetInnerHTML={{ __html: wikiData.content }} />
-                      
-                      <div className="article-footer">
-                        <h4>External References</h4>
-                        <div className="links-row">
-                          <a href={wikiData.wikiUrl} target="_blank" rel="noreferrer" className="btn-wiki">Wikipedia Entry 🏛️</a>
-                          {wikiData.externalLinks?.map((link, i) => (
-                            <a key={i} href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer" className="btn-wiki secondary">
-                              Reference {i + 1}
-                            </a>
-                          ))}
-                        </div>
+                    <div className="ency-workspace">
+                      {/* Left: Section Menu */}
+                      <div className="ency-section-menu custom-scrollbar">
+                        <button className={activeWikiSection === -1 ? 'active' : ''} onClick={() => setActiveWikiSection(-1)}>📜 Overview</button>
+                        {wikiData.sections?.map((s, i) => (
+                          <button key={i} className={activeWikiSection === i ? 'active' : ''} onClick={() => setActiveWikiSection(i)}>
+                            {s.title}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Right: Section Content */}
+                      <div className="ency-section-content custom-scrollbar">
+                        {activeWikiSection === -1 ? (
+                          <div className="section-article animate-slide-right">
+                             <h3 className="section-h">{wikiData.title}</h3>
+                             {wikiData.originalImage && <img src={wikiData.originalImage} className="section-poster glass-card" alt="poster" />}
+                             <p className="section-p">{wikiData.summary}</p>
+                          </div>
+                        ) : (
+                          <div className="section-article animate-slide-right" key={activeWikiSection}>
+                             <h3 className="section-h">{wikiData.sections[activeWikiSection].title}</h3>
+                             <div className="wiki-parsed-html" dangerouslySetInnerHTML={{ __html: wikiData.sections[activeWikiSection].content }} />
+                          </div>
+                        )}
+
+                        <a href={wikiData.wikiUrl} target="_blank" rel="noreferrer" className="wiki-btn-link">
+                          Explore Full Wikipedia Original Archive 🏛️
+                        </a>
                       </div>
                     </div>
                   )}
@@ -184,9 +215,41 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
               )}
 
               {activeTab === 'ai' && (
-                <div className="ai-tab animate-fade">
-                   <p className="ai-teaser">Ask AIRA for mystical cinematic insights about {details?.title || details?.name}...</p>
-                   {/* GeminiOracle component should be integrated here or logic triggered */}
+                <div className="ai-modal-tab animate-fade">
+                   <div className="ai-oracle-header">
+                      <div className="oracle-aura animate-pulse" />
+                      <div className="oracle-info">
+                         <h3>Ask AIRA Vault</h3>
+                         <p>Direct Oracle Link: {details?.title || details?.name}</p>
+                      </div>
+                   </div>
+
+                   <div className="ai-modal-chat custom-scrollbar">
+                      {airaChat.length === 0 ? (
+                        <div className="ai-empty-state">
+                           <div className="ai-icon">🔮</div>
+                           <p>Seek your wisdom from AIRA. Ask me anything about this cinematic archive.</p>
+                        </div>
+                      ) : (
+                        airaChat.map((msg, i) => (
+                          <div key={i} className={`ai-msg ${msg.role}`}>
+                             <div className="msg-content glass-card">{msg.content}</div>
+                          </div>
+                        ))
+                      )}
+                      {airaLoading && <div className="aira-writing">AIRA is decrypting...</div>}
+                   </div>
+
+                   <form className="ai-modal-input" onSubmit={askAIRA}>
+                      <input 
+                        type="text" 
+                        placeholder="Seek cinematic wisdom..." 
+                        value={airaInput}
+                        onChange={(e) => setAiraInput(e.target.value)}
+                        disabled={airaLoading}
+                      />
+                      <button type="submit" disabled={airaLoading}>➤</button>
+                   </form>
                 </div>
               )}
             </div>
