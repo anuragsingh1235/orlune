@@ -4,17 +4,19 @@ const pool = require('../config/database');
 exports.searchUsers = async (req, res) => {
   const { query } = req.query;
   const userId = req.user.id;
-
   if (!query) return res.json([]);
 
   try {
-    // Split query like "Aayush kumar" into ["%Aayush%", "%kumar%"]
     const searchTerms = query.split(' ').filter(t => t.trim().length > 0).map(term => `%${term}%`);
     const result = await pool.query(
-      `SELECT id, username, avatar_url, bio 
-       FROM users 
-       WHERE (username ILIKE ANY($1::text[]) OR email ILIKE ANY($1::text[]))
-         AND id != $2
+      `SELECT u.id, u.username, u.display_id, u.avatar_url, u.bio,
+        (SELECT status FROM friend_requests WHERE (sender_id = $2 AND receiver_id = u.id)) as sent_status,
+        (SELECT status FROM friend_requests WHERE (sender_id = u.id AND receiver_id = $2)) as received_status,
+        (SELECT id FROM friend_requests WHERE (sender_id = u.id AND receiver_id = $2)) as received_request_id,
+        (SELECT status FROM friendships WHERE (user_id1 = LEAST(u.id, $2) AND user_id2 = GREATEST(u.id, $2))) as friend_status
+       FROM users u 
+       WHERE (u.username ILIKE ANY($1::text[]) OR u.email ILIKE ANY($1::text[]) OR u.display_id ILIKE ANY($1::text[]))
+         AND u.id != $2
        LIMIT 10`,
       [searchTerms, userId]
     );

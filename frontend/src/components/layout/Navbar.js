@@ -129,12 +129,12 @@ export default function Navbar() {
           <div className="mobile-auth-section">
             {user ? (
               <div className="mobile-user-info">
-                <div className="mobile-user-card">
+                <div className="mobile-user-card" onClick={() => { setMenuOpen(false); navigate('/profile'); }}>
                   <div className="user-avatar large">
                     {user.username?.[0]?.toUpperCase()}
                   </div>
                   <div className="user-details">
-                    <span className="user-name">{user.username}</span>
+                    <span className="user-name">{user.username} <span style={{ color: 'var(--primary)', fontSize: '0.7rem' }}>[View Profile]</span></span>
                     <span className="user-email">{user.email}</span>
                   </div>
                 </div>
