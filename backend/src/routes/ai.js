@@ -29,9 +29,8 @@ router.post("/oracle", async (req, res) => {
     if (!reply) throw new Error("The archives are silent.");
     res.json({ reply });
   } catch (err) {
-    const errorDetail = err.response?.data?.error?.message || err.message;
-    console.error("AIRA ERROR:", errorDetail);
-    res.json({ reply: `DEBUG ERROR: ${errorDetail}. Please check your Key on Vercel.` });
+    console.error("AIRA ERROR:", err.response?.data || err.message);
+    res.json({ reply: "The connection to the archives is momentarily veiled. Seek your answer again, traveler." });
   }
 });
 
