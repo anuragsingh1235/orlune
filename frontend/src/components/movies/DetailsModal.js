@@ -69,7 +69,8 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     }, 12000);
 
     try {
-      const titleStr = specificTitle || details?.title || details?.name || item.title || item.name;
+      const localizedTitle = wikiData?.localizedTitles?.[wikiLang];
+      const titleStr = specificTitle || localizedTitle || details?.title || details?.name || item.title || item.name;
       const res = await api.get(`/wiki/wiki?title=${encodeURIComponent(titleStr)}&lang=${wikiLang}`);
       clearTimeout(watchdog);
       setWikiData(res.data);
@@ -304,9 +305,8 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                                    __html: wikiData?.sections?.[activeWikiSection]?.content
                                      ?.replace(/id="[^"]*"/g, '')
                                      ?.replace(/class="[^"]*"/g, '')
-                                     ?.replace(/<span[^>]*>\[edit\]<\/span>/g, '')
                                      ?.replace(/\[edit\]/g, '')
-                                     ?.replace(/>\w+\[edit\]/g, '>') // fix things like >Plot[edit]
+                                     ?.replace(/>\w+\[edit\]/g, '>')
                                      ?.replace(/\[\d+\]/g, '')
                                      ?.replace(/\[note \d+\]/g, '')
                                      ?.replace(/>\w+\[Edit\]/g, '>')

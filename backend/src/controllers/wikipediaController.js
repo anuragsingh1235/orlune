@@ -26,20 +26,26 @@ exports.getWikiData = async (req, res) => {
         const pTitle = sRes.data.query.search[0]?.title;
         if (!pTitle) return res.json({ error: 'Not found' });
 
-        const [sum, content] = await Promise.all([
+        const [sum, content, links] = await Promise.all([
             axios.get(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pTitle)}`, { headers }),
-            axios.get(`https://${lang}.wikipedia.org/w/api.php`, { params: { action: 'parse', page: pTitle, prop: 'sections|text|images', format: 'json' }, headers })
+            axios.get(`https://${lang}.wikipedia.org/w/api.php`, { params: { action: 'parse', page: pTitle, prop: 'sections|text|images', format: 'json' }, headers }),
+            axios.get(`https://${lang}.wikipedia.org/w/api.php`, { params: { action: 'query', titles: pTitle, prop: 'langlinks', lllimit: 50, format: 'json' }, headers })
         ]);
 
         const fullHtml = content.data.parse.text['*'];
         const sections = content.data.parse.sections.filter(s => s.toclevel === 1);
         
+        // 🗺️ LOCALIZE ARCHIVE: Map same film titles across languages
+        const localizedTitles = {};
+        const pLinks = Object.values(links.data.query.pages)[0]?.langlinks;
+        if (pLinks) pLinks.forEach(l => { localizedTitles[l.lang] = l['*']; });
+
         const parsed = await Promise.all(sections.map(async (s, i) => {
+            // ... (rest of the existing section parsing logic remains the same)
             const start = fullHtml.indexOf(`id="${s.anchor}"`);
             const end = i < sections.length - 1 ? fullHtml.indexOf(`id="${sections[i+1].anchor}"`) : undefined;
             let body = fullHtml.slice(start, end);
             
-            // 📸 VISUAL ARCHIVE HUNT: Extract every image from the section
             const sectionImages = [];
             const imgMatch = body.match(/src="([^"]+)"/g);
             if (imgMatch) {
@@ -51,14 +57,13 @@ exports.getWikiData = async (req, res) => {
                 });
             }
 
-            // 🏛️ DEEP SANITIZATION: Vaporize Digital Junk
             body = body
                 .replace(/id="[^"]*"/g, '')
                 .replace(/class="[^"]*"/g, '')
                 .replace(/<span[^>]*>\[edit\]<\/span>/g, '')
-                .replace(/\[\d+\]/g, '') // remove [1], [2] etc
-                .replace(/\[note \d+\]/g, '') // remove [note 1] etc
-                .replace(/>\w+\[edit\]/g, '>') // fix things like >Plot[edit]
+                .replace(/\[\d+\]/g, '')
+                .replace(/\[note \d+\]/g, '')
+                .replace(/>\w+\[edit\]/g, '>')
                 .replace(/\[edit\]/g, '');
 
             const isCast = s.line.toLowerCase().includes('cast');
@@ -77,6 +82,13 @@ exports.getWikiData = async (req, res) => {
             return { title: s.line, content: body, members, sectionImages: sectionImages.slice(0, 5) };
         }));
 
-        res.json({ title: pTitle, summary: sum.data.extract, thumbnail: sum.data.thumbnail?.source, sections: parsed, wikiUrl: `https://${lang}.wikipedia.org/wiki/${pTitle}` });
+        res.json({ 
+            title: pTitle, 
+            summary: sum.data.extract, 
+            thumbnail: sum.data.thumbnail?.source, 
+            sections: parsed, 
+            localizedTitles, // ⚓ Anchor for global sync
+            wikiUrl: `https://${lang}.wikipedia.org/wiki/${pTitle}` 
+        });
     } catch { res.status(500).send(); }
 };
