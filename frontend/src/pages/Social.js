@@ -91,11 +91,8 @@ export default function Social() {
     try {
       await api.post('/social/request', { receiver_id: receiverId });
       toast.success("Connection request sent");
-      
-      // Update local search results to show pending
-      setSearchResults(prev => prev.map(u => 
-        u.id === receiverId ? { ...u, sent_status: 'pending' } : u
-      ));
+      setSearchQuery('');
+      setSearchResults([]);
     } catch (err) {
       toast.error(err.response?.data?.error || "Request failed");
     }
@@ -163,31 +160,15 @@ export default function Social() {
             />
             {searchResults.length > 0 && (
               <div className="search-results">
-                 {searchResults.map(u => {
-                   const isSent = u.sent_status === 'pending';
-                   const isReceived = u.received_status === 'pending';
-                   const isFriend = u.friend_status === 'accepted';
-
-                   return (
-                     <div key={u.id} className="search-item">
-                        <div className="contact-avatar">{u.username[0].toUpperCase()}</div>
-                        <div className="contact-info">
-                           <h4>{u.username} <span className="search-id">#{u.display_id}</span></h4>
-                           <div className="search-actions">
-                              {isFriend ? (
-                                <span className="status-label">Ally</span>
-                              ) : isSent ? (
-                                <span className="status-label">Transmitting...</span>
-                              ) : isReceived ? (
-                                <button className="btn btn-xs btn-primary" onClick={() => respondToRequest(u.received_request_id, 'accepted')}>Accept</button>
-                              ) : (
-                                <button className="btn btn-xs btn-outline" onClick={() => sendFriendRequest(u.id)}>Add Ally</button>
-                              )}
-                           </div>
-                        </div>
-                     </div>
-                   );
-                 })}
+                 {searchResults.map(u => (
+                   <div key={u.id} className="search-item" onClick={() => sendFriendRequest(u.id)}>
+                      <div className="contact-avatar">{u.username[0].toUpperCase()}</div>
+                      <div className="contact-info">
+                         <h4>{u.username}</h4>
+                         <p>Click to add friend</p>
+                      </div>
+                   </div>
+                 ))}
               </div>
             )}
           </div>

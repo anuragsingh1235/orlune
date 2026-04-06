@@ -9,7 +9,6 @@ async function migrate() {
         username VARCHAR(50) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        display_id VARCHAR(20) UNIQUE,
         avatar_url VARCHAR(500) DEFAULT '',
         bio TEXT DEFAULT '',
         battle_wins INTEGER DEFAULT 0,
