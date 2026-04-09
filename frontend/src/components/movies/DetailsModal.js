@@ -135,7 +135,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     const regions = Object.values(details['watch/providers'].results);
     regions.forEach(r => {
       if (!watchLink && r.link) watchLink = r.link;
-      const offers = [...(r.flatrate || []), ...(r.free || [])];
+      const offers = [...(r.flatrate || []), ...(r.free || []), ...(r.rent || []), ...(r.buy || [])];
       offers.forEach(p => {
         // Exclude redundant small providers or just distinct by provider_id
         if (!seen.has(p.provider_id)) {
@@ -221,9 +221,10 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   </div>
 
                   {/* 📺 WATCH PLATFORMS (Premium UI) */}
-                  {globalProviders.length > 0 && (
-                    <div className="watch-platforms-container animate-up">
-                      <h3 className="platforms-title">Streaming On <span>(Available Now)</span></h3>
+                  <div className="watch-platforms-container animate-up">
+                    <h3 className="platforms-title">Streaming On <span>(Global Archives)</span></h3>
+                    
+                    {globalProviders.length > 0 ? (
                       <div className="platforms-grid custom-scrollbar">
                          {globalProviders.map((p, idx) => (
                             <a 
@@ -242,8 +243,12 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                             </a>
                          ))}
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', borderRadius: 12 }}>
+                        No digital streams or archives available for this title yet.
+                      </div>
+                    )}
+                  </div>
 
                 </div>
               )}
