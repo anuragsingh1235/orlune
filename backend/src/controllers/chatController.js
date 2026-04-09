@@ -3,9 +3,11 @@ const pool = require('../config/database');
 // ─── SEND MESSAGE ──────────────────────────────────────────
 exports.sendMessage = async (req, res) => {
   const sender_id = req.user.id;
-  const { receiver_id, content } = req.body;
-
-  if (!content) return res.status(400).json({ error: "Content required" });
+  const { receiver_id, content, attachment_url, attachment_type } = req.body;
+  
+  if (!content && !attachment_url) {
+    return res.status(400).json({ error: "Content or attachment required" });
+  }
 
   try {
     // Check if blocked
@@ -22,10 +24,10 @@ exports.sendMessage = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO messages (sender_id, receiver_id, content) 
-       VALUES ($1, $2, $3) 
+      `INSERT INTO messages (sender_id, receiver_id, content, attachment_url, attachment_type) 
+       VALUES ($1, $2, $3, $4, $5) 
        RETURNING *`,
-      [sender_id, receiver_id, content]
+      [sender_id, receiver_id, content || '', attachment_url || null, attachment_type || null]
     );
 
     res.json(result.rows[0]);

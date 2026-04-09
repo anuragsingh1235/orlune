@@ -14,7 +14,11 @@ export default function Social() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef(null);
+  const imgInputRef = useRef(null);
+  const docInputRef = useRef(null);
+  const vidInputRef = useRef(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -107,17 +111,43 @@ export default function Social() {
     }
   };
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !activeChat) return;
-    const content = newMessage;
-    setNewMessage('');
+  const sendMessage = async (e, forcedContent = null, attachment = null) => {
+    if (e) e.preventDefault();
+    const contentToSend = forcedContent !== null ? forcedContent : newMessage;
+    if (!contentToSend.trim() && !attachment) return;
+
     try {
-      const res = await api.post('/chat/send', { receiver_id: activeChat.id, content });
+      const payload = {
+        receiver_id: activeChat.id,
+        content: contentToSend
+      };
+      
+      if (attachment) {
+        payload.attachment_url = attachment.url;
+        payload.attachment_type = attachment.type;
+      }
+
+      const res = await api.post('/chat/send', payload);
       setMessages([...messages, res.data]);
+      if (forcedContent === null) setNewMessage('');
     } catch (err) {
-      toast.error("Message intercepted or failed");
+      toast.error("Transmission failed");
     }
+  };
+
+  const handleFileSelect = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) return toast.error("File exceeds 10MB limit");
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      sendMessage(null, "", { url: reader.result, type });
+      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const blockUser = async (friendId) => {
@@ -299,28 +329,41 @@ export default function Social() {
             )}
 
             <div className="chat-messages">
-               {messages.map((m, idx) => {
-                 const isMe = m.sender_id === (friends.find(f => f.id === m.sender_id) ? false : true); // Simplification, server returns sender_id
-                 // Accurate Me check: Since friends list contains others, if sender_id is not in friends list, it's Me OR check context
-                 // Correct way: use auth user id
-                 const meId = JSON.parse(localStorage.getItem('ww_user'))?.id;
-                 const isSentByMe = m.sender_id === meId;
+                {messages.map((m, idx) => {
+                  const meId = JSON.parse(localStorage.getItem('ww_user'))?.id;
+                  const isSentByMe = m.sender_id === meId;
 
-                 return (
-                   <div key={idx} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
-                      <div className="message-bubble">{m.content}</div>
-                      <span className="message-time">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                   </div>
-                 );
-               })}
+                  return (
+                    <div key={idx} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
+                       {m.attachment_url && (
+                          <div className="message-attachment">
+                             {m.attachment_type === 'image' && <img src={m.attachment_url} alt="Shared" className="chat-img" />}
+                             {m.attachment_type === 'video' && <video src={m.attachment_url} controls className="chat-vid" />}
+                             {m.attachment_type === 'document' && (
+                                <a href={m.attachment_url} download="attachment" className="chat-doc">
+                                   <span className="doc-icon">📄</span> Download Document
+                                </a>
+                             )}
+                          </div>
+                       )}
+                       {m.content && <div className="message-bubble">{m.content}</div>}
+                       <span className="message-time">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  );
+                })}
                <div ref={messagesEndRef} />
             </div>
 
             <div className="chat-input-area">
+               {isUploading && <div className="upload-progress">Encrypting & Uploading...</div>}
                <div className="chat-attachments">
-                  <button type="button" className="attachment-btn" title="Send Document" onClick={() => toast.success("Doc sharing unlocking soon!")}>📄</button>
-                  <button type="button" className="attachment-btn" title="Send Image" onClick={() => toast.success("Image sharing unlocking soon!")}>🖼️</button>
-                  <button type="button" className="attachment-btn" title="Send Video" onClick={() => toast.success("Video sharing unlocking soon!")}>🎬</button>
+                  <button type="button" className="attachment-btn" title="Send Document" onClick={() => docInputRef.current.click()}>📄</button>
+                  <button type="button" className="attachment-btn" title="Send Image" onClick={() => imgInputRef.current.click()}>🖼️</button>
+                  <button type="button" className="attachment-btn" title="Send Video" onClick={() => vidInputRef.current.click()}>🎬</button>
+                  
+                  <input type="file" ref={docInputRef} hidden onChange={(e) => handleFileSelect(e, 'document')} />
+                  <input type="file" ref={imgInputRef} hidden accept="image/*" onChange={(e) => handleFileSelect(e, 'image')} />
+                  <input type="file" ref={vidInputRef} hidden accept="video/*" onChange={(e) => handleFileSelect(e, 'video')} />
                </div>
                <form className="chat-input-container" onSubmit={sendMessage}>
                   <input 
