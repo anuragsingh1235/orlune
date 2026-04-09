@@ -28,6 +28,9 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
   const [airaChat, setAiraChat] = useState([]);
   const [airaLoading, setAiraLoading] = useState(false);
 
+  // Streaming State
+  const [providerFilter, setProviderFilter] = useState('all');
+
   useEffect(() => {
     // Lock scroll when modal is open
     document.body.style.overflow = 'hidden';
@@ -39,6 +42,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     api.get(endpoint)
       .then((res) => {
         setDetails({ ...res.data, hideTrailer });
+        document.title = `${res.data.title || res.data.name} - Watchlist Wars`;
       })
       .catch((err) => {
         console.error('Details fetch failed:', err);
@@ -48,6 +52,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
     return () => {
       document.body.style.overflow = 'auto';
+      document.title = "Watchlist Wars | Orlune";
     };
   }, [item]);
 
@@ -135,16 +140,26 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     const regions = Object.values(details['watch/providers'].results);
     regions.forEach(r => {
       if (!watchLink && r.link) watchLink = r.link;
-      const offers = [...(r.flatrate || []), ...(r.free || []), ...(r.rent || []), ...(r.buy || [])];
-      offers.forEach(p => {
-        // Exclude redundant small providers or just distinct by provider_id
-        if (!seen.has(p.provider_id)) {
-          seen.add(p.provider_id);
-          globalProviders.push(p);
-        }
-      });
+      
+      const compile = (list, type, cost) => {
+         (list || []).forEach(p => {
+           const id = p.provider_id + cost;
+           if (!seen.has(id)) {
+              seen.add(id);
+              globalProviders.push({ ...p, offerType: type, costCat: cost });
+           }
+         });
+      };
+
+      compile(r.free, 'Free', 'free');
+      compile(r.ads, 'Ads', 'free');
+      compile(r.flatrate, 'Subscription', 'paid');
+      compile(r.rent, 'Rent', 'paid');
+      compile(r.buy, 'Buy', 'paid');
     });
   }
+
+  const filteredProviders = globalProviders.filter(p => providerFilter === 'all' || p.costCat === providerFilter);
 
   return (
     <div className="modal-overlay animate-fade" onClick={onClose}>
@@ -194,13 +209,22 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
                   {/* 📺 WATCH PLATFORMS (Premium UI) Directly Below Trailer */}
                   <div className="watch-platforms-container animate-up">
-                    <h3 className="platforms-title">Streaming On <span>(Global Archives)</span></h3>
+                    <div className="platforms-header">
+                       <h3 className="platforms-title">Streaming On <span>(Global Archives)</span></h3>
+                       {globalProviders.length > 0 && (
+                         <div className="platforms-filter">
+                           <button className={providerFilter === 'all' ? 'active' : ''} onClick={() => setProviderFilter('all')}>All</button>
+                           <button className={providerFilter === 'free' ? 'active' : ''} onClick={() => setProviderFilter('free')}>Free</button>
+                           <button className={providerFilter === 'paid' ? 'active' : ''} onClick={() => setProviderFilter('paid')}>Paid</button>
+                         </div>
+                       )}
+                    </div>
                     
                     {globalProviders.length > 0 ? (
                       <div className="platforms-grid custom-scrollbar">
-                         {globalProviders.map((p, idx) => (
+                         {filteredProviders.map((p, idx) => (
                             <a 
-                              key={p.provider_id} 
+                              key={`${p.provider_id}-${p.costCat}`} 
                               href={watchLink || '#'} 
                               target="_blank" 
                               rel="noreferrer" 
@@ -211,13 +235,22 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                               <div className="platform-logo-wrapper">
                                  <img src={`https://image.tmdb.org/t/p/original${p.logo_path}`} alt={p.provider_name} />
                               </div>
-                              <span className="platform-name">{p.provider_name}</span>
+                              <div className="platform-info">
+                                 <span className="platform-name">{p.provider_name}</span>
+                                 <span className={`platform-type-badge ${p.offerType.toLowerCase()}`}>{p.offerType}</span>
+                              </div>
+                              <div className="watch-now-btn">Watch Now</div>
                             </a>
                          ))}
+                         {filteredProviders.length === 0 && (
+                            <div className="no-platforms-filtered">No platforms found for this filter.</div>
+                         )}
                       </div>
                     ) : (
-                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', borderRadius: 12 }}>
-                        No digital streams or archives available for this title yet.
+                      <div className="empty-streaming-state">
+                        <div className="empty-icon">📡</div>
+                        <h4>Signal Lost</h4>
+                        <p>No digital streams or archives available for this title yet. It might be in theaters or unreleased.</p>
                       </div>
                     )}
                   </div>
@@ -243,8 +276,9 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
                   <div className="info-panel glass-card">
                     <h2 className="title-display">{details.title || details.name}</h2>
-                    <div className="meta-info">
+                    <div className="meta-info meta-gap">
                        <span className="rating gold">⭐ {details.vote_average?.toFixed(1)}</span>
+                       <span className="meta-divider">|</span>
                        <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
                     </div>
                     <p className="description-text">{details.overview}</p>

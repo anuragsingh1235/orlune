@@ -846,11 +846,19 @@
   box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
 }
 
+.platforms-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .platforms-title {
   font-size: 1.2rem;
   font-weight: 800;
   color: #fff;
-  margin-bottom: 20px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -860,6 +868,33 @@
   color: var(--accent);
   font-size: 0.85rem;
   margin-left: 8px;
+}
+
+.platforms-filter {
+  display: flex;
+  gap: 8px;
+  background: rgba(0,0,0,0.3);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.platforms-filter button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.platforms-filter button.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 .platforms-grid {
@@ -878,7 +913,7 @@
   text-decoration: none;
   padding: 16px;
   border-radius: 16px;
-  min-width: 120px;
+  min-width: 140px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -893,7 +928,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(229, 9, 20, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at top, rgba(229, 9, 20, 0.2) 0%, transparent 80%);
   opacity: 0;
   transition: opacity 0.4s ease;
 }
@@ -922,6 +957,7 @@
 
 .platform-card:hover .platform-logo-wrapper {
   transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.6);
 }
 
 .platform-logo-wrapper img {
@@ -930,16 +966,125 @@
   object-fit: cover;
 }
 
-.platform-name {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #fff;
-  text-align: center;
+.platform-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   position: relative;
   z-index: 1;
+}
+
+.platform-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
   transition: color 0.3s ease;
 }
 
 .platform-card:hover .platform-name {
   color: var(--accent);
+}
+
+.platform-type-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+  color: var(--text-muted);
+}
+
+.platform-type-badge.subscription {
+  background: rgba(147, 51, 234, 0.2);
+  color: #c084fc;
+}
+
+.platform-type-badge.free, .platform-type-badge.ads {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.platform-type-badge.rent, .platform-type-badge.buy {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+}
+
+.watch-now-btn {
+  margin-top: 4px;
+  padding: 6px 16px;
+  background: rgba(229, 9, 20, 0.1);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border-radius: 20px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  opacity: 0.8;
+}
+
+.platform-card:hover .watch-now-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+  transform: translateY(-2px);
+  opacity: 1;
+  box-shadow: 0 5px 15px rgba(229, 9, 20, 0.4);
+}
+
+.empty-streaming-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px dashed rgba(255,255,255,0.1);
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-streaming-state h4 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.empty-streaming-state p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 300px;
+  line-height: 1.4;
+}
+
+.no-platforms-filtered {
+  padding: 20px;
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Meta Data Divider */
+.meta-gap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.meta-divider {
+  color: rgba(255,255,255,0.2);
+  margin: 0 4px;
 }
