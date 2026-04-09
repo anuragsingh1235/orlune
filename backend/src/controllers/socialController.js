@@ -144,3 +144,19 @@ exports.blockUser = async (req, res) => {
     res.status(500).json({ error: "Block failed" });
   }
 };
+
+// ─── REMOVE FRIEND ──────────────────────────────────────────
+exports.removeFriend = async (req, res) => {
+  const userId = req.user.id;
+  const { friendId } = req.body;
+
+  try {
+    const u1 = Math.min(userId, friendId);
+    const u2 = Math.max(userId, friendId);
+    
+    await pool.query("DELETE FROM friendships WHERE user_id1=$1 AND user_id2=$2", [u1, u2]);
+    res.json({ message: "Friend removed" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to remove friend" });
+  }
+};

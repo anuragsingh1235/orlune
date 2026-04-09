@@ -132,6 +132,18 @@ export default function Social() {
     }
   };
 
+  const removeFriend = async (friendId) => {
+    if (!window.confirm("Are you sure you want to remove this connection?")) return;
+    try {
+      await api.post('/social/remove', { friendId });
+      toast.success("Connection removed");
+      setActiveChat(null);
+      fetchInitialData();
+    } catch (err) {
+      toast.error("Removal failed");
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -248,7 +260,8 @@ export default function Social() {
                   </div>
                </div>
                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-sm btn-ghost" onClick={() => blockUser(activeChat.id)}>Block</button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => removeFriend(activeChat.id)} style={{color: '#EBCB8B', borderColor: 'rgba(235, 203, 139, 0.2)'}}>Remove</button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => blockUser(activeChat.id)} style={{color: '#BF616A', borderColor: 'rgba(191, 97, 106, 0.2)'}}>Block</button>
                </div>
             </div>
 
@@ -300,6 +313,11 @@ export default function Social() {
             </div>
 
             <div className="chat-input-area">
+               <div className="chat-attachments">
+                  <button type="button" className="attachment-btn" title="Send Document" onClick={() => toast.success("Doc sharing unlocking soon!")}>📄</button>
+                  <button type="button" className="attachment-btn" title="Send Image" onClick={() => toast.success("Image sharing unlocking soon!")}>🖼️</button>
+                  <button type="button" className="attachment-btn" title="Send Video" onClick={() => toast.success("Video sharing unlocking soon!")}>🎬</button>
+               </div>
                <form className="chat-input-container" onSubmit={sendMessage}>
                   <input 
                     type="text" 

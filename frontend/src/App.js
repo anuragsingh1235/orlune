@@ -13,6 +13,7 @@ import Battles from './pages/Battles';
 import Leaderboard from './pages/Leaderboard';
 import Social from './pages/Social';
 import GeminiOracle from './components/movies/GeminiOracle';
+import Profile from './pages/Profile';
 import './styles/globals.css';
 
 function ProtectedRoute({ children }) {
@@ -35,6 +36,7 @@ function AppRoutes() {
         <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
         <Route path="/battles" element={<ProtectedRoute><Battles /></ProtectedRoute>} />
         <Route path="/social" element={<ProtectedRoute><Social /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

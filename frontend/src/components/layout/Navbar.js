@@ -129,7 +129,7 @@ export default function Navbar() {
           <div className="mobile-auth-section">
             {user ? (
               <div className="mobile-user-info">
-                <div className="mobile-user-card">
+                <Link to="/profile" className="mobile-user-card" onClick={() => setMenuOpen(false)} style={{ textDecoration: 'none' }}>
                   <div className="user-avatar large">
                     {user.username?.[0]?.toUpperCase()}
                   </div>
@@ -137,7 +137,7 @@ export default function Navbar() {
                     <span className="user-name">{user.username}</span>
                     <span className="user-email">{user.email}</span>
                   </div>
-                </div>
+                </Link>
                 <button onClick={handleLogout} className="mobile-logout-btn">
                   Logout from Account
                 </button>

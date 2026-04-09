@@ -126,7 +126,7 @@ exports.login = async (req, res) => {
 exports.me = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, username, email FROM users WHERE id=$1",
+      "SELECT id, username, email, avatar_url, bio FROM users WHERE id=$1",
       [req.user?.id || 1] // temp fallback
     );
 
@@ -139,6 +139,21 @@ exports.me = async (req, res) => {
   } catch (err) {
     console.error("ME ERROR:", err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+/* ================= UPDATE PROFILE ================= */
+exports.updateProfile = async (req, res) => {
+  const { avatar_url, bio } = req.body;
+  try {
+    const result = await pool.query(
+      "UPDATE users SET avatar_url=$1, bio=$2 WHERE id=$3 RETURNING id, username, email, avatar_url, bio",
+      [avatar_url || '', bio || '', req.user.id]
+    );
+    res.json({ message: "Profile updated successfully", user: result.rows[0] });
+  } catch (err) {
+    console.error("UPDATE PROFILE ERROR:", err);
+    res.status(500).json({ error: "Failed to update profile" });
   }
 };
 

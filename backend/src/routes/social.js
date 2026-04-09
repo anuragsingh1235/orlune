@@ -11,5 +11,6 @@ router.get('/requests', socialController.getPendingRequests);
 router.post('/respond', socialController.respondToRequest);
 router.get('/friends', socialController.getFriends);
 router.post('/block', socialController.blockUser);
+router.post('/remove', socialController.removeFriend);
 
 module.exports = router;
