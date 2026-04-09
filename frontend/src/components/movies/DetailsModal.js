@@ -159,7 +159,24 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
     });
   }
 
-  const filteredProviders = globalProviders.filter(p => providerFilter === 'all' || p.costCat === providerFilter);
+  // Fallback: If TMDB has no data but title is released, provide Universal Search checks
+  let isFallback = false;
+  if (globalProviders.length === 0) {
+    isFallback = true;
+    globalProviders.push(
+      { provider_id: 991, provider_name: 'Netflix', logo_path: '/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg', offerType: 'Search', costCat: 'all' },
+      { provider_id: 992, provider_name: 'Amazon Prime', logo_path: '/ifrXBSXWZ51EY7X6wV2QyZlK78c.jpg', offerType: 'Search', costCat: 'all' },
+      { provider_id: 993, provider_name: 'YouTube', logo_path: '/p3Z12gKq2qvJaUOMeKNU2mzKVI9.jpg', offerType: 'Search', costCat: 'all' }
+    );
+    if (item?.media_type === 'tv' || item?.media_type === 'movie') {
+       globalProviders.push({ provider_id: 994, provider_name: 'Disney+', logo_path: '/7rwgEs15tFwyR9NPQ5vqvtIJo61.jpg', offerType: 'Search', costCat: 'all' });
+    }
+    if (item?.media_type === 'anime') {
+       globalProviders.push({ provider_id: 995, provider_name: 'Crunchyroll', logo_path: '/mXeC4TrcgdU6ltE9bCBCEORwSQR.jpg', offerType: 'Search', costCat: 'all' });
+    }
+  }
+
+  const filteredProviders = globalProviders.filter(p => providerFilter === 'all' || p.costCat === providerFilter || p.costCat === 'all');
 
   // Instant Deep-Link Generator
   const getDirectLink = (providerName, fallbackLink) => {
@@ -230,8 +247,11 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   {/* 📺 WATCH PLATFORMS (Premium UI) Directly Below Trailer */}
                   <div className="watch-platforms-container animate-up">
                     <div className="platforms-header">
-                       <h3 className="platforms-title">Streaming On <span>(Global Archives)</span></h3>
-                       {globalProviders.length > 0 && (
+                       <h3 className="platforms-title">
+                         {isFallback ? 'Check Availability' : 'Streaming On'} 
+                         <span>({isFallback ? 'Global Search' : 'Global Archives'})</span>
+                       </h3>
+                       {!isFallback && globalProviders.length > 0 && (
                          <div className="platforms-filter">
                            <button className={providerFilter === 'all' ? 'active' : ''} onClick={() => setProviderFilter('all')}>All</button>
                            <button className={providerFilter === 'free' ? 'active' : ''} onClick={() => setProviderFilter('free')}>Free</button>
@@ -259,20 +279,14 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                                  <span className="platform-name">{p.provider_name}</span>
                                  <span className={`platform-type-badge ${p.offerType.toLowerCase()}`}>{p.offerType}</span>
                               </div>
-                              <div className="watch-now-btn">Watch Now</div>
+                              <div className="watch-now-btn">{isFallback ? 'Search Link' : 'Watch Now'}</div>
                             </a>
                          ))}
                          {filteredProviders.length === 0 && (
                             <div className="no-platforms-filtered">No platforms found for this filter.</div>
                          )}
                       </div>
-                    ) : (
-                      <div className="empty-streaming-state">
-                        <div className="empty-icon">📡</div>
-                        <h4>Signal Lost</h4>
-                        <p>No digital streams or archives available for this title yet. It might be in theaters or unreleased.</p>
-                      </div>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* Scene Selector */}
