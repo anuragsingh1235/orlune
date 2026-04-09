@@ -40,9 +40,24 @@
 .loss { color: var(--accent); }
 .lb-films { font-size: 14px; color: var(--text-secondary); }
 
-@media (max-width: 600px) {
-  .lb-thead, .lb-trow { grid-template-columns: 44px 1fr 80px 70px; }
-  .lb-films { display: none; }
+@media (max-width: 768px) {
+  .lb-thead, .lb-trow {
+    grid-template-columns: 32px 1fr 90px;
+    padding: 12px 10px;
+    gap: 10px;
+  }
+  .lb-thead span:nth-child(3),
+  .lb-thead span:nth-child(4),
+  .lb-pts, .lb-wl {
+    display: none; /* Hide points and win/loss on very small screens so content fits perfectly */
+  }
+  .lb-social-cell {
+    min-width: unset !important;
+  }
+  .btn-social {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
 }
 
 /* SOCIAL CONNECT STYLES */

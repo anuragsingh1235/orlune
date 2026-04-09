@@ -231,9 +231,9 @@
 
 /* ── RESPONSIVENESS ── */
 @media (max-width: 1000px) {
-  .social-page { flex-direction: column; height: auto; }
+  .social-page { flex-direction: column; height: auto; padding-bottom: 80px; }
   .social-sidebar { width: 100%; }
-  .chat-window { min-height: 500px; }
+  .chat-window { min-height: 60vh; margin-top: 10px; }
 }
 
 .no-chat-selected {
