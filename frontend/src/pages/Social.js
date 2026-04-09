@@ -183,18 +183,22 @@ export default function Social() {
 
         {/* Pending Requests */}
         {requests.length > 0 && (
-           <div className="social-card">
+           <div className="social-card requests-shimmer">
               <div className="social-card-header">
-                <h3>Friend Requests <span className="badge-count">{requests.length}</span></h3>
+                <h3>Friend Requests <span className="badge-count pulse">{requests.length}</span></h3>
               </div>
               <div className="contacts-list">
                  {requests.map(req => (
                    <div key={req.id} className="request-item">
                       <div className="contact-avatar">{req.username[0].toUpperCase()}</div>
-                      <div className="contact-info"><h4>{req.username}</h4></div>
+                      <div className="contact-info"><h4>{req.username}</h4><p className="request-text">Wants to align</p></div>
                       <div className="request-actions">
-                         <button className="btn btn-sm btn-primary" onClick={() => respondToRequest(req.id, 'accepted')}>✓</button>
-                         <button className="btn btn-sm btn-secondary" onClick={() => respondToRequest(req.id, 'rejected')}>✕</button>
+                         <button className="premium-btn accept" onClick={() => respondToRequest(req.id, 'accepted')} title="Accept">
+                           <span className="premium-icon">✓</span>
+                         </button>
+                         <button className="premium-btn reject" onClick={() => respondToRequest(req.id, 'rejected')} title="Reject">
+                           <span className="premium-icon">✕</span>
+                         </button>
                       </div>
                    </div>
                  ))}
@@ -249,23 +253,33 @@ export default function Social() {
             </div>
 
             {/* Friend's Watchlist Preview */}
-            <div className="friend-watchlist-preview">
-               <div className="preview-header">
-                  <span>WATCHLIST ARCHIVE</span>
-                  {watchlistLoading ? <div className="mini-spinner" /> : <span>{friendWatchlist.length} Records</span>}
-               </div>
-               <div className="preview-grid">
-                  {friendWatchlist.length > 0 ? (
-                    friendWatchlist.map(item => (
-                      <div key={item.id} className="preview-item">
-                         <img src={item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : 'https://via.placeholder.com/92x138'} alt={item.title} />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="empty-preview">No records discovered in this vault.</div>
-                  )}
-               </div>
-            </div>
+            {activeChat.status === 'accepted' ? (
+              <div className="friend-watchlist-preview">
+                 <div className="preview-header">
+                    <span>WATCHLIST ARCHIVE</span>
+                    {watchlistLoading ? <div className="mini-spinner" /> : <span>{friendWatchlist.length} Records</span>}
+                 </div>
+                 <div className="preview-grid">
+                    {friendWatchlist.length > 0 ? (
+                      friendWatchlist.map(item => (
+                        <div key={item.id} className="preview-item">
+                           <img src={item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : 'https://via.placeholder.com/92x138'} alt={item.title} />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-preview">No records discovered in this vault.</div>
+                    )}
+                 </div>
+              </div>
+            ) : (
+              <div className="locked-archive">
+                 <div className="locked-icon">🔒</div>
+                 <div className="locked-info">
+                    <h4>Archive Classified</h4>
+                    <p>Requires an active alliance to access this user's records.</p>
+                 </div>
+              </div>
+            )}
 
             <div className="chat-messages">
                {messages.map((m, idx) => {

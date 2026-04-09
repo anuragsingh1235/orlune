@@ -9,6 +9,8 @@ export default function Leaderboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [friendsList, setFriendsList] = useState([]);
+
   useEffect(() => {
     api.get('/battles/leaderboard')
       .then((r) => {
@@ -18,7 +20,13 @@ export default function Leaderboard() {
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+
+    if (user) {
+      api.get('/social/friends').then(res => {
+         setFriendsList(Array.isArray(res.data) ? res.data.map(f => f.id) : []);
+      }).catch(err => console.error(err));
+    }
+  }, [user]);
 
   const [sentRequests, setSentRequests] = useState([]);
 
@@ -101,7 +109,9 @@ export default function Leaderboard() {
               </span>
               <div className="lb-social-cell" style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '12px' }}>
                 {u.id !== user?.id && (
-                  sentRequests.includes(u.id) ? (
+                  friendsList.includes(u.id) ? (
+                    <button className="btn-social sent" disabled>Already Friends</button>
+                  ) : sentRequests.includes(u.id) ? (
                     <button className="btn-social sent" disabled>Requested</button>
                   ) : (
                     <button className="btn-social" onClick={() => sendRequest(u.id)}>+ Connect</button>

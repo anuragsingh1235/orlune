@@ -339,3 +339,104 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+/* ── PREMIUM REQUEST ACTIONS ── */
+.requests-shimmer {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(94, 129, 172, 0.3);
+}
+
+.request-text {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.premium-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.premium-btn.accept { background: rgba(143, 188, 187, 0.1); color: var(--success); }
+.premium-btn.accept:hover { background: var(--success); color: #fff; transform: scale(1.15) translateY(-2px); box-shadow: 0 6px 15px rgba(143, 188, 187, 0.4); }
+
+.premium-btn.reject { background: rgba(191, 97, 106, 0.1); color: #bf616a; }
+.premium-btn.reject:hover { background: #bf616a; color: #fff; transform: scale(1.15) translateY(-2px); box-shadow: 0 6px 15px rgba(191, 97, 106, 0.4); }
+
+.premium-icon {
+  font-weight: 800;
+  font-size: 0.85rem;
+  z-index: 2;
+}
+
+.pulse {
+  animation: notification-pulse 2s infinite;
+}
+
+@keyframes notification-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(94, 129, 172, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(94, 129, 172, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(94, 129, 172, 0); }
+}
+
+/* ── LOCKED ARCHIVE ── */
+.locked-archive {
+  padding: 20px 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.locked-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  font-size: 1.5rem;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+}
+
+.locked-info h4 {
+  font-size: 0.95rem;
+  color: #fff;
+  margin-bottom: 4px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.locked-info p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
