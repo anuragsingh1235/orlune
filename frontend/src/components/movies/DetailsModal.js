@@ -161,10 +161,41 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
   const filteredProviders = globalProviders.filter(p => providerFilter === 'all' || p.costCat === providerFilter);
 
-  // Fast Global Redirects - Bypass TMDB proxy for speed
+  // Complete Per-Platform Deep Link Engine
   const getDirectLink = (providerName) => {
     const titleObj = details?.title || details?.name || item?.title || item?.name || '';
     const title = encodeURIComponent(titleObj);
+    const n = providerName.toLowerCase();
+
+    // Tier 1: Direct search URLs (confirmed working)
+    if (n.includes('netflix'))        return `https://www.netflix.com/search?q=${title}`;
+    if (n.includes('prime') || n.includes('amazon')) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${title}`;
+    if (n.includes('disney'))         return `https://www.disneyplus.com/search?q=${title}`;
+    if (n.includes('max') || n.includes('hbo')) return `https://play.max.com/search?q=${title}`;
+    if (n.includes('hulu'))           return `https://www.hulu.com/search?q=${title}`;
+    if (n.includes('apple'))          return `https://tv.apple.com/search?term=${title}`;
+    if (n.includes('peacock'))        return `https://www.peacocktv.com/watch/search?q=${title}`;
+    if (n.includes('paramount'))      return `https://www.paramountplus.com/search/?q=${title}`;
+    if (n.includes('crunchyroll'))    return `https://www.crunchyroll.com/search?q=${title}`;
+    if (n.includes('youtube'))        return `https://www.youtube.com/results?search_query=${title}+full+movie`;
+    if (n.includes('mubi'))           return `https://mubi.com/en/films?q=${title}`;
+    if (n.includes('tubi'))           return `https://tubitv.com/search?queryItems=${title}`;
+    if (n.includes('pluto'))          return `https://pluto.tv/search#${title}`;
+    if (n.includes('fubo'))           return `https://www.fubo.tv/welcome`;
+    if (n.includes('shudder'))        return `https://www.shudder.com/search?q=${title}`;
+    if (n.includes('starz'))          return `https://www.starz.com/en/search?q=${title}`;
+    if (n.includes('showtime'))       return `https://www.showtime.com/search-results?q=${title}`;
+    if (n.includes('zee') || n.includes('zee5')) return `https://www.zee5.com/search?q=${title}`;
+    if (n.includes('jio'))            return `https://www.jiocinema.com/search?q=${title}`;
+    if (n.includes('hotstar') || n.includes('star')) return `https://www.hotstar.com/search?q=${title}`;
+    if (n.includes('sony') || n.includes('sonyliv')) return `https://www.sonyliv.com/search?q=${title}`;
+    if (n.includes('aha'))            return `https://www.aha.video/search?q=${title}`;
+    if (n.includes('mxplayer') || n.includes('mx')) return `https://www.mxplayer.in/search?q=${title}`;
+    if (n.includes('discovery') || n.includes('discovery+')) return `https://www.discoveryplus.com/search?q=${title}`;
+    if (n.includes('channel 4') || n.includes('all 4')) return `https://www.channel4.com/search?q=${title}`;
+    if (n.includes('bbc'))            return `https://www.bbc.co.uk/iplayer/search?q=${title}`;
+
+    // Last Resort: Google with platform name for any unknown provider
     return `https://www.google.com/search?q=Watch+${title}+on+${encodeURIComponent(providerName)}`;
   };
 
@@ -218,13 +249,20 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                   <div className="watch-platforms-container animate-up">
                     <div className="platforms-header">
                        <h3 className="platforms-title">Streaming On <span>(Available Platforms)</span></h3>
-                       {globalProviders.length > 0 && (
-                         <div className="platforms-filter">
-                           <button className={providerFilter === 'all' ? 'active' : ''} onClick={() => setProviderFilter('all')}>All</button>
-                           <button className={providerFilter === 'free' ? 'active' : ''} onClick={() => setProviderFilter('free')}>Free</button>
-                           <button className={providerFilter === 'paid' ? 'active' : ''} onClick={() => setProviderFilter('paid')}>Paid</button>
-                         </div>
-                       )}
+                       <div className="platforms-header-right">
+                         {globalProviders.length > 0 && (
+                           <div className="platforms-filter">
+                             <button className={providerFilter === 'all' ? 'active' : ''} onClick={() => setProviderFilter('all')}>All</button>
+                             <button className={providerFilter === 'free' ? 'active' : ''} onClick={() => setProviderFilter('free')}>Free</button>
+                             <button className={providerFilter === 'paid' ? 'active' : ''} onClick={() => setProviderFilter('paid')}>Paid</button>
+                           </div>
+                         )}
+                         {watchLink && (
+                           <a href={watchLink} target="_blank" rel="noreferrer" className="justwatch-btn">
+                             🎬 All Options
+                           </a>
+                         )}
+                       </div>
                     </div>
                     
                     {globalProviders.length > 0 ? (
@@ -246,7 +284,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                                  <span className="platform-name">{p.provider_name}</span>
                                  <span className={`platform-type-badge ${p.offerType.toLowerCase()}`}>{p.offerType}</span>
                               </div>
-                              <div className="watch-now-btn">Watch Now</div>
+                              <div className="watch-now-btn">Watch Now ↗</div>
                             </a>
                          ))}
                          {filteredProviders.length === 0 && (
@@ -257,7 +295,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                       <div className="empty-streaming-state">
                         <div className="empty-icon">📡</div>
                         <h4>Signal Lost</h4>
-                        <p>No verified digital streams or archives available for this title yet. It might be unreleased or region-locked.</p>
+                        <p>No verified digital streams found for this title yet. It might be unreleased or region-locked.</p>
                       </div>
                     )}
                   </div>

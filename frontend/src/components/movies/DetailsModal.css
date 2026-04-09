@@ -879,6 +879,39 @@
   border: 1px solid rgba(255,255,255,0.05);
 }
 
+.platforms-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.justwatch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(31, 182, 255, 0.08);
+  border: 1px solid rgba(31, 182, 255, 0.25);
+  color: #63d3ff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border-radius: 20px;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.justwatch-btn:hover {
+  background: rgba(31, 182, 255, 0.18);
+  border-color: #63d3ff;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(31, 182, 255, 0.3);
+  transform: translateY(-1px);
+}
+
 .platforms-filter button {
   background: transparent;
   border: none;
