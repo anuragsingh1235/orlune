@@ -24,7 +24,7 @@ export default function Leaderboard() {
 
   const sendRequest = async (targetId) => {
     try {
-      await api.post('/social/request', { receiverId: targetId });
+      await api.post('/social/request', { receiver_id: targetId });
       setSentRequests(prev => [...prev, targetId]);
     } catch (err) {
       console.error("Failed to send request:", err);
