@@ -203,7 +203,7 @@ exports.getStats = async (req, res) => {
     const [flwrs, flwng, wl] = await Promise.all([
       pool.query("SELECT COUNT(*) FROM follows WHERE following_id = $1", [userId]),
       pool.query("SELECT COUNT(*) FROM follows WHERE follower_id = $1", [userId]),
-      pool.query("SELECT COUNT(*) FROM watchlist WHERE user_id = $1", [userId]),
+      pool.query("SELECT COUNT(*) FROM watchlist_items WHERE user_id = $1", [userId]),
     ]);
     res.json({
       followers: parseInt(flwrs.rows[0].count),
@@ -231,9 +231,6 @@ exports.getMutualFriends = async (req, res) => {
   const targetId = req.params.userId || req.user.id;
   const requesterId = req.user.id;
   try {
-    if (!(await checkFriendship(requesterId, targetId))) {
-      return res.status(403).json({ error: "Mutual connection required" });
-    }
     const result = await pool.query(
       `SELECT u.id, u.username, u.avatar_url, u.bio
        FROM follows f1
@@ -253,9 +250,6 @@ exports.getFollowing = async (req, res) => {
   const targetId = req.params.userId || req.user.id;
   const requesterId = req.user.id;
   try {
-    if (!(await checkFriendship(requesterId, targetId))) {
-      return res.status(403).json({ error: "Mutual connection required" });
-    }
     const result = await pool.query(
       `SELECT u.id, u.username, u.avatar_url, u.bio
        FROM follows f JOIN users u ON f.following_id = u.id
@@ -273,9 +267,6 @@ exports.getFollowers = async (req, res) => {
   const targetId = req.params.userId || req.user.id;
   const requesterId = req.user.id;
   try {
-    if (!(await checkFriendship(requesterId, targetId))) {
-      return res.status(403).json({ error: "Mutual connection required" });
-    }
     const result = await pool.query(
       `SELECT u.id, u.username, u.avatar_url, u.bio
        FROM follows f JOIN users u ON f.follower_id = u.id
