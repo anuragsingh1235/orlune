@@ -172,7 +172,7 @@ exports.getDetails = async (req, res) => {
     if (!isImdb) {
       // 1) Fetch from TMDB
       const response = await axios.get(
-        `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${tmdbKey}&append_to_response=videos,credits`,
+        `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${tmdbKey}&append_to_response=videos,credits,watch/providers`,
         { timeout: 4000 }
       );
       data = response.data;

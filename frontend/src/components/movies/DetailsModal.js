@@ -127,6 +127,25 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
   const currentVideoId = details?.activeVideoId || details?.trailerId || details?.relatedScenes?.[0]?.id || details?.fanVideos?.[0]?.id || details?.generalVideos?.[0]?.id;
 
+  // Prepare Premium Watch Providers
+  let globalProviders = [];
+  let watchLink = '';
+  if (details && details['watch/providers']?.results) {
+    const seen = new Set();
+    const regions = Object.values(details['watch/providers'].results);
+    regions.forEach(r => {
+      if (!watchLink && r.link) watchLink = r.link;
+      const offers = [...(r.flatrate || []), ...(r.free || [])];
+      offers.forEach(p => {
+        // Exclude redundant small providers or just distinct by provider_id
+        if (!seen.has(p.provider_id)) {
+          seen.add(p.provider_id);
+          globalProviders.push(p);
+        }
+      });
+    });
+  }
+
   return (
     <div className="modal-overlay animate-fade" onClick={onClose}>
       <div className="modal-content glass-card animate-scale" onClick={(e) => e.stopPropagation()}>
@@ -200,6 +219,32 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                     </div>
                     <p className="description-text">{details.overview}</p>
                   </div>
+
+                  {/* 📺 WATCH PLATFORMS (Premium UI) */}
+                  {globalProviders.length > 0 && (
+                    <div className="watch-platforms-container animate-up">
+                      <h3 className="platforms-title">Streaming On <span>(Available Now)</span></h3>
+                      <div className="platforms-grid custom-scrollbar">
+                         {globalProviders.map((p, idx) => (
+                            <a 
+                              key={p.provider_id} 
+                              href={watchLink || '#'} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="platform-card glass-card" 
+                              style={{ animationDelay: `${idx * 0.05}s` }}
+                              title={`Watch on ${p.provider_name}`}
+                            >
+                              <div className="platform-logo-wrapper">
+                                 <img src={`https://image.tmdb.org/t/p/original${p.logo_path}`} alt={p.provider_name} />
+                              </div>
+                              <span className="platform-name">{p.provider_name}</span>
+                            </a>
+                         ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
 

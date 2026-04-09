@@ -163,10 +163,13 @@ exports.getDetails = async (req, res) => {
            if (!baseData.poster_path) baseData.poster_path = t.poster_path;
            
            // Fetch full TMDB details to get videos
-           const tFull = await axios.get(`https://api.themoviedb.org/3/tv/${t.id}?api_key=${tmdbKey}&append_to_response=videos`, { timeout: 4000 });
+           const tFull = await axios.get(`https://api.themoviedb.org/3/tv/${t.id}?api_key=${tmdbKey}&append_to_response=videos,watch/providers`, { timeout: 4000 });
            const tmdbTrailer = tFull.data.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
            if (tmdbTrailer && !a?.trailer?.youtube_id) {
              baseData.trailerId = tmdbTrailer.key;
+           }
+           if (tFull.data["watch/providers"]) {
+             baseData["watch/providers"] = tFull.data["watch/providers"];
            }
         }
       } catch (err) {}
