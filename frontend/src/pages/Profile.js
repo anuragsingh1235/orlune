@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import notify from '../utils/notify';
@@ -6,6 +7,7 @@ import './Profile.css';
 
 export default function Profile() {
   const { user, setUser } = useAuth();
+  const navigate = useNavigate();
   const [profileData, setProfileData] = useState({ name: '', username: '', avatar_url: '', bio: '' });
   const [stats, setStats] = useState({ watchlist: 0, followers: 0, following: 0 });
   const [loading, setLoading] = useState(true);
@@ -108,10 +110,10 @@ export default function Profile() {
               <img src={displayAvatar} alt="DP" className="ig-avatar" />
             </div>
             <div className="ig-stats">
-              <button className="ig-stat-btn" onClick={() => openSheet('watchlist-view')}>
+              <div className="ig-stat-btn" onClick={() => navigate('/watchlist')} style={{ cursor: 'pointer' }}>
                 <span className="stat-count">{stats.watchlist}</span>
                 <span className="stat-label">Watchlist</span>
-              </button>
+              </div>
               <button className="ig-stat-btn" onClick={() => openSheet('followers')}>
                 <span className="stat-count">{stats.followers}</span>
                 <span className="stat-label">Followers</span>
@@ -176,7 +178,8 @@ export default function Profile() {
               <h3>
                 {activeSheet === 'followers' ? 'Followers'
                  : activeSheet === 'following' ? 'Following'
-                 : 'Friends'}
+                 : activeSheet === 'friends' ? 'Friends'
+                 : ''}
               </h3>
               <button className="sheet-close" onClick={closeSheet}>✕</button>
             </div>
