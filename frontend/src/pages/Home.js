@@ -98,22 +98,19 @@ export default function Home() {
   }
 
   return (
-    <div className="home-page landing-view animate-fade">
-      <section className="hero">
-        <div className="hero-bg" />
-        <div className="hero-glow" />
-        <div className="container hero-content-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-          <div className="hero-content" style={{ flex: 1.2 }}>
-            <p className="hero-eyebrow animate-up" style={{ color: '#B48EAD', fontWeight: '700' }}>Film · Series · Community</p>
-            <h1 className="hero-title animate-up">Your cinematic<br /><span className="text-gradient">universe,</span> curated.</h1>
-            <p className="hero-subtitle animate-up">Discover what to watch next. Track every film you've seen. Share your taste with people who genuinely care about cinema.</p>
-            <div className="hero-actions animate-up" style={{ marginTop: '20px' }}>
-              <button className="btn-join" onClick={openRegister} style={{ padding: '16px 36px', fontSize: '1rem' }}>Join the Community</button>
-              <button className="btn-signin" onClick={openLogin} style={{ marginLeft: '12px' }}>Sign in</button>
-            </div>
-          </div>
-          <div className="hero-animation hide-mobile animate-fade" style={{ flex: 0.8, display: 'flex', justifyContent: 'center' }}>
-            <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_x62chJ.json" background="transparent" speed="1" style={{ width: '450px', height: '450px' }} loop autoplay />
+    <div className="home-page landing-splash-view animate-fade">
+      <section className="hero-landing">
+        <div className="hero-content container">
+          <h1 className="hero-title animate-down">
+            Master Your <span className="text-gradient">Watcher's Legacy</span>
+          </h1>
+          <p className="hero-subtitle animate-up">
+            The ultimate archive for true cinematic enthusiasts. Track your watchlist, 
+            challenge the community in the Gallery, and ascend the rankings.
+          </p>
+          <div className="hero-cta animate-up">
+            <button className="btn btn-primary btn-lg" onClick={openRegister}>Master Your Legacy</button>
+            <button className="btn btn-outline btn-lg" onClick={openLogin}>Sign In</button>
           </div>
         </div>
       </section>
