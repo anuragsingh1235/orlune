@@ -47,7 +47,7 @@ export default function Social() {
       setFriends(fRes.data);
       setRequests(rRes.data);
     } catch (err) {
-      toast.error("Failed to load social archive");
+      toast.error("Failed to load friends");
     } finally {
       setLoading(false);
     }
@@ -251,12 +251,12 @@ export default function Social() {
         {/* My Friends */}
         <div className="social-card" style={{ flex: 1 }}>
           <div className="social-card-header">
-            <h3>Archived Friends</h3>
+            <h3>Friends</h3>
           </div>
           <div className="contacts-list">
             {friends.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                 No allies found. Find users to start a chat.
+                 No friends found. Find users to start a chat.
               </div>
             ) : (
               friends.map(f => (
@@ -268,7 +268,7 @@ export default function Social() {
                   <div className="contact-avatar">{f.username[0].toUpperCase()}</div>
                   <div className="contact-info">
                     <h4>{f.username}</h4>
-                    <p>{f.status === 'blocked' ? '🚫 Connection severed' : 'Ready to transmit'}</p>
+                    <p className="online-dot">{f.status === 'blocked' ? '🔴 Blocked' : '🟢 Active'}</p>
                   </div>
                 </div>
               ))
@@ -286,7 +286,7 @@ export default function Social() {
                   <div className="contact-avatar">{activeChat.username[0].toUpperCase()}</div>
                   <div>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{activeChat.username}</h3>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Secure Link Established</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Online</p>
                   </div>
                </div>
                <div style={{ display: 'flex', gap: '10px' }}>
@@ -365,24 +365,24 @@ export default function Social() {
                   <input type="file" ref={imgInputRef} hidden accept="image/*" onChange={(e) => handleFileSelect(e, 'image')} />
                   <input type="file" ref={vidInputRef} hidden accept="video/*" onChange={(e) => handleFileSelect(e, 'video')} />
                </div>
-               <form className="chat-input-container" onSubmit={sendMessage}>
+                   <form className="chat-input-container" onSubmit={sendMessage}>
                   <input 
                     type="text" 
                     className="chat-input" 
-                    placeholder="Type an encrypted message..."
+                    placeholder="Message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                   />
-                  <button type="submit" className="btn btn-primary btn-sm">Transmit</button>
+                  <button type="submit" className="btn btn-primary btn-sm">Send</button>
                </form>
             </div>
           </>
         ) : (
-          <div className="no-chat-selected">
-             <div className="icon">📡</div>
-             <h3>Secure Transmission Center</h3>
-             <p>Select a contact to initiate an encrypted channel.</p>
-          </div>
+              <div className="no-chat-selected">
+               <div className="icon">💬</div>
+               <h3>Your Messages</h3>
+               <p>Select a friend to start chatting.</p>
+            </div>
         )}
       </div>
 

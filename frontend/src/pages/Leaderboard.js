@@ -2,69 +2,54 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import './Leaderboard.css';
 
 export default function Leaderboard() {
   const { user } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [friendsList, setFriendsList] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
 
   useEffect(() => {
     api.get('/battles/leaderboard')
-      .then((r) => {
-        if (Array.isArray(r.data)) {
-          setData(r.data);
-        }
-      })
-      .catch(err => console.error(err))
+      .then(r => { if (Array.isArray(r.data)) setData(r.data); })
+      .catch(console.error)
       .finally(() => setLoading(false));
 
     if (user) {
-      api.get('/social/friends').then(res => {
-         setFriendsList(Array.isArray(res.data) ? res.data.map(f => f.id) : []);
-      }).catch(err => console.error(err));
+      api.get('/social/friends')
+        .then(res => setFriendsList(Array.isArray(res.data) ? res.data.map(f => f.id) : []))
+        .catch(console.error);
     }
   }, [user]);
-
-  const [sentRequests, setSentRequests] = useState([]);
 
   const sendRequest = async (targetId) => {
     try {
       await api.post('/social/request', { receiver_id: targetId });
       setSentRequests(prev => [...prev, targetId]);
+      toast.success('Friend request sent!');
     } catch (err) {
-      console.error("Failed to send request:", err);
+      toast.error('Could not send request');
     }
   };
 
-  const medals = ['🥇', '🥈', '🥉'];
+  const tierColors = [
+    'linear-gradient(135deg, #FFD700, #FFA500)',
+    'linear-gradient(135deg, #C0C0C0, #A0A0A0)',
+    'linear-gradient(135deg, #CD7F32, #A0522D)',
+  ];
 
-  // ... (Gated view logic remains the same inside original file)
   if (!user) {
     return (
-      <div className="leaderboard-page container animate-fade" style={{ textAlign: 'center', paddingBottom: '100px' }}>
-        <h1 className="page-title text-gradient">🏆 The <span>Collector's Circle</span></h1>
-        
-        <div className="lb-gate-hero glass-card animate-scale" style={{ 
-          maxWidth: '600px', 
-          margin: '40px auto', 
-          padding: '60px 40px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '24px'
-        }}>
-          <div className="lb-gate-icon" style={{ fontSize: '48px' }}>✨</div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: '800' }}>Exclusive for the Community</h2>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            To view the full global standings and history of our most dedicated collectors, 
-            you must be a part of the Orlune network.
-          </p>
-          
-          <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-            <Link to="/register" className="btn btn-primary btn-lg">Join the Battle</Link>
+      <div className="leaderboard-page container animate-fade" style={{ textAlign: 'center' }}>
+        <div className="lb-hero">
+          <div className="lb-hero-glow" />
+          <h1 className="lb-hero-title">🏆 Top <span className="text-gradient">Ranked</span></h1>
+          <p className="lb-hero-sub">See who dominates the watchlist scene. Join to claim your spot.</p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 32 }}>
+            <Link to="/register" className="btn btn-primary btn-lg">Join Free</Link>
             <Link to="/login" className="btn btn-secondary btn-lg">Sign In</Link>
           </div>
         </div>
@@ -74,54 +59,67 @@ export default function Leaderboard() {
 
   return (
     <div className="leaderboard-page container animate-fade">
-      <h1 className="page-title text-gradient">🏆 Global <span>Standings</span></h1>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 32, fontSize: '0.95rem' }}>
-        Top-tier members ranked by their cinematic contributions and community standing.
-      </p>
+      <div className="lb-hero">
+        <div className="lb-hero-glow" />
+        <h1 className="lb-hero-title">🏆 Top <span className="text-gradient">Ranked</span></h1>
+        <p className="lb-hero-sub">Community members ranked by their cinematic impact and watchlist mastery.</p>
+      </div>
 
       {loading ? (
-        <div className="spinner" />
+        <div className="spinner" style={{ marginTop: 60 }} />
       ) : (
-        <div className="lb-table glass-card animate-up" style={{ padding: '8px' }}>
-          <div className="lb-thead">
-            <span>Rank</span>
-            <span>Cinephile</span>
-            <span>Contributions</span>
-            <span>Record</span>
-            <span>Social</span>
-          </div>
+        <div className="lb-list-wrap">
           {data.length > 0 ? data.map((u, i) => (
-            <div key={u.id} className={`lb-trow ${u.id === user?.id ? 'is-me' : ''}`}>
-              <span className="lb-pos">
-                {i < 3 ? medals[i] : <em style={{ fontStyle: 'normal', opacity: 0.5 }}>#{i + 1}</em>}
-              </span>
-              <div className="lb-user-cell">
-                <div className="lb-av" style={{ background: u.id === user?.id ? 'var(--accent)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  {u.username?.[0]?.toUpperCase()}
+            <div key={u.id} className={`lb-card ${u.id === user?.id ? 'lb-card-me' : ''}`} style={{ animationDelay: `${i * 40}ms` }}>
+              {/* Rank */}
+              <div className="lb-rank">
+                {i < 3 ? (
+                  <div className="lb-medal" style={{ background: tierColors[i] }}>{i + 1}</div>
+                ) : (
+                  <span className="lb-rank-num">#{i + 1}</span>
+                )}
+              </div>
+
+              {/* Avatar */}
+              <div className="lb-avatar-cell">
+                {u.avatar_url ? (
+                  <img src={u.avatar_url} alt={u.username} className="lb-av-img" />
+                ) : (
+                  <div className="lb-av-initial" style={{ background: u.id === user?.id ? 'var(--accent)' : 'rgba(255,255,255,0.06)' }}>
+                    {u.username?.[0]?.toUpperCase()}
+                  </div>
+                )}
+                {i < 3 && <div className="lb-crown" style={{ background: tierColors[i] }} />}
+              </div>
+
+              {/* Info */}
+              <div className="lb-info">
+                <div className="lb-name">
+                  {u.username}
+                  {u.id === user?.id && <span className="you-tag">YOU</span>}
                 </div>
-                <div>
-                  <p className="lb-uname">{u.username} {u.id === user?.id ? <span className="you-tag">YOU</span> : ''}</p>
+                <div className="lb-meta">
+                  <span className="lb-pts-inline">⭐ {u.total_points} pts</span>
+                  <span className="lb-wins">{u.battle_wins}W / {u.battle_losses}L</span>
                 </div>
               </div>
-              <span className="lb-pts">{u.total_points} <small style={{ opacity: 0.5 }}>pts</small></span>
-              <span className="lb-wl">
-                <span className="win">{u.battle_wins}W</span> / <span className="loss">{u.battle_losses}L</span>
-              </span>
-              <div className="lb-social-cell" style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '12px' }}>
+
+              {/* Action */}
+              <div className="lb-action">
                 {u.id !== user?.id && (
                   friendsList.includes(u.id) ? (
-                    <button className="btn-social sent" disabled>Already Friends</button>
+                    <button className="lb-btn lb-btn-friends" disabled>✓ Friends</button>
                   ) : sentRequests.includes(u.id) ? (
-                    <button className="btn-social sent" disabled>Requested</button>
+                    <button className="lb-btn lb-btn-pending" disabled>Pending…</button>
                   ) : (
-                    <button className="btn-social" onClick={() => sendRequest(u.id)}>+ Connect</button>
+                    <button className="lb-btn lb-btn-add" onClick={() => sendRequest(u.id)}>+ Add</button>
                   )
                 )}
               </div>
             </div>
           )) : (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No members found in the archive yet.
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No players found yet.
             </div>
           )}
         </div>

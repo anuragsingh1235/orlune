@@ -7,7 +7,7 @@ import './Profile.css';
 export default function Profile() {
   const { user, login } = useAuth(); // Need to update context user if username changes
   const [profileData, setProfileData] = useState({ name: '', username: '', avatar_url: '', bio: '' });
-  const [stats, setStats] = useState({ battles: 0, friends: 0 });
+  const [stats, setStats] = useState({ battles: 0, friends: 0, watchlist: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -34,6 +34,9 @@ export default function Profile() {
       
       const battlesRes = await api.get('/battles/my');
       setStats(prev => ({ ...prev, battles: Array.isArray(battlesRes.data) ? battlesRes.data.length : 0 }));
+      
+      const wlRes = await api.get('/watchlist');
+      setStats(prev => ({ ...prev, watchlist: Array.isArray(wlRes.data) ? wlRes.data.length : 0 }));
     } catch (err) {
       toast.error('Failed to load profile');
     } finally {
@@ -86,9 +89,9 @@ export default function Profile() {
                  <img src={displayAvatar} alt="DP" className="ig-avatar" />
               </div>
               <div className="ig-stats">
+                 <div className="ig-stat"><span className="stat-count">{stats.watchlist}</span><span className="stat-label">Watchlist</span></div>
+                 <div className="ig-stat"><span className="stat-count">{stats.friends}</span><span className="stat-label">Friends</span></div>
                  <div className="ig-stat"><span className="stat-count">{stats.battles}</span><span className="stat-label">Battles</span></div>
-                 <div className="ig-stat"><span className="stat-count">{stats.friends}</span><span className="stat-label">Allies</span></div>
-                 <div className="ig-stat"><span className="stat-count">0</span><span className="stat-label">Following</span></div>
               </div>
            </div>
            
