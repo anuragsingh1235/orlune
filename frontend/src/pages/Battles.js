@@ -26,9 +26,20 @@ export default function Battles() {
   // ── TODAY STATE
   const [todayMovies, setTodayMovies] = useState([]);
   const [todayLoading, setTodayLoading] = useState(true);
+  const [todayGenre, setTodayGenre] = useState('All');
   const [ratings, setRatings] = useState({}); // tmdb_id -> {avg, count, userRating, submitCount}
   const [sliderVals, setSliderVals] = useState({}); // tmdb_id -> slider value
   const [ratingSubmitting, setRatingSubmitting] = useState(new Set());
+
+  const filteredToday = todayMovies.filter(m => {
+    if (todayGenre === 'All') return true;
+    if (todayGenre === 'Hollywood') return m.original_language === 'en';
+    if (todayGenre === 'Bollywood') return ['hi','te','ta','ml','kn'].includes(m.original_language);
+    if (todayGenre === 'KDrama') return m.original_language === 'ko';
+    if (todayGenre === 'CDrama') return m.original_language === 'zh';
+    if (todayGenre === 'Anime') return m.original_language === 'ja';
+    return true; // add more mapping if needed
+  });
 
   // ── ARENA STATE
   const [arenaChallenges, setArenaChallenges] = useState([]);
@@ -297,21 +308,30 @@ export default function Battles() {
     <div className="arena-section">
       <div className="arena-section-header">
         <h2 className="arena-section-title">🎉 Released Today</h2>
-        <p className="arena-section-sub">Rate today's fresh drops — only 2 chances per movie!</p>
+        <p className="arena-section-sub">Rate today's drops — only 2 chances per title!</p>
       </div>
+
+      <div className="genre-filters">
+        {['All','Hollywood','Bollywood','KDrama','CDrama','Anime'].map(g => (
+          <button key={g} className={`genre-pill ${todayGenre === g ? 'active' : ''}`} onClick={() => setTodayGenre(g)}>
+            {GENRE_ICONS[g]} {g}
+          </button>
+        ))}
+      </div>
+
       {todayLoading ? (
         <div className="arena-skeleton-grid">
           {[...Array(4)].map((_,i) => <div key={i} className="skeleton-card"><div className="skeleton-poster"/><div className="skeleton-line"/><div className="skeleton-line short"/></div>)}
         </div>
-      ) : todayMovies.length === 0 ? (
+      ) : filteredToday.length === 0 ? (
         <div className="arena-empty">
           <div className="arena-empty-icon">📅</div>
-          <h3>No major releases today</h3>
-          <p>Check back tomorrow for fresh drops</p>
+          <h3>Empty Slate</h3>
+          <p>No major drops matching "{todayGenre}" today</p>
         </div>
       ) : (
         <div className="today-grid">
-          {todayMovies.map(movie => {
+          {filteredToday.map(movie => {
             const r = ratings[movie.id] || {};
             const sliderVal = sliderVals[movie.id] ?? 5;
             const pct = ((r.avgRating || 0) / 10) * 100;
@@ -562,26 +582,43 @@ export default function Battles() {
 
             {createStep === 2 && (
               <div className="step-content animate-fade">
-                <h2 className="modal-title">2. Your Representative</h2>
+                <h2 className="modal-title">2. Choose Your Rep</h2>
                 <input
                   className="arena-search-input"
-                  placeholder="Search globally for any movie/show..."
+                  placeholder="Universal archive search..."
                   value={movieSearchQ}
                   onChange={e => setMovieSearchQ(e.target.value)}
                   autoFocus
                 />
-                <div className="picker-results">
-                  {movieSearching && <p className="loading-text">Scanning universal archives...</p>}
+                <div className="picker-results custom-scrollbar">
+                  {movieSearching && <p className="loading-text pulse">Scanning dimensions...</p>}
+                  {!movieSearching && movieSearchResults.length === 0 && movieSearchQ && <p className="loading-text">No records found.</p>}
                   {movieSearchResults.map(m => (
-                    <div key={m.id} className={`picker-item ${myMovie?.id === m.id ? 'selected' : ''}`} onClick={() => setMyMovie(m)}>
-                      <img src={m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : 'https://via.placeholder.com/92x138?text=No+Poster'} alt="p"/>
-                      <span>{m.title || m.name}</span>
+                    <div 
+                      key={m.id} 
+                      className={`picker-item ${myMovie?.id === m.id ? 'selected' : ''}`} 
+                      onClick={() => setMyMovie(m)}
+                    >
+                      <div className="picker-thumb-wrap">
+                        {m.poster_path ? (
+                           <img src={m.poster_path.startsWith('http') ? m.poster_path : `https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="p"/>
+                        ) : (
+                          <div className="picker-thumb-none">🎞️</div>
+                        )}
+                        {myMovie?.id === m.id && <div className="picker-check">✓</div>}
+                      </div>
+                      <div className="picker-item-info">
+                        <span className="picker-item-title">{m.title || m.name}</span>
+                        <span className="picker-item-year">{(m.release_date || m.first_air_date || '').slice(0,4)}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
                 <div className="modal-nav-btns">
                   <button className="create-back-btn" onClick={() => setCreateStep(1)}>Back</button>
-                  <button className="create-next-btn" onClick={() => setCreateStep(3)} disabled={!myMovie}>Confirm Choice →</button>
+                  <button className="create-next-btn" onClick={() => setCreateStep(3)} disabled={!myMovie}>
+                    {myMovie ? `Confirm: ${myMovie.title || myMovie.name}` : 'Select a Movie'} →
+                  </button>
                 </div>
               </div>
             )}

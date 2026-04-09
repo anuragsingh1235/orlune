@@ -292,10 +292,18 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                          )}
                       </div>
                     ) : (
-                      <div className="empty-streaming-state">
-                        <div className="empty-icon">📡</div>
-                        <h4>Signal Lost</h4>
-                        <p>No verified digital streams found for this title yet. It might be unreleased or region-locked.</p>
+                      <div className="empty-streaming-state glass-card">
+                        <div className="empty-icon pulse">📡</div>
+                        <h4>Stream Archives Veiled</h4>
+                        <p>No verified digital streams found in local archives. External scouting recommended.</p>
+                        <a 
+                          href={`https://www.google.com/search?q=watch+${encodeURIComponent(details?.title || details?.name || item?.title || item?.name)}+online`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="platforms-scout-btn"
+                        >
+                          Scout Global Platforms (Google) ↗
+                        </a>
                       </div>
                     )}
                   </div>
