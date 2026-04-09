@@ -25,7 +25,7 @@ router.post("/oracle", async (req, res) => {
     contents.push({ role: 'user', parts: [{ text: prompt }] });
 
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       { contents },
       { timeout: 15000 }
     );
