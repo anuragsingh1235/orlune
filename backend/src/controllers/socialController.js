@@ -192,15 +192,75 @@ exports.unfollowUser = async (req, res) => {
   }
 };
 
+// ─── GET STATS ──────────────────────────────────────────
+exports.getStats = async (req, res) => {
+  const { userId } = req.params;
+  const requesterId = req.user.id;
+
+  try {
+    // Basic stats are usually public, but we can restrict if needed. 
+    // For now, let's keep counts public but the LISTS (below) private as requested.
+    const [flwrs, flwng, wl] = await Promise.all([
+      pool.query("SELECT COUNT(*) FROM follows WHERE following_id = $1", [userId]),
+      pool.query("SELECT COUNT(*) FROM follows WHERE follower_id = $1", [userId]),
+      pool.query("SELECT COUNT(*) FROM watchlist WHERE user_id = $1", [userId]),
+    ]);
+    res.json({
+      followers: parseInt(flwrs.rows[0].count),
+      following: parseInt(flwng.rows[0].count),
+      watchlist: parseInt(wl.rows[0].count),
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+};
+
+const checkFriendship = async (u1, u2) => {
+  if (parseInt(u1) === parseInt(u2)) return true;
+  const result = await pool.query(
+    `SELECT COUNT(*) FROM follows f1
+     JOIN follows f2 ON f1.follower_id = f2.following_id AND f1.following_id = f2.follower_id
+     WHERE f1.follower_id = $1 AND f1.following_id = $2`,
+    [u1, u2]
+  );
+  return parseInt(result.rows[0].count) > 0;
+};
+
+// ─── GET MUTUAL FRIENDS (both follow each other) ──────────────────────────────────────────
+exports.getMutualFriends = async (req, res) => {
+  const targetId = req.params.userId || req.user.id;
+  const requesterId = req.user.id;
+  try {
+    if (!(await checkFriendship(requesterId, targetId))) {
+      return res.status(403).json({ error: "Mutual connection required" });
+    }
+    const result = await pool.query(
+      `SELECT u.id, u.username, u.avatar_url, u.bio
+       FROM follows f1
+       JOIN follows f2 ON f1.follower_id = f2.following_id AND f1.following_id = f2.follower_id
+       JOIN users u ON u.id = f1.following_id
+       WHERE f1.follower_id = $1`,
+      [targetId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch mutual friends" });
+  }
+};
+
 // ─── GET FOLLOWING ──────────────────────────────────────────
 exports.getFollowing = async (req, res) => {
-  const userId = req.user.id;
+  const targetId = req.params.userId || req.user.id;
+  const requesterId = req.user.id;
   try {
+    if (!(await checkFriendship(requesterId, targetId))) {
+      return res.status(403).json({ error: "Mutual connection required" });
+    }
     const result = await pool.query(
       `SELECT u.id, u.username, u.avatar_url, u.bio
        FROM follows f JOIN users u ON f.following_id = u.id
        WHERE f.follower_id = $1`,
-      [userId]
+      [targetId]
     );
     res.json(result.rows);
   } catch (err) {
@@ -210,35 +270,21 @@ exports.getFollowing = async (req, res) => {
 
 // ─── GET FOLLOWERS ──────────────────────────────────────────
 exports.getFollowers = async (req, res) => {
-  const userId = req.user.id;
+  const targetId = req.params.userId || req.user.id;
+  const requesterId = req.user.id;
   try {
+    if (!(await checkFriendship(requesterId, targetId))) {
+      return res.status(403).json({ error: "Mutual connection required" });
+    }
     const result = await pool.query(
       `SELECT u.id, u.username, u.avatar_url, u.bio
        FROM follows f JOIN users u ON f.follower_id = u.id
        WHERE f.following_id = $1`,
-      [userId]
+      [targetId]
     );
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch followers" });
-  }
-};
-
-// ─── GET MUTUAL FRIENDS (both follow each other) ──────────────────────────────────────────
-exports.getMutualFriends = async (req, res) => {
-  const userId = req.user.id;
-  try {
-    const result = await pool.query(
-      `SELECT u.id, u.username, u.avatar_url, u.bio
-       FROM follows f1
-       JOIN follows f2 ON f1.follower_id = f2.following_id AND f1.following_id = f2.follower_id
-       JOIN users u ON u.id = f1.following_id
-       WHERE f1.follower_id = $1`,
-      [userId]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch mutual friends" });
   }
 };
 

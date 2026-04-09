@@ -117,7 +117,22 @@ exports.getItems = async (req, res) => {
 
 exports.getUserWatchlist = async (req, res) => {
   const { id } = req.params;
+  const requesterId = req.user.id;
+
   try {
+    if (requesterId !== parseInt(id)) {
+      // Check for mutual follows
+      const checkResult = await pool.query(
+        `SELECT COUNT(*) FROM follows f1
+         JOIN follows f2 ON f1.follower_id = f2.following_id AND f1.following_id = f2.follower_id
+         WHERE f1.follower_id = $1 AND f1.following_id = $2`,
+        [requesterId, id]
+      );
+      if (parseInt(checkResult.rows[0].count) === 0) {
+        return res.status(403).json({ error: "Connect with this user to view their collection" });
+      }
+    }
+
     const result = await pool.query(
       "SELECT w.*, u.username FROM watchlist_items w JOIN users u ON w.user_id = u.id WHERE u.id=$1 ORDER BY w.created_at DESC",
       [id]

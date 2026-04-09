@@ -85,7 +85,7 @@ export default function Leaderboard() {
                 </div>
 
                 {/* Avatar */}
-                <div className="lb-avatar-cell">
+                <Link to={`/profile/${u.id}`} className="lb-avatar-cell">
                   {u.avatar_url ? (
                     <img src={u.avatar_url} alt={u.username} className="lb-av-img" />
                   ) : (
@@ -93,14 +93,14 @@ export default function Leaderboard() {
                       {u.username?.[0]?.toUpperCase()}
                     </div>
                   )}
-                </div>
+                </Link>
 
                 {/* Info */}
                 <div className="lb-info">
-                  <div className="lb-name">
+                  <Link to={`/profile/${u.id}`} className="lb-name" style={{ textDecoration: 'none' }}>
                     {u.username}
                     {u.id === user?.id && <span className="you-tag">YOU</span>}
-                  </div>
+                  </Link>
                   <div className="lb-meta">
                     <span className="lb-pts-inline">⭐ {u.total_points} pts</span>
                     <span className="lb-wins">{u.watchlist_size || 0} watched</span>

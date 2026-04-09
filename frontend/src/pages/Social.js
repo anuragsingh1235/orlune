@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import notify from '../utils/notify';
 import './Social.css';
@@ -202,9 +203,7 @@ export default function Social() {
             {searchResults.length > 0 && (
               <div className="search-results">
                  {searchResults.map(u => (
-                   <div key={u.id} className="search-item" onClick={() => {
-                     if (u.connection_status === 'none') sendFriendRequest(u.id);
-                   }}>
+                   <Link key={u.id} to={`/profile/${u.id}`} className="search-item">
                       <div className="contact-avatar">{u.username[0].toUpperCase()}</div>
                       <div className="contact-info">
                          <h4>{u.username}</h4>
@@ -213,10 +212,10 @@ export default function Social() {
                             u.connection_status === 'request_sent' ? 'Request Sent' :
                             u.connection_status === 'request_received' ? 'Review Request in Pending Tab' :
                             u.connection_status === 'blocked' ? 'Blocked' :
-                            'Click to add friend'}
+                            'View Profile'}
                          </p>
                       </div>
-                   </div>
+                   </Link>
                  ))}
               </div>
             )}

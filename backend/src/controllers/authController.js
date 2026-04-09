@@ -126,8 +126,8 @@ exports.login = async (req, res) => {
 exports.me = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, username, email, avatar_url, bio FROM users WHERE id=$1",
-      [req.user?.id || 1] // temp fallback
+      "SELECT id, username, email, avatar_url, bio, name FROM users WHERE id=$1",
+      [req.user.id]
     );
 
     if (!result.rows.length) {
@@ -139,6 +139,25 @@ exports.me = async (req, res) => {
   } catch (err) {
     console.error("ME ERROR:", err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+/* ================= PUBLIC PROFILE ================= */
+exports.getUserProfile = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT id, username, avatar_url, bio, name FROM users WHERE id=$1",
+      [userId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch user profile" });
   }
 };
 
