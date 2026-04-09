@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
+import notify from '../utils/notify';
 import './Leaderboard.css';
 
 export default function Leaderboard() {
@@ -29,9 +29,9 @@ export default function Leaderboard() {
     try {
       await api.post('/social/follow', { followingId: targetId });
       setJustFollowed(prev => [...prev, targetId]);
-      toast.success('Following!');
+      notify.success('Following!');
     } catch (err) {
-      toast.error('Could not follow');
+      notify.error('Could not follow');
     }
   };
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
-import toast from 'react-hot-toast';
+import notify from '../utils/notify';
 import { useAuth } from '../context/AuthContext';
 import './Battles.css';
 
@@ -32,12 +32,12 @@ export default function Battles() {
   const challenge = async (opponentId, name) => {
     try {
       await api.post(`/battles/challenge/${opponentId}`);
-      toast.success(`Challenge sent to ${name}! ⚔️`);
+      notify.success(`Challenge sent to ${name}! ⚔️`);
       setShowChallenge(false);
       setSearchQ('');
       api.get('/battles/my').then((r) => setBattles(r.data));
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to challenge');
+      notify.error(err.response?.data?.error || 'Failed to challenge');
     }
   };
 
@@ -45,8 +45,8 @@ export default function Battles() {
     try {
       const { data } = await api.put(`/battles/${id}/respond`, { action });
       setBattles((prev) => prev.map((b) => b.id === id ? { ...b, status: data.status } : b));
-      toast.success(action === 'accept' ? '⚔️ Battle accepted!' : 'Battle declined');
-    } catch { toast.error('Failed'); }
+      notify.success(action === 'accept' ? '⚔️ Battle accepted!' : 'Battle declined');
+    } catch { notify.error('Failed'); }
   };
 
   const statusColor = { pending: 'badge-blue', active: 'badge-red', completed: 'badge-green', declined: '' };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import notify from '../../utils/notify';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import './MovieCard.css';
@@ -45,11 +45,11 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
 
   const handleAdd = async (e) => {
     e.stopPropagation();
-    if (!user) { toast.error('Login to add to Vault'); return; }
+    if (!user) { notify.error('Sign in to add records'); return; }
     
     // 🛡️ Prevent re-adding masterpieces
     if (item.status === 'completed') {
-      toast('This masterpiece is already in your archive.', { icon: '✨' });
+      notify.info('This record is already in your profile.');
       return;
     }
 
@@ -66,11 +66,11 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
         vote_average: item.vote_average,
         genres: item.genre_ids?.join(',') || '',
       });
-      toast.success(`Vaulted "${title}"!`);
+      notify.success(`Added "${title}" to watchlist`);
       if (onAdd) onAdd(item);
     } catch (err) {
-      if (err.response?.status === 409) toast('Already in your Vault', { icon: '📦' });
-      else toast.error('Failed to vault');
+      if (err.response?.status === 409) notify.info('Already in your watchlist');
+      else notify.error('Failed to add record');
     } finally {
       setAdding(false);
     }
@@ -81,7 +81,7 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
     ? `Mastered ${new Date(item.completed_at).toLocaleDateString()}`
     : item.status === 'watching'
       ? `Started ${getTimeAgo(item.started_at)}`
-      : `Vaulted ${getTimeAgo(item.created_at)}`;
+      : `Added ${getTimeAgo(item.created_at)}`;
 
   const [imgError, setImgError] = useState(false);
   const handleImageError = () => setImgError(true);
@@ -99,14 +99,14 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
           />
         ) : (
           <div className="poster-placeholder-text">
-             <span>ARCHIVE RECORD</span>
+             <span>ARCHIVE</span>
              <p>{title}</p>
           </div>
         )}
         <div className="movie-overlay" onClick={(e) => e.stopPropagation()}>
           {user && !showStatus && item.status !== 'completed' && (
             <button className="add-btn" onClick={handleAdd} disabled={adding}>
-              {adding ? '...' : '+ Vault'}
+              {adding ? '...' : '+ Add'}
             </button>
           )}
           {item.status === 'completed' && !showStatus && (
@@ -133,7 +133,7 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
               <span className="time-meta">
                 {item.status === 'completed' && item.completed_at ? `Mastered ${new Date(item.completed_at).toLocaleDateString()}` :
                  item.status === 'watching' && item.started_at ? `Watching for ${getTimeAgo(item.started_at)}` :
-                 item.created_at ? `Vaulted ${getTimeAgo(item.created_at)}` : ''}
+                 item.created_at ? `Added ${getTimeAgo(item.created_at)}` : ''}
               </span>
             )}
         </div>

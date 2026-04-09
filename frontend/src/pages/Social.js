@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
-import { toast } from 'react-hot-toast';
+import notify from '../utils/notify';
 import './Social.css';
 
 export default function Social() {
@@ -47,7 +47,7 @@ export default function Social() {
       setFriends(fRes.data);
       setRequests(rRes.data);
     } catch (err) {
-      toast.error("Failed to load friends");
+      notify.error("Failed to load friends");
     } finally {
       setLoading(false);
     }
@@ -94,20 +94,20 @@ export default function Social() {
   const sendFriendRequest = async (receiverId) => {
     try {
       await api.post('/social/request', { receiver_id: receiverId });
-      toast.success("Connection request sent");
+      notify.success("Connection request sent");
       setSearchResults(prev => prev.map(u => u.id === receiverId ? { ...u, connection_status: 'request_sent' } : u));
     } catch (err) {
-      toast.error(err.response?.data?.error || "Request failed");
+      notify.error(err.response?.data?.error || "Request failed");
     }
   };
 
   const respondToRequest = async (requestId, status) => {
     try {
       await api.post('/social/respond', { requestId, status });
-      toast.success(`Request ${status}`);
+      notify.success(`Request ${status}`);
       fetchInitialData();
     } catch (err) {
-      toast.error("Action failed");
+      notify.error("Action failed");
     }
   };
 
@@ -131,7 +131,7 @@ export default function Social() {
       setMessages([...messages, res.data]);
       if (forcedContent === null) setNewMessage('');
     } catch (err) {
-      toast.error("Transmission failed");
+      notify.error("Transmission failed");
     }
   };
 
@@ -139,7 +139,7 @@ export default function Social() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) return toast.error("File exceeds 10MB limit");
+    if (file.size > 10 * 1024 * 1024) return notify.error("File exceeds 10MB limit");
 
     setIsUploading(true);
     const reader = new FileReader();
@@ -154,11 +154,11 @@ export default function Social() {
     if (!window.confirm("Sever connection and block this user?")) return;
     try {
       await api.post('/social/block', { friendId });
-      toast.success("User blacklisted");
+      notify.success("User blacklisted");
       setActiveChat(null);
       fetchInitialData();
     } catch (err) {
-      toast.error("Block failed");
+      notify.error("Block failed");
     }
   };
 
@@ -166,11 +166,11 @@ export default function Social() {
     if (!window.confirm("Are you sure you want to remove this connection?")) return;
     try {
       await api.post('/social/remove', { friendId });
-      toast.success("Connection removed");
+      notify.success("Connection removed");
       setActiveChat(null);
       fetchInitialData();
     } catch (err) {
-      toast.error("Removal failed");
+      notify.error("Removal failed");
     }
   };
 

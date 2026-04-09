@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import notify from '../utils/notify';
 import { useAuth } from '../context/AuthContext';
 import MovieCard from '../components/movies/MovieCard';
 import DetailsModal from '../components/movies/DetailsModal';
@@ -52,10 +52,10 @@ export default function Watchlist() {
     try {
       await api.delete(`/watchlist/${id}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
-      toast.success('Record purged from archive');
+      notify.success('Record purged from archive');
     } catch (err) { 
       const msg = err.response?.data?.error || 'Failed to remove';
-      toast.error(msg, { duration: 4000 }); 
+      notify.error(msg, { duration: 4000 }); 
     }
   };
 
@@ -64,10 +64,10 @@ export default function Watchlist() {
       const { data } = await api.put(`/watchlist/${masteringItem.id}`, editData);
       setItems((prev) => prev.map((i) => i.id === masteringItem.id ? data : i));
       setMasteringItem(null);
-      toast.success('Masterpiece Record Stored 🏛️');
+      notify.success('Masterpiece Record Stored 🏛️');
     } catch (err) { 
       const msg = err.response?.data?.error || 'Failed to update record';
-      toast.error(msg); 
+      notify.error(msg); 
     }
   };
 
@@ -86,8 +86,8 @@ export default function Watchlist() {
       const { data } = await api.put(`/watchlist/${editItem.id}`, editForm);
       setItems((prev) => prev.map((i) => i.id === editItem.id ? data : i));
       setEditItem(null);
-      toast.success('Archive updated');
-    } catch { toast.error('Failed to update'); }
+      notify.success('Archive updated');
+    } catch { notify.error('Failed to update'); }
   };
 
   const safeItems = Array.isArray(items) ? items : [];
@@ -200,8 +200,8 @@ export default function Watchlist() {
                       try {
                         const { data } = await api.put(`/watchlist/${item.id}`, { status: 'watching' });
                         setItems((prev) => prev.map((i) => i.id === item.id ? data : i));
-                        toast.success('Cinematic Journey Started 🎬');
-                      } catch { toast.error('Failed to start journey'); }
+                        notify.success('Cinematic Journey Started 🎬');
+                      } catch { notify.error('Failed to start journey'); }
                     }} title="Start Journey">
                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M7 6V18L17 12L7 6Z" fill="currentColor" />
