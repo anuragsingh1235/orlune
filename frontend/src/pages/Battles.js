@@ -620,7 +620,6 @@ export default function Battles() {
       )}
     </div>
   );
-}
 
   return (
     <div className="battles-premium-page">
