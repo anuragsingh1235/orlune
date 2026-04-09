@@ -94,6 +94,15 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    // 🔥 Patch Updates
+    try {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)');
+      await pool.query('ALTER TABLE users ALTER COLUMN avatar_url TYPE TEXT');
+    } catch(e) {
+      console.log('Patch warning:', e.message);
+    }
+
     console.log('✅ Migration check complete!');
   } catch (err) {
     console.error('❌ Migration failed:', err);
