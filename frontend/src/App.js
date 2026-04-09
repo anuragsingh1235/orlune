@@ -1,6 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-// Deployment re-trigger: Premium Animations & Fixes
-import { AnimatePresence } from 'framer-motion';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/layout/Navbar';
@@ -25,27 +23,24 @@ function ProtectedRoute({ children }) {
 }
 
 function AppRoutes() {
-  const location = useLocation();
   return (
     <>
       <Navbar />
       <NavbarSpacer />
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/anime" element={<Anime />} />
-          <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
-          <Route path="/battles" element={<ProtectedRoute><Battles /></ProtectedRoute>} />
-          <Route path="/social" element={<ProtectedRoute><Social /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </AnimatePresence>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/anime" element={<Anime />} />
+        <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
+        <Route path="/battles" element={<ProtectedRoute><Battles /></ProtectedRoute>} />
+        <Route path="/social" element={<ProtectedRoute><Social /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
       <GeminiOracle />
     </>
   );

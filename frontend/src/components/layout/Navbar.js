@@ -26,13 +26,13 @@ export default function Navbar() {
   }, [menuOpen]);
 
   const links = [
-    { to: '/', label: 'Home', icon: 'https://cdn.lordicon.com/wmwqvixz.json' },
-    { to: '/search', label: 'Search', icon: 'https://cdn.lordicon.com/kkvsybiw.json' },
-    { to: '/anime', label: 'Anime', icon: 'https://cdn.lordicon.com/ofdfvfxr.json' },
-    { to: '/watchlist', label: 'Watchlist', icon: 'https://cdn.lordicon.com/pdsourfn.json' },
-    { to: '/battles', label: 'Gallery', icon: 'https://cdn.lordicon.com/beviivtr.json' },
-    { to: '/social', label: 'Social', icon: 'https://cdn.lordicon.com/bhfjfgqz.json' },
-    { to: '/leaderboard', label: 'Rankings', icon: 'https://cdn.lordicon.com/lupuorrc.json' },
+    { to: '/', label: 'Home' },
+    { to: '/search', label: 'Search' },
+    { to: '/anime', label: 'Anime' },
+    { to: '/watchlist', label: 'Watchlist' },
+    { to: '/battles', label: 'Gallery' },
+    { to: '/social', label: 'Social' },
+    { to: '/leaderboard', label: 'Rankings' },
   ];
 
   const handleLogout = () => {
@@ -68,15 +68,7 @@ export default function Navbar() {
               to={l.to}
               className={`nav-link ${isActive(l.to) ? 'active' : ''}`}
             >
-              <div className="nav-icon-wrapper">
-                <lord-icon
-                    src={l.icon}
-                    trigger="hover"
-                    colors={isActive(l.to) ? "primary:#ffffff,secondary:#7c4dff" : "primary:#888888,secondary:#ffffff"}
-                    style={{width:'20px',height:'20px'}}>
-                </lord-icon>
-              </div>
-              <span className="nav-label-text">{l.label}</span>
+              {l.label}
               {isActive(l.to) && <span className="active-dot" />}
             </Link>
           ))}
@@ -132,12 +124,6 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}
                 style={{ transitionDelay: `${i * 50}ms` }}
               >
-                <lord-icon
-                    src={l.icon}
-                    trigger="hover"
-                    colors="primary:#ffffff,secondary:#7c4dff"
-                    style={{width:'24px',height:'24px',marginRight:'12px'}}>
-                </lord-icon>
                 {l.label}
               </Link>
             ))}
