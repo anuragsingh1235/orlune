@@ -161,11 +161,8 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
   const filteredProviders = globalProviders.filter(p => providerFilter === 'all' || p.costCat === providerFilter);
 
-  // Return the official TMDB JustWatch link or fallback to a precise global search if missing
-  const getDirectLink = (providerName, fallbackLink) => {
-    if (fallbackLink) return fallbackLink;
-    
-    // Only used if TMDB somehow fails to construct a watchLink for an explicitly confirmed provider
+  // Fast Global Redirects - Bypass TMDB proxy for speed
+  const getDirectLink = (providerName) => {
     const titleObj = details?.title || details?.name || item?.title || item?.name || '';
     const title = encodeURIComponent(titleObj);
     return `https://www.google.com/search?q=Watch+${title}+on+${encodeURIComponent(providerName)}`;
@@ -235,7 +232,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                          {filteredProviders.map((p, idx) => (
                             <a 
                               key={`${p.provider_id}-${p.costCat}`} 
-                              href={getDirectLink(p.provider_name, watchLink)} 
+                              href={getDirectLink(p.provider_name)} 
                               target="_blank" 
                               rel="noreferrer" 
                               className="platform-card glass-card" 
