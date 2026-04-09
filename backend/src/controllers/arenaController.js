@@ -25,14 +25,13 @@ exports.getUpcoming = async (req, res) => {
     const base = `${TMDB}/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=release_date.asc&include_adult=false&primary_release_date.gte=${today}&primary_release_date.lte=${future}`;
     const tvBase = `${TMDB}/discover/tv?api_key=${TMDB_KEY}&language=en-US&sort_by=first_air_date.asc&first_air_date.gte=${today}&first_air_date.lte=${future}`;
 
-    if (g === 'hollywood')       url = `${base}&with_original_language=en&region=US`;
-    else if (g === 'bollywood')  url = `${base}&with_original_language=hi|te|ta|ml|kn&region=IN`;
+    if (g === 'hollywood')       url = `${base}&with_original_language=en&without_genres=16`;
+    else if (g === 'bollywood')  url = `${base}&with_original_language=hi|te|ta|ml|kn`;
     else if (g === 'kdrama')     url = `${tvBase}&with_original_language=ko`;
     else if (g === 'cdrama')     url = `${tvBase}&with_original_language=zh`;
     else if (g === 'anime')      url = `${tvBase}&with_original_language=ja&with_genres=16`;
     else if (GENRE_IDS[g])       url = `${base}&with_genres=${GENRE_IDS[g]}`;
-    else                         url = `${base}&region=US`; 
-
+    else                         url = `${base}`; // Global "All"
     const r = await axios.get(url);
     const results = (r.data.results || []).map(m => ({
         ...m,

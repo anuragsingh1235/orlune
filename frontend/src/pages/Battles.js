@@ -33,12 +33,24 @@ export default function Battles() {
 
   const filteredToday = todayMovies.filter(m => {
     if (todayGenre === 'All') return true;
+    
+    // Language Filters
     if (todayGenre === 'Hollywood') return m.original_language === 'en';
     if (todayGenre === 'Bollywood') return ['hi','te','ta','ml','kn'].includes(m.original_language);
     if (todayGenre === 'KDrama') return m.original_language === 'ko';
     if (todayGenre === 'CDrama') return m.original_language === 'zh';
     if (todayGenre === 'Anime') return m.original_language === 'ja';
-    return true; // add more mapping if needed
+    
+    // Genre Filters
+    const gMap = {
+      'Action': 28, 'Romance': 10749, 'Thriller': 53, 'Horror': 27,
+      'Sci-Fi': 878, 'Comedy': 35, 'Drama': 18
+    };
+    if (gMap[todayGenre]) {
+      return m.genre_ids?.includes(gMap[todayGenre]);
+    }
+    
+    return true;
   });
 
   // ── ARENA STATE
