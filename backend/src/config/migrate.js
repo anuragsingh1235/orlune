@@ -101,6 +101,71 @@ async function migrate() {
       await pool.query('ALTER TABLE users ALTER COLUMN avatar_url TYPE TEXT');
       await pool.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_url TEXT');
       await pool.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(50)');
+
+      // New Battle Arena Tables
+      await pool.query(`CREATE TABLE IF NOT EXISTS upcoming_reminders (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        tmdb_id INTEGER NOT NULL,
+        media_type VARCHAR(10) NOT NULL DEFAULT 'movie',
+        title VARCHAR(255) NOT NULL,
+        release_date VARCHAR(20),
+        poster_path VARCHAR(500),
+        email VARCHAR(255),
+        reminded BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, tmdb_id, media_type)
+      )`);
+
+      await pool.query(`CREATE TABLE IF NOT EXISTS movie_ratings (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        tmdb_id INTEGER NOT NULL,
+        media_type VARCHAR(10) NOT NULL DEFAULT 'movie',
+        title VARCHAR(255) NOT NULL,
+        rating INTEGER CHECK(rating >= 1 AND rating <= 10),
+        submit_count INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id, tmdb_id)
+      )`);
+
+      await pool.query(`CREATE TABLE IF NOT EXISTS arena_challenges (
+        id SERIAL PRIMARY KEY,
+        creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        opponent_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'pending',
+        genre VARCHAR(100),
+        creator_movie_id INTEGER,
+        creator_movie_title VARCHAR(255),
+        creator_movie_poster VARCHAR(500),
+        opponent_movie_id INTEGER,
+        opponent_movie_title VARCHAR(255),
+        opponent_movie_poster VARCHAR(500),
+        creator_color VARCHAR(20) DEFAULT '#e50914',
+        opponent_color VARCHAR(20) DEFAULT '#0095f6',
+        creator_votes INTEGER DEFAULT 0,
+        opponent_votes INTEGER DEFAULT 0,
+        ends_at TIMESTAMP,
+        winner_id INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW()
+      )`);
+
+      await pool.query(`CREATE TABLE IF NOT EXISTS arena_votes (
+        id SERIAL PRIMARY KEY,
+        challenge_id INTEGER REFERENCES arena_challenges(id) ON DELETE CASCADE,
+        voter_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        voted_for INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(challenge_id, voter_id)
+      )`);
+
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS challenger_movie_id INTEGER');
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS challenger_movie_title VARCHAR(255)');
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS challenger_movie_poster VARCHAR(500)');
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS opponent_movie_id INTEGER');
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS opponent_movie_title VARCHAR(255)');
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS opponent_movie_poster VARCHAR(500)');
     } catch(e) {
       console.log('Patch warning:', e.message);
     }

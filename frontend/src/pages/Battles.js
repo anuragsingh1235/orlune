@@ -1,154 +1,496 @@
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
-import notify from '../utils/notify';
 import { useAuth } from '../context/AuthContext';
 import './Battles.css';
 
+const GENRES = ['All','Hollywood','Bollywood','KDrama','CDrama','Anime','Action','Romance','Thriller','Horror','Sci-Fi','Comedy','Drama'];
+
+const GENRE_ICONS = {
+  All:'🌍', Hollywood:'🎬', Bollywood:'🎭', KDrama:'🇰🇷', CDrama:'🇨🇳',
+  Anime:'⛩️', Action:'💥', Romance:'💕', Thriller:'🔪', Horror:'👻',
+  'Sci-Fi':'🚀', Comedy:'😂', Drama:'🎭'
+};
+
 export default function Battles() {
   const { user } = useAuth();
-  const [battles, setBattles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showChallenge, setShowChallenge] = useState(false);
-  const [searchQ, setSearchQ] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState('upcoming');
+
+  // ── UPCOMING STATE
+  const [upcoming, setUpcoming] = useState([]);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
+  const [upGenre, setUpGenre] = useState('All');
+  const [reminders, setReminders] = useState(new Set());
+  const [reminderLoading, setReminderLoading] = useState(new Set());
+
+  // ── TODAY STATE
+  const [todayMovies, setTodayMovies] = useState([]);
+  const [todayLoading, setTodayLoading] = useState(true);
+  const [ratings, setRatings] = useState({}); // tmdb_id -> {avg, count, userRating, submitCount}
+  const [sliderVals, setSliderVals] = useState({}); // tmdb_id -> slider value
+  const [ratingSubmitting, setRatingSubmitting] = useState(new Set());
+
+  // ── ARENA STATE
+  const [arenaChallenges, setArenaChallenges] = useState([]);
+  const [arenaLoading, setArenaLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createGenre, setCreateGenre] = useState('All');
+  const [opponentSearch, setOpponentSearch] = useState('');
+  const [opponentResults, setOpponentResults] = useState([]);
+  const [myVotes, setMyVotes] = useState({}); // challenge_id -> voted_for
+  const [winner, setWinner] = useState(null); // battle that just ended (for animation)
+
+  // ── FETCH UPCOMING
+  const fetchUpcoming = useCallback(async (genre) => {
+    setUpcomingLoading(true);
+    try {
+      const { data } = await api.get('/arena/upcoming', { params: { genre } });
+      setUpcoming(data.results || []);
+    } catch { setUpcoming([]); }
+    setUpcomingLoading(false);
+  }, []);
+
+  useEffect(() => { fetchUpcoming(upGenre); }, [upGenre, fetchUpcoming]);
 
   useEffect(() => {
-    if (!user) return;
-    api.get('/battles/my').then((r) => setBattles(r.data)).finally(() => setLoading(false));
+    if (user) {
+      api.get('/arena/reminders').then(r => setReminders(new Set(r.data.reminders)));
+    }
+  }, [user]);
+
+  // ── FETCH TODAY
+  useEffect(() => {
+    if (activeTab !== 'today') return;
+    setTodayLoading(true);
+    api.get('/arena/today').then(async ({ data }) => {
+      setTodayMovies(data.results || []);
+      // Fetch ratings for each
+      const ratingsMap = {};
+      await Promise.all((data.results || []).map(async m => {
+        try {
+          const headers = user ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {};
+          const r = await api.get(`/arena/rating/${m.id}`, { headers });
+          ratingsMap[m.id] = r.data;
+        } catch {}
+      }));
+      setRatings(ratingsMap);
+      setTodayLoading(false);
+    }).catch(() => setTodayLoading(false));
+  }, [activeTab, user]);
+
+  // ── FETCH ARENA
+  const fetchArena = useCallback(async () => {
+    setArenaLoading(true);
+    try {
+      const { data } = await api.get('/arena/feed');
+      setArenaChallenges(data);
+      // Fetch my votes for active ones
+      if (user) {
+        const voteMap = {};
+        await Promise.all(data.filter(c => c.status === 'active').map(async c => {
+          try {
+            const r = await api.get(`/arena/challenge/${c.id}/my-vote`);
+            if (r.data.voted) voteMap[c.id] = r.data.votedFor;
+          } catch {}
+        }));
+        setMyVotes(voteMap);
+      }
+    } catch { setArenaChallenges([]); }
+    setArenaLoading(false);
   }, [user]);
 
   useEffect(() => {
-    if (!searchQ.trim()) { setSearchResults([]); return; }
+    if (activeTab === 'arena') fetchArena();
+  }, [activeTab, fetchArena]);
+
+  // ── OPPONENT SEARCH
+  useEffect(() => {
+    if (!opponentSearch.trim()) { setOpponentResults([]); return; }
     const t = setTimeout(async () => {
-      setSearching(true);
-      const { data } = await api.get('/battles/users/search', { params: { q: searchQ } });
-      setSearchResults(data);
-      setSearching(false);
+      try {
+        const { data } = await api.get('/battles/users/search', { params: { q: opponentSearch } });
+        setOpponentResults(data);
+      } catch {}
     }, 400);
     return () => clearTimeout(t);
-  }, [searchQ]);
+  }, [opponentSearch]);
 
-  const challenge = async (opponentId, name) => {
+  // ── TOGGLE REMINDER
+  const toggleReminder = async (movie) => {
+    if (!user) return alert('Please log in to set reminders');
+    const id = movie.id;
+    setReminderLoading(prev => new Set([...prev, id]));
     try {
-      await api.post(`/battles/challenge/${opponentId}`);
-      notify.success(`Challenge sent to ${name}! ⚔️`);
-      setShowChallenge(false);
-      setSearchQ('');
-      api.get('/battles/my').then((r) => setBattles(r.data));
-    } catch (err) {
-      notify.error(err.response?.data?.error || 'Failed to challenge');
+      const { data } = await api.post('/arena/reminder', {
+        tmdb_id: id, media_type: 'movie',
+        title: movie.title, release_date: movie.release_date,
+        poster_path: movie.poster_path
+      });
+      setReminders(prev => {
+        const next = new Set(prev);
+        if (data.active) next.add(id); else next.delete(id);
+        return next;
+      });
+    } catch {}
+    setReminderLoading(prev => { const n = new Set(prev); n.delete(id); return n; });
+  };
+
+  // ── SUBMIT RATING
+  const submitRating = async (movie) => {
+    if (!user) return alert('Please log in to rate movies');
+    const id = movie.id;
+    const val = sliderVals[id] || 5;
+    const r = ratings[id];
+    if (r?.userSubmitCount >= 2) return;
+
+    if (r?.userSubmitCount === 1) {
+      const confirm = window.confirm('⚠️ WARNING: This is your LAST CHANCE to rate this movie. Your previous rating will be replaced. Are you sure?');
+      if (!confirm) return;
     }
-  };
 
-  const respond = async (id, action) => {
+    setRatingSubmitting(prev => new Set([...prev, id]));
     try {
-      const { data } = await api.put(`/battles/${id}/respond`, { action });
-      setBattles((prev) => prev.map((b) => b.id === id ? { ...b, status: data.status } : b));
-      notify.success(action === 'accept' ? '⚔️ Battle accepted!' : 'Battle declined');
-    } catch { notify.error('Failed'); }
+      const res = await api.post('/arena/rating', {
+        tmdb_id: id, media_type: 'movie', title: movie.title, rating: val
+      });
+      // Refresh rating
+      const updated = await api.get(`/arena/rating/${id}`);
+      setRatings(prev => ({ ...prev, [id]: updated.data }));
+    } catch {}
+    setRatingSubmitting(prev => { const n = new Set(prev); n.delete(id); return n; });
   };
 
-  const statusColor = { pending: 'badge-blue', active: 'badge-red', completed: 'badge-green', declined: '' };
-  const statusIcon = { pending: '⏳', active: '⚔️', completed: '🏆', declined: '❌' };
+  // ── CREATE CHALLENGE
+  const createChallenge = async (opponentId) => {
+    try {
+      await api.post('/arena/challenge', { genre: createGenre, opponentId });
+      setShowCreateModal(false);
+      setOpponentSearch('');
+      if (activeTab === 'arena') fetchArena();
+      alert('⚔️ Challenge created! Waiting for opponent...');
+    } catch { alert('Failed to create challenge'); }
+  };
 
-  if (!user) return (
-    <div className="container" style={{ padding: '80px 24px', textAlign: 'center' }}>
-      <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
-      <h2 style={{ marginBottom: 8 }}>Login Required</h2>
-      <p style={{ color: 'var(--text-muted)' }}>Sign in to enter battle arena</p>
+  // ── RESPOND TO CHALLENGE
+  const respondChallenge = async (id, action) => {
+    try {
+      await api.put(`/arena/challenge/${id}/respond`, { action });
+      fetchArena();
+    } catch {}
+  };
+
+  // ── VOTE
+  const voteChallenge = async (challengeId, side) => {
+    if (!user) return alert('Log in to vote');
+    if (myVotes[challengeId]) return;
+    try {
+      const { data } = await api.post(`/arena/challenge/${challengeId}/vote`, { votedFor: side });
+      setMyVotes(prev => ({ ...prev, [challengeId]: side === 'creator' ? arenaChallenges.find(c=>c.id===challengeId)?.creator_id : arenaChallenges.find(c=>c.id===challengeId)?.opponent_id }));
+      setArenaChallenges(prev => prev.map(c => c.id === challengeId ? { ...c, creator_votes: data.creatorVotes, opponent_votes: data.opponentVotes } : c));
+    } catch {}
+  };
+
+  // ── RENDER UPCOMING TAB
+  const renderUpcoming = () => (
+    <div className="arena-section">
+      <div className="arena-section-header">
+        <h2 className="arena-section-title">🚀 Upcoming Releases</h2>
+        <p className="arena-section-sub">Set reminders before they drop</p>
+      </div>
+      <div className="genre-filters">
+        {GENRES.map(g => (
+          <button key={g} className={`genre-pill ${upGenre === g ? 'active' : ''}`} onClick={() => setUpGenre(g)}>
+            {GENRE_ICONS[g]} {g}
+          </button>
+        ))}
+      </div>
+      {upcomingLoading ? (
+        <div className="arena-skeleton-grid">
+          {[...Array(6)].map((_,i) => <div key={i} className="skeleton-card"><div className="skeleton-poster"/><div className="skeleton-line"/><div className="skeleton-line short"/></div>)}
+        </div>
+      ) : upcoming.length === 0 ? (
+        <div className="arena-empty">
+          <div className="arena-empty-icon">🎬</div>
+          <h3>No upcoming titles found</h3>
+          <p>Try a different genre filter</p>
+        </div>
+      ) : (
+        <div className="upcoming-grid">
+          {upcoming.map(movie => {
+            const isReminded = reminders.has(movie.id);
+            const isLoading = reminderLoading.has(movie.id);
+            const releaseDate = new Date(movie.release_date);
+            const daysUntil = Math.ceil((releaseDate - new Date()) / (1000*60*60*24));
+            return (
+              <div key={movie.id} className="upcoming-card glass-card">
+                <div className="upcoming-poster-wrap">
+                  <img
+                    src={movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : 'https://via.placeholder.com/300x450?text=No+Poster'}
+                    alt={movie.title}
+                    className="upcoming-poster"
+                  />
+                  <div className="upcoming-overlay">
+                    <button
+                      className={`reminder-btn ${isReminded ? 'active' : ''} ${isLoading ? 'loading' : ''}`}
+                      onClick={() => toggleReminder(movie)}
+                      title={isReminded ? 'Remove reminder' : 'Set reminder'}
+                    >
+                      {isLoading ? '⏳' : isReminded ? '🔔' : '🔕'}
+                    </button>
+                    <div className="countdown-badge">{daysUntil === 1 ? '1 day' : `${daysUntil} days`}</div>
+                  </div>
+                </div>
+                <div className="upcoming-info">
+                  <h4 className="upcoming-title">{movie.title}</h4>
+                  <div className="upcoming-meta">
+                    <span className="release-date">📅 {new Date(movie.release_date).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</span>
+                    {movie.vote_average > 0 && <span className="up-rating">⭐ {movie.vote_average.toFixed(1)}</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 
-  return (
-    <div className="battles-page container">
-      <div className="section-header">
-        <h1 className="page-title">⚔️ Battle <span>Arena</span></h1>
-        <button className="btn btn-primary" onClick={() => setShowChallenge(true)}>+ Challenge Someone</button>
+  // ── RENDER TODAY TAB
+  const renderToday = () => (
+    <div className="arena-section">
+      <div className="arena-section-header">
+        <h2 className="arena-section-title">🎉 Released Today</h2>
+        <p className="arena-section-sub">Rate today's fresh drops — only 2 chances per movie!</p>
       </div>
-
-      <div className="battles-explainer">
-        <div className="explain-card">
-          <span>1️⃣</span>
-          <p>Challenge a user to a watchlist battle</p>
+      {todayLoading ? (
+        <div className="arena-skeleton-grid">
+          {[...Array(4)].map((_,i) => <div key={i} className="skeleton-card"><div className="skeleton-poster"/><div className="skeleton-line"/><div className="skeleton-line short"/></div>)}
         </div>
-        <div className="explain-card">
-          <span>2️⃣</span>
-          <p>They accept — battle goes live for 3 days</p>
-        </div>
-        <div className="explain-card">
-          <span>3️⃣</span>
-          <p>Other users vote on who has the better watchlist</p>
-        </div>
-        <div className="explain-card">
-          <span>4️⃣</span>
-          <p>Winner earns points & climbs leaderboard</p>
-        </div>
-      </div>
-
-      {loading ? <div className="spinner" /> : battles.length === 0 ? (
-        <div className="empty-state">
-          <div className="icon">⚔️</div>
-          <h3>No battles yet</h3>
-          <p>Challenge someone to prove your taste!</p>
+      ) : todayMovies.length === 0 ? (
+        <div className="arena-empty">
+          <div className="arena-empty-icon">📅</div>
+          <h3>No major releases today</h3>
+          <p>Check back tomorrow for fresh drops</p>
         </div>
       ) : (
-        <div className="battles-list">
-          {battles.map((b) => {
-            const isChallenger = b.challenger_id === user.id;
-            const myName = isChallenger ? b.challenger_name : b.opponent_name;
-            const theirName = isChallenger ? b.opponent_name : b.challenger_name;
-            const myVotes = isChallenger ? b.challenger_votes : b.opponent_votes;
-            const theirVotes = isChallenger ? b.opponent_votes : b.challenger_votes;
-            const total = myVotes + theirVotes;
-            const myPct = total ? Math.round((myVotes / total) * 100) : 50;
+        <div className="today-grid">
+          {todayMovies.map(movie => {
+            const r = ratings[movie.id] || {};
+            const sliderVal = sliderVals[movie.id] ?? 5;
+            const pct = ((r.avgRating || 0) / 10) * 100;
+            const isLocked = r.userSubmitCount >= 2;
+            const isSubmitting = ratingSubmitting.has(movie.id);
+            const lineColor = pct >= 50 ? `rgba(16,185,129,${0.3 + (pct/100)*0.7})` : `rgba(239,68,68,${0.3 + ((1-pct/100))*0.7})`;
+            return (
+              <div key={movie.id} className="today-card glass-card">
+                <div className="today-poster-wrap">
+                  <img src={movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : 'https://via.placeholder.com/300x450?text=No+Poster'} alt={movie.title} className="today-poster" />
+                  <div className="today-badge">NEW</div>
+                </div>
+                <div className="today-info">
+                  <h4 className="today-title">{movie.title}</h4>
+                  <div className="today-meta">
+                    {movie.vote_average > 0 && <span className="tmdb-r">⭐ {movie.vote_average.toFixed(1)} TMDB</span>}
+                    {r.count > 0 && <span className="user-r">👥 {r.count} ratings</span>}
+                  </div>
 
-            const myId = isChallenger ? b.challenger_id : b.opponent_id;
-            const theirId = isChallenger ? b.opponent_id : b.challenger_id;
+                  {/* Rating Slider */}
+                  {user && !isLocked && (
+                    <div className="rating-zone">
+                      <div className="slider-label">
+                        <span>Your Rating</span>
+                        <span className="slider-val">{sliderVal}/10</span>
+                      </div>
+                      <input
+                        type="range" min="1" max="10" step="1"
+                        value={sliderVal}
+                        onChange={e => setSliderVals(prev => ({ ...prev, [movie.id]: parseInt(e.target.value) }))}
+                        className="rating-slider"
+                        style={{ '--val': `${(sliderVal-1)/9*100}%` }}
+                      />
+                      <div className="slider-ticks">{[1,2,3,4,5,6,7,8,9,10].map(n=><span key={n}>{n}</span>)}</div>
+                      {r.userSubmitCount === 1 && (
+                        <div className="last-chance-warn">⚠️ Last chance! Previous rating: {r.userRating}/10</div>
+                      )}
+                      <button className={`submit-rating-btn ${isSubmitting ? 'loading' : ''}`} onClick={() => submitRating(movie)} disabled={isSubmitting}>
+                        {isSubmitting ? 'Submitting...' : r.userSubmitCount === 1 ? '🔥 Final Submit' : '✅ Submit Rating'}
+                      </button>
+                    </div>
+                  )}
+                  {isLocked && (
+                    <div className="rating-locked">🔒 You've rated this: <strong>{r.userRating}/10</strong> — Rating locked</div>
+                  )}
+                  {!user && (
+                    <div className="rating-login">🔐 <Link to="/login">Log in</Link> to rate</div>
+                  )}
+
+                  {/* Avg Rating Bar */}
+                  <div className="avg-rating-section">
+                    <div className="avg-rating-label">
+                      <span>Avg Score</span>
+                      <span style={{ color: pct >= 50 ? '#10b981' : '#ef4444' }}>{r.avgRating?.toFixed(1) || '—'}/10</span>
+                    </div>
+                    <div className="avg-bar-track">
+                      <div className="avg-bar-fill" style={{ width: `${pct}%`, background: lineColor, boxShadow: `0 0 12px ${lineColor}` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── RENDER ARENA TAB
+  const renderArena = () => (
+    <div className="arena-section">
+      <div className="arena-section-header">
+        <h2 className="arena-section-title">⚔️ Movie Battle Arena</h2>
+        <p className="arena-section-sub">Challenge someone — let the community decide who picked better</p>
+        {user && (
+          <button className="create-challenge-btn" onClick={() => setShowCreateModal(true)}>
+            ⚡ Create Challenge
+          </button>
+        )}
+      </div>
+
+      {arenaLoading ? (
+        <div className="arena-skeleton-grid">
+          {[...Array(3)].map((_,i) => <div key={i} className="skeleton-card wide"><div className="skeleton-line"/><div className="skeleton-line long"/><div className="skeleton-line short"/></div>)}
+        </div>
+      ) : arenaChallenges.length === 0 ? (
+        <div className="arena-empty">
+          <div className="arena-empty-icon">⚔️</div>
+          <h3>No battles yet</h3>
+          <p>Be the first to create a challenge!</p>
+        </div>
+      ) : (
+        <div className="arena-feed">
+          {arenaChallenges.map(ch => {
+            const isCreator = user?.id === ch.creator_id;
+            const isOpponent = user?.id === ch.opponent_id;
+            const isParticipant = isCreator || isOpponent;
+            const total = (ch.creator_votes || 0) + (ch.opponent_votes || 0);
+            const cPct = total ? Math.round((ch.creator_votes / total) * 100) : 50;
+            const oPct = 100 - cPct;
+            const myVote = myVotes[ch.id];
+            const timeLeft = ch.ends_at ? Math.max(0, Math.ceil((new Date(ch.ends_at) - new Date()) / (1000*60*60))) : null;
+            const isExpired = ch.ends_at && new Date(ch.ends_at) < new Date();
 
             return (
-              <div key={b.id} className="battle-card">
-                <div className="battle-header">
-                  <span className={`badge ${statusColor[b.status]}`}>
-                    {statusIcon[b.status]} {b.status}
-                  </span>
-                  <span className="battle-date">
-                    {b.ends_at ? `Ends ${new Date(b.ends_at).toLocaleDateString()}` : ''}
-                  </span>
-                </div>
-                <div className="battle-vs">
-                  <Link to={`/profile/${myId}`} className="battle-user" style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div className="b-avatar">{myName?.[0]?.toUpperCase()}</div>
-                    <span>{myName} <em>(You)</em></span>
-                    <strong>{myVotes} votes</strong>
-                  </Link>
-                  <div className="vs-badge">VS</div>
-                  <Link to={`/profile/${theirId}`} className="battle-user right" style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div className="b-avatar">{theirName?.[0]?.toUpperCase()}</div>
-                    <span>{theirName}</span>
-                    <strong>{theirVotes} votes</strong>
-                  </Link>
+              <div key={ch.id} className={`arena-card glass-card ${ch.status}`}>
+                {/* Header */}
+                <div className="arena-card-header">
+                  <div className="arena-genre-tag">{GENRE_ICONS[ch.genre] || '🎬'} {ch.genre}</div>
+                  <div className="arena-status-info">
+                    {ch.status === 'active' && timeLeft !== null && (
+                      <span className="arena-timer">⏱ {timeLeft}h left</span>
+                    )}
+                    <span className={`arena-badge ${ch.status}`}>{ch.status === 'pending' ? '⏳ Pending' : ch.status === 'active' ? '⚔️ Live' : '🏆 Ended'}</span>
+                  </div>
                 </div>
 
-                {b.status === 'active' && total > 0 && (
-                  <div style={{ marginTop: 12 }}>
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${myPct}%` }} />
+                {/* VS Layout */}
+                <div className="arena-vs-wrap">
+                  {/* Creator Side */}
+                  <div className="arena-side" style={{ '--side-color': ch.creator_color }}>
+                    <div className="arena-avatar" style={{ background: ch.creator_color }}>
+                      {ch.creator_avatar ? <img src={ch.creator_avatar} alt={ch.creator_name}/> : ch.creator_name?.[0]?.toUpperCase()}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                      <span>{myPct}%</span><span>{100 - myPct}%</span>
+                    <Link to={`/profile/${ch.creator_id}`} className="arena-username">{ch.creator_name}</Link>
+                    {ch.creator_movie_poster && (
+                      <img src={`https://image.tmdb.org/t/p/w200${ch.creator_movie_poster}`} alt={ch.creator_movie_title} className="arena-movie-poster"/>
+                    )}
+                    {ch.creator_movie_title && <p className="arena-movie-title">{ch.creator_movie_title}</p>}
+                    {isCreator && ch.status === 'active' && !ch.creator_movie_id && (
+                      <MoviePicker challengeId={ch.id} side="creator" onPicked={fetchArena}/>
+                    )}
+                    {ch.status === 'active' && ch.creator_movie_id && ch.opponent_movie_id && !isParticipant && (
+                      <button
+                        className={`vote-btn ${myVote ? 'voted' : ''}`}
+                        style={{ borderColor: ch.creator_color, color: myVote ? '#fff' : ch.creator_color, background: myVote && myVote === ch.creator_id ? ch.creator_color : 'transparent' }}
+                        onClick={() => !myVote && voteChallenge(ch.id, 'creator')}
+                      >
+                        {myVote ? (myVote === ch.creator_id ? '✅ Voted' : '—') : `Vote A`}
+                      </button>
+                    )}
+                    <div className="arena-vote-count" style={{ color: ch.creator_color }}>{ch.creator_votes || 0} votes</div>
+                  </div>
+
+                  <div className="arena-vs-badge">VS</div>
+
+                  {/* Opponent Side */}
+                  <div className="arena-side" style={{ '--side-color': ch.opponent_color }}>
+                    {ch.opponent_id ? (
+                      <>
+                        <div className="arena-avatar" style={{ background: ch.opponent_color }}>
+                          {ch.opponent_avatar ? <img src={ch.opponent_avatar} alt={ch.opponent_name}/> : ch.opponent_name?.[0]?.toUpperCase()}
+                        </div>
+                        <Link to={`/profile/${ch.opponent_id}`} className="arena-username">{ch.opponent_name}</Link>
+                        {ch.opponent_movie_poster && (
+                          <img src={`https://image.tmdb.org/t/p/w200${ch.opponent_movie_poster}`} alt={ch.opponent_movie_title} className="arena-movie-poster"/>
+                        )}
+                        {ch.opponent_movie_title && <p className="arena-movie-title">{ch.opponent_movie_title}</p>}
+                        {isOpponent && ch.status === 'active' && !ch.opponent_movie_id && (
+                          <MoviePicker challengeId={ch.id} side="opponent" onPicked={fetchArena}/>
+                        )}
+                        {ch.status === 'active' && ch.creator_movie_id && ch.opponent_movie_id && !isParticipant && (
+                          <button
+                            className={`vote-btn ${myVote ? 'voted' : ''}`}
+                            style={{ borderColor: ch.opponent_color, color: myVote ? '#fff' : ch.opponent_color, background: myVote && myVote === ch.opponent_id ? ch.opponent_color : 'transparent' }}
+                            onClick={() => !myVote && voteChallenge(ch.id, 'opponent')}
+                          >
+                            {myVote ? (myVote === ch.opponent_id ? '✅ Voted' : '—') : `Vote B`}
+                          </button>
+                        )}
+                        <div className="arena-vote-count" style={{ color: ch.opponent_color }}>{ch.opponent_votes || 0} votes</div>
+                      </>
+                    ) : (
+                      <div className="waiting-opponent">
+                        <div className="arena-avatar pulse">?</div>
+                        <p>Waiting for challenger...</p>
+                        {!isCreator && user && (
+                          <button className="accept-open-btn" onClick={() => respondChallenge(ch.id, 'accept')}>⚡ Join Battle</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Accept/Ignore for direct challenges */}
+                {ch.status === 'pending' && isOpponent && (
+                  <div className="arena-respond-row">
+                    <button className="arena-accept-btn" onClick={() => respondChallenge(ch.id, 'accept')}>✅ Accept</button>
+                    <button className="arena-ignore-btn" onClick={() => respondChallenge(ch.id, 'ignore')}>❌ Ignore</button>
+                  </div>
+                )}
+
+                {/* Vote Bar */}
+                {ch.status === 'active' && total > 0 && (
+                  <div className="arena-vote-bar-wrap">
+                    <div className="arena-vote-bar">
+                      <div className="arena-bar-a" style={{ width: `${cPct}%`, background: ch.creator_color, boxShadow: `0 0 12px ${ch.creator_color}88` }}/>
+                      <div className="arena-bar-b" style={{ width: `${oPct}%`, background: ch.opponent_color, boxShadow: `0 0 12px ${ch.opponent_color}88` }}/>
+                    </div>
+                    <div className="arena-bar-labels">
+                      <span style={{ color: ch.creator_color }}>{cPct}%</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{total} total votes</span>
+                      <span style={{ color: ch.opponent_color }}>{oPct}%</span>
                     </div>
                   </div>
                 )}
 
-                {b.status === 'pending' && !isChallenger && (
-                  <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                    <button className="btn btn-primary btn-sm" onClick={() => respond(b.id, 'accept')}>✅ Accept</button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => respond(b.id, 'decline')}>❌ Decline</button>
+                {/* Winner State */}
+                {ch.status === 'completed' && ch.winner_id && (
+                  <div className="arena-result">
+                    {ch.winner_id === user?.id ? (
+                      <div className="winner-banner">🏆 You Won! +{total} points awarded</div>
+                    ) : (
+                      <div className="loser-banner">😞 Better luck next time</div>
+                    )}
                   </div>
-                )}
-                {b.status === 'pending' && isChallenger && (
-                  <p style={{ marginTop: 12, fontSize: 13, color: 'var(--text-muted)' }}>⏳ Waiting for {theirName} to respond...</p>
                 )}
               </div>
             );
@@ -156,31 +498,135 @@ export default function Battles() {
         </div>
       )}
 
-      {/* Challenge Modal */}
-      {showChallenge && (
-        <div className="modal-overlay" onClick={() => setShowChallenge(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: 20 }}>⚔️ Challenge a User</h2>
-            <input className="input" placeholder="Search by username..."
-              value={searchQ} onChange={(e) => setSearchQ(e.target.value)} autoFocus />
-            <div className="challenge-results">
-              {searching && <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 12 }}>Searching...</p>}
-              {searchResults.map((u) => (
-                <div key={u.id} className="challenge-user">
-                  <Link to={`/profile/${u.id}`} className="b-avatar" style={{ textDecoration: 'none', color: 'inherit' }}>{u.username?.[0]?.toUpperCase()}</Link>
-                  <div style={{ flex: 1 }}>
-                    <Link to={`/profile/${u.id}`} style={{ textDecoration: 'none', color: 'inherit' }}><p style={{ fontWeight: 600 }}>{u.username}</p></Link>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{u.battle_wins}W · {u.total_points} pts</p>
-                  </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => challenge(u.id, u.username)}>Challenge ⚔️</button>
-                </div>
+      {/* Create Challenge Modal */}
+      {showCreateModal && (
+        <div className="arena-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="arena-modal glass-card" onClick={e => e.stopPropagation()}>
+            <button className="arena-modal-close" onClick={() => setShowCreateModal(false)}>×</button>
+            <h2 className="arena-modal-title">⚡ Create Battle</h2>
+            <p className="arena-modal-sub">Pick your genre and challenge someone</p>
+
+            <div className="modal-section-label">🎬 Choose Genre</div>
+            <div className="modal-genre-grid">
+              {GENRES.map(g => (
+                <button key={g} className={`modal-genre-btn ${createGenre === g ? 'active' : ''}`} onClick={() => setCreateGenre(g)}>
+                  {GENRE_ICONS[g]} {g}
+                </button>
               ))}
-              {searchQ && !searching && searchResults.length === 0 && (
-                <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 12 }}>No users found</p>
-              )}
             </div>
+
+            <div className="modal-section-label">👤 Challenge Someone (optional)</div>
+            <input
+              className="arena-search-input"
+              placeholder="Search username..."
+              value={opponentSearch}
+              onChange={e => setOpponentSearch(e.target.value)}
+            />
+            {opponentResults.map(u => (
+              <div key={u.id} className="opponent-result">
+                <div className="opp-avatar">{u.username?.[0]?.toUpperCase()}</div>
+                <div className="opp-info">
+                  <span className="opp-name">{u.username}</span>
+                  <span className="opp-stats">{u.battle_wins}W · {u.total_points}pts</span>
+                </div>
+                <button className="opp-challenge-btn" onClick={() => createChallenge(u.id)}>Challenge ⚔️</button>
+              </div>
+            ))}
+
+            <button className="create-open-btn" onClick={() => createChallenge(null)}>
+              🌍 Create Open Challenge (Anyone can join)
+            </button>
           </div>
         </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="battles-premium-page">
+      {/* Hero */}
+      <div className="battles-hero">
+        <div className="battles-hero-glow"/>
+        <h1 className="battles-hero-title">⚔️ Battle <span>Arena</span></h1>
+        <p className="battles-hero-sub">Upcoming drops · Today's releases · Live movie battles</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="battles-tabs">
+        {[
+          { id: 'upcoming', label: '🚀 Upcoming', desc: 'Coming soon' },
+          { id: 'today', label: '🎉 Today', desc: 'Fresh drops' },
+          { id: 'arena', label: '⚔️ Arena', desc: 'Battle' },
+        ].map(t => (
+          <button key={t.id} className={`battles-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
+            <span className="tab-label">{t.label}</span>
+            <span className="tab-desc">{t.desc}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="battles-content">
+        {activeTab === 'upcoming' && renderUpcoming()}
+        {activeTab === 'today' && renderToday()}
+        {activeTab === 'arena' && renderArena()}
+      </div>
+    </div>
+  );
+}
+
+// ── Movie Picker Sub-component
+function MoviePicker({ challengeId, side, onPicked }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/movies/search', { params: { q: query, type: 'movie' } });
+        setResults((data.results || []).slice(0, 6));
+      } catch {}
+    }, 400);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const confirm = async () => {
+    if (!selected) return;
+    setConfirming(true);
+    try {
+      await api.put(`/arena/challenge/${challengeId}/movie`, {
+        movie_id: selected.id, movie_title: selected.title || selected.name,
+        movie_poster: selected.poster_path
+      });
+      onPicked();
+    } catch {}
+    setConfirming(false);
+  };
+
+  if (!open) return (
+    <button className="pick-movie-btn" onClick={() => setOpen(true)}>🎬 Pick Your Movie</button>
+  );
+
+  return (
+    <div className="movie-picker glass-card" onClick={e => e.stopPropagation()}>
+      <h4>Pick Your Movie</h4>
+      <input className="picker-input" placeholder="Search movie..." value={query} onChange={e => { setQuery(e.target.value); setSelected(null); }} autoFocus/>
+      <div className="picker-results">
+        {results.map(m => (
+          <div key={m.id} className={`picker-item ${selected?.id === m.id ? 'selected' : ''}`} onClick={() => setSelected(m)}>
+            {m.poster_path && <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt={m.title}/>}
+            <span>{m.title || m.name}</span>
+          </div>
+        ))}
+      </div>
+      {selected && (
+        <button className="picker-confirm-btn" onClick={confirm} disabled={confirming}>
+          {confirming ? 'Locking...' : `🔒 Lock: ${selected.title}`}
+        </button>
       )}
     </div>
   );
