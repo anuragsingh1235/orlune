@@ -726,14 +726,142 @@
 .picker-confirm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── RESPONSIVE ──────────────────────────────────── */
-@media (max-width: 768px) {
-  .battles-hero { padding: 60px 16px 30px; }
-  .battles-tabs { gap: 8px; }
-  .battles-tab { min-width: 90px; padding: 12px 16px; }
-  .today-grid { grid-template-columns: 1fr; }
-  .arena-vs-wrap { flex-direction: column; }
-  .arena-vs-badge { align-self: center; transform: rotate(90deg); }
-  .upcoming-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-  .arena-section-header { flex-direction: column; }
-  .create-challenge-btn { margin-left: 0; width: 100%; }
+/* ── MULTI-STEP MODAL UI ─────────────────────────── */
+.modal-stepper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 30px;
 }
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.step-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  transform: scale(1.2);
+}
+
+.step-dot:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  background: rgba(255,255,255,0.05);
+  transform: translateY(-50%);
+}
+
+.step-dot.active:not(:last-child)::after {
+  background: var(--accent);
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-align: center;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.create-next-btn {
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.create-next-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.create-next-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.modal-nav-btns {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+}
+
+.create-back-btn {
+  padding: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.loading-text {
+  text-align: center;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 20px;
+}
+
+.opponent-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.up-media-type {
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(229,9,20,0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.watch-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transition: all 0.2s ease;
+  margin-top: 5px;
+}
+
+.watch-link-btn:hover {
+  background: #fff;
+  color: #000 !important;
+}
+
+@media (max-width: 768px) {
+  .modal-nav-btns { grid-template-columns: 1fr; }
+}
+

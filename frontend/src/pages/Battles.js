@@ -160,14 +160,51 @@ export default function Battles() {
     setRatingSubmitting(prev => { const n = new Set(prev); n.delete(id); return n; });
   };
 
-  // ── CREATE CHALLENGE
+  // ── CREATE CHALLENGE — multi-step state
+  const [createStep, setCreateStep] = useState(1); // 1=genre, 2=movie, 3=opponent
+  const [myMovie, setMyMovie] = useState(null); // { id, title, poster_path }
+  const [movieSearchQ, setMovieSearchQ] = useState('');
+  const [movieSearchResults, setMovieSearchResults] = useState([]);
+  const [movieSearching, setMovieSearching] = useState(false);
+
+  // Search movies for battle pick
+  useEffect(() => {
+    if (!movieSearchQ.trim()) { setMovieSearchResults([]); return; }
+    const t = setTimeout(async () => {
+      setMovieSearching(true);
+      try {
+        const { data } = await api.get('/movies/search', { params: { q: movieSearchQ, type: 'movie' } });
+        setMovieSearchResults((data.results || []).slice(0, 8));
+      } catch {}
+      setMovieSearching(false);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [movieSearchQ]);
+
+  const resetCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateStep(1);
+    setCreateGenre('All');
+    setMyMovie(null);
+    setMovieSearchQ('');
+    setMovieSearchResults([]);
+    setOpponentSearch('');
+    setOpponentResults([]);
+  };
+
   const createChallenge = async (opponentId) => {
+    if (!myMovie) return alert('Please pick your movie first!');
     try {
-      await api.post('/arena/challenge', { genre: createGenre, opponentId });
-      setShowCreateModal(false);
-      setOpponentSearch('');
+      await api.post('/arena/challenge', {
+        genre: createGenre,
+        opponentId,
+        creatorMovieId: myMovie.id,
+        creatorMovieTitle: myMovie.title || myMovie.name,
+        creatorMoviePoster: myMovie.poster_path
+      });
+      resetCreateModal();
       if (activeTab === 'arena') fetchArena();
-      alert('⚔️ Challenge created! Waiting for opponent...');
+      alert('⚔️ Challenge launched! Waiting for an opponent...');
     } catch { alert('Failed to create challenge'); }
   };
 
@@ -488,59 +525,92 @@ export default function Battles() {
                     {ch.winner_id === user?.id ? (
                       <div className="winner-banner">🏆 You Won! +{total} points awarded</div>
                     ) : (
-                      <div className="loser-banner">😞 Better luck next time</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Create Challenge Modal */}
+                    {/* MULTI-STEP CREATE MODAL */}
       {showCreateModal && (
-        <div className="arena-modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div className="arena-modal-overlay" onClick={resetCreateModal}>
           <div className="arena-modal glass-card" onClick={e => e.stopPropagation()}>
-            <button className="arena-modal-close" onClick={() => setShowCreateModal(false)}>×</button>
-            <h2 className="arena-modal-title">⚡ Create Battle</h2>
-            <p className="arena-modal-sub">Pick your genre and challenge someone</p>
-
-            <div className="modal-section-label">🎬 Choose Genre</div>
-            <div className="modal-genre-grid">
-              {GENRES.map(g => (
-                <button key={g} className={`modal-genre-btn ${createGenre === g ? 'active' : ''}`} onClick={() => setCreateGenre(g)}>
-                  {GENRE_ICONS[g]} {g}
-                </button>
-              ))}
+            <button className="arena-modal-close" onClick={resetCreateModal}>×</button>
+            <div className="modal-stepper">
+              <div className={`step-dot ${createStep >= 1 ? 'active' : ''}`} />
+              <div className={`step-dot ${createStep >= 2 ? 'active' : ''}`} />
+              <div className={`step-dot ${createStep >= 3 ? 'active' : ''}`} />
             </div>
 
-            <div className="modal-section-label">👤 Challenge Someone (optional)</div>
-            <input
-              className="arena-search-input"
-              placeholder="Search username..."
-              value={opponentSearch}
-              onChange={e => setOpponentSearch(e.target.value)}
-            />
-            {opponentResults.map(u => (
-              <div key={u.id} className="opponent-result">
-                <div className="opp-avatar">{u.username?.[0]?.toUpperCase()}</div>
-                <div className="opp-info">
-                  <span className="opp-name">{u.username}</span>
-                  <span className="opp-stats">{u.battle_wins}W · {u.total_points}pts</span>
+            {createStep === 1 && (
+              <div className="step-content animate-fade">
+                <h2 className="modal-title">1. Choose Category</h2>
+                <div className="modal-genre-grid">
+                  {GENRES.map(g => (
+                    <button key={g} className={`modal-genre-btn ${createGenre === g ? 'active' : ''}`} onClick={() => setCreateGenre(g)}>
+                      {GENRE_ICONS[g]} {g}
+                    </button>
+                  ))}
                 </div>
-                <button className="opp-challenge-btn" onClick={() => createChallenge(u.id)}>Challenge ⚔️</button>
+                <button className="create-next-btn" onClick={() => setCreateStep(2)}>Choose Movie →</button>
               </div>
-            ))}
+            )}
 
-            <button className="create-open-btn" onClick={() => createChallenge(null)}>
-              🌍 Create Open Challenge (Anyone can join)
-            </button>
+            {createStep === 2 && (
+              <div className="step-content animate-fade">
+                <h2 className="modal-title">2. Your Representative</h2>
+                <input
+                  className="arena-search-input"
+                  placeholder="Search globally for any movie/show..."
+                  value={movieSearchQ}
+                  onChange={e => setMovieSearchQ(e.target.value)}
+                  autoFocus
+                />
+                <div className="picker-results">
+                  {movieSearching && <p className="loading-text">Scanning universal archives...</p>}
+                  {movieSearchResults.map(m => (
+                    <div key={m.id} className={`picker-item ${myMovie?.id === m.id ? 'selected' : ''}`} onClick={() => setMyMovie(m)}>
+                      <img src={m.poster_path ? `https://image.tmdb.org/t/p/w92${m.poster_path}` : 'https://via.placeholder.com/92x138?text=No+Poster'} alt="p"/>
+                      <span>{m.title || m.name}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="modal-nav-btns">
+                  <button className="create-back-btn" onClick={() => setCreateStep(1)}>Back</button>
+                  <button className="create-next-btn" onClick={() => setCreateStep(3)} disabled={!myMovie}>Confirm Choice →</button>
+                </div>
+              </div>
+            )}
+
+            {createStep === 3 && (
+              <div className="step-content animate-fade">
+                <h2 className="modal-title">3. Finalize Duel</h2>
+                <p className="modal-sub">Confirming battle for {createGenre} | Choice: <strong>{myMovie?.title || myMovie?.name}</strong></p>
+                <div className="opponent-section">
+                  <input
+                    className="arena-search-input"
+                    placeholder="Duel a specific user (type name) or leave empty for Open Challenge"
+                    value={opponentSearch}
+                    onChange={e => setOpponentSearch(e.target.value)}
+                  />
+                  <div className="opponent-results">
+                    {opponentResults.map(u => (
+                      <div key={u.id} className="opponent-result">
+                        <div className="opp-avatar">{u.username?.[0]?.toUpperCase()}</div>
+                        <span className="opp-name">{u.username}</span>
+                        <button className="opp-challenge-btn" onClick={() => createChallenge(u.id)}>DUEL</button>
+                      </div>
+                    ))}
+                  </div>
+                  {!opponentSearch && (
+                    <button className="create-open-btn" onClick={() => createChallenge(null)}>
+                      🔥 LAUNCH OPEN CHALLENGE
+                    </button>
+                  )}
+                </div>
+                <button className="create-back-btn" onClick={() => setCreateStep(2)} style={{marginTop: 15}}>Back to Movie</button>
+              </div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
+}
 
   return (
     <div className="battles-premium-page">

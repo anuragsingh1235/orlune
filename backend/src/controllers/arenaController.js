@@ -7,27 +7,39 @@ const COLORS = ['#e50914','#0095f6','#a855f7','#f59e0b','#10b981','#ef4444','#3b
 
 const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
 
+// TMDB Genre IDs
+const GENRE_IDS = {
+  action: 28, romance: 10749, thriller: 53, horror: 27,
+  'sci-fi': 878, comedy: 35, drama: 18, animation: 16, crime: 80
+};
+
 // ─── UPCOMING MOVIES ───────────────────────────────────────────────
 exports.getUpcoming = async (req, res) => {
   try {
-    const { genre, region = 'IN' } = req.query;
-    let url = `${TMDB}/movie/upcoming?api_key=${TMDB_KEY}&language=en-US&region=${region}&page=1`;
-    const r = await axios.get(url);
-    let results = r.data.results || [];
+    const { genre } = req.query;
+    const g = (genre || 'all').toLowerCase();
+    const today = new Date().toISOString().split('T')[0];
+    const future = new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // Also fetch region-specific (Bollywood = IN, Kdrama = KR, Cdrama = CN)
-    const regions = { bollywood: 'IN', kdrama: 'KR', cdrama: 'CN', hollywood: 'US' };
-    if (genre && regions[genre.toLowerCase()]) {
-      const r2 = await axios.get(`${TMDB}/movie/upcoming?api_key=${TMDB_KEY}&language=en-US&region=${regions[genre.toLowerCase()]}&page=1`);
-      results = [...results, ...(r2.data.results || [])];
-    }
-    // Deduplicate
-    const seen = new Set();
-    results = results.filter(m => { if (seen.has(m.id)) return false; seen.add(m.id); return true; });
-    // Filter to only future dates
-    const today = new Date(); today.setHours(0,0,0,0);
-    results = results.filter(m => m.release_date && new Date(m.release_date) > today);
-    results.sort((a, b) => new Date(a.release_date) - new Date(b.release_date));
+    let url;
+    const base = `${TMDB}/discover/movie?api_key=${TMDB_KEY}&language=en-US&sort_by=release_date.asc&include_adult=false&primary_release_date.gte=${today}&primary_release_date.lte=${future}`;
+    const tvBase = `${TMDB}/discover/tv?api_key=${TMDB_KEY}&language=en-US&sort_by=first_air_date.asc&first_air_date.gte=${today}&first_air_date.lte=${future}`;
+
+    if (g === 'hollywood')       url = `${base}&with_original_language=en&region=US`;
+    else if (g === 'bollywood')  url = `${base}&with_original_language=hi|te|ta|ml|kn&region=IN`;
+    else if (g === 'kdrama')     url = `${tvBase}&with_original_language=ko`;
+    else if (g === 'cdrama')     url = `${tvBase}&with_original_language=zh`;
+    else if (g === 'anime')      url = `${tvBase}&with_original_language=ja&with_genres=16`;
+    else if (GENRE_IDS[g])       url = `${base}&with_genres=${GENRE_IDS[g]}`;
+    else                         url = `${base}&region=US`; 
+
+    const r = await axios.get(url);
+    const results = (r.data.results || []).map(m => ({
+        ...m,
+        title: m.title || m.name,
+        release_date: m.release_date || m.first_air_date,
+        media_type: g === 'anime' || g === 'cdrama' || g === 'kdrama' ? 'tv' : 'movie'
+    }));
     res.json({ results });
   } catch (err) {
     console.error('Upcoming error:', err.message);
@@ -38,13 +50,19 @@ exports.getUpcoming = async (req, res) => {
 // ─── TODAY'S RELEASES ──────────────────────────────────────────────
 exports.getTodayReleased = async (req, res) => {
   try {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const url = `${TMDB}/discover/movie?api_key=${TMDB_KEY}&primary_release_date.gte=${todayStr}&primary_release_date.lte=${todayStr}&language=en-US&sort_by=popularity.desc`;
-    const r = await axios.get(url);
-    res.json({ results: r.data.results || [] });
+    const today = new Date().toISOString().split('T')[0];
+    const [mv, tv] = await Promise.all([
+      axios.get(`${TMDB}/discover/movie?api_key=${TMDB_KEY}&primary_release_date.gte=${today}&primary_release_date.lte=${today}&language=en-US`),
+      axios.get(`${TMDB}/discover/tv?api_key=${TMDB_KEY}&first_air_date.gte=${today}&first_air_date.lte=${today}&language=en-US`)
+    ]);
+    
+    const results = [
+        ...(mv.data.results || []).map(m => ({ ...m, media_type: 'movie' })),
+        ...(tv.data.results || []).map(m => ({ ...m, media_type: 'tv', title: m.name, release_date: m.first_air_date }))
+    ];
+    res.json({ results });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch today releases' });
+    res.status(500).json({ error: 'Failed' });
   }
 };
 
@@ -146,18 +164,26 @@ exports.getArenaFeed = async (req, res) => {
 };
 
 exports.createChallenge = async (req, res) => {
-  const { genre, opponentId } = req.body;
+  const { genre, opponentId, creatorMovieId, creatorMovieTitle, creatorMoviePoster } = req.body;
   const creatorColor = randomColor();
   let opponentColor = randomColor();
   while (opponentColor === creatorColor) opponentColor = randomColor();
   try {
     const r = await pool.query(
-      `INSERT INTO arena_challenges (creator_id, opponent_id, genre, creator_color, opponent_color)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [req.user.id, opponentId || null, genre || 'All', creatorColor, opponentColor]
+      `INSERT INTO arena_challenges (
+        creator_id, opponent_id, genre, 
+        creator_movie_id, creator_movie_title, creator_movie_poster,
+        creator_color, opponent_color
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [
+        req.user.id, opponentId || null, genre || 'All', 
+        creatorMovieId, creatorMovieTitle, creatorMoviePoster,
+        creatorColor, opponentColor
+      ]
     );
     res.status(201).json(r.rows[0]);
-  } catch {
+  } catch (err) {
+    console.error('Create challenge error:', err.message);
     res.status(500).json({ error: 'Failed to create challenge' });
   }
 };

@@ -112,6 +112,16 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
           {item.status === 'completed' && !showStatus && (
             <div className="completed-check animate-fade">✨ Mastered</div>
           )}
+          {/* 🎬 Global Watch Link */}
+          <a 
+            href={`https://www.google.com/search?q=watch+${encodeURIComponent(title)}+online`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="watch-link-btn"
+            title="Search watch options"
+          >
+            Watch Now ↗
+          </a>
         </div>
         {rating && (
           <div className="movie-rating">
