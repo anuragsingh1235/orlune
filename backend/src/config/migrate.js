@@ -96,6 +96,7 @@ async function migrate() {
     `);
 
     // 🔥 Patch Updates
+    try {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)');
       await pool.query('ALTER TABLE users ALTER COLUMN avatar_url TYPE TEXT');
       await pool.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_url TEXT');

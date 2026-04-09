@@ -144,11 +144,11 @@ exports.me = async (req, res) => {
 
 /* ================= UPDATE PROFILE ================= */
 exports.updateProfile = async (req, res) => {
-  const { avatar_url, bio } = req.body;
+  const { avatar_url, bio, name, username } = req.body;
   try {
     const result = await pool.query(
-      "UPDATE users SET avatar_url=$1, bio=$2 WHERE id=$3 RETURNING id, username, email, avatar_url, bio",
-      [avatar_url || '', bio || '', req.user.id]
+      "UPDATE users SET avatar_url=$1, bio=$2, name=$3, username=$4 WHERE id=$5 RETURNING id, username, email, avatar_url, bio, name",
+      [avatar_url || '', bio || '', name || '', username || '', req.user.id]
     );
     res.json({ message: "Profile updated successfully", user: result.rows[0] });
   } catch (err) {
