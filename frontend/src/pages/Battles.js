@@ -525,7 +525,17 @@ export default function Battles() {
                     {ch.winner_id === user?.id ? (
                       <div className="winner-banner">🏆 You Won! +{total} points awarded</div>
                     ) : (
-                    {/* MULTI-STEP CREATE MODAL */}
+                      <div className="loser-banner">😞 Better luck next time</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* MULTI-STEP CREATE MODAL */}
       {showCreateModal && (
         <div className="arena-modal-overlay" onClick={resetCreateModal}>
           <div className="arena-modal glass-card" onClick={e => e.stopPropagation()}>
