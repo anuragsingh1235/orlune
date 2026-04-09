@@ -192,35 +192,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                     )}
                   </div>
 
-                  {/* Scene Selector */}
-                  <div className="discovery-grid animate-up">
-                    {[
-                      ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []),
-                      ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic' })),
-                      ...(details.fanVideos || []).map(s => ({ ...s, type: 'Edit' })),
-                      ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
-                    ].map((v, i) => (
-                      <div 
-                        key={i} 
-                        className={`discovery-card ${currentVideoId === v.id ? 'active' : ''}`}
-                        onClick={() => setDetails({ ...details, activeVideoId: v.id })}
-                      >
-                        <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} alt="thumb" />
-                        <div className="card-info"><span className="tag">{v.type}</span></div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="info-panel glass-card">
-                    <h2 className="title-display">{details.title || details.name}</h2>
-                    <div className="meta-info">
-                       <span className="rating gold">⭐ {details.vote_average?.toFixed(1)}</span>
-                       <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
-                    </div>
-                    <p className="description-text">{details.overview}</p>
-                  </div>
-
-                  {/* 📺 WATCH PLATFORMS (Premium UI) */}
+                  {/* 📺 WATCH PLATFORMS (Premium UI) Directly Below Trailer */}
                   <div className="watch-platforms-container animate-up">
                     <h3 className="platforms-title">Streaming On <span>(Global Archives)</span></h3>
                     
@@ -248,6 +220,34 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                         No digital streams or archives available for this title yet.
                       </div>
                     )}
+                  </div>
+
+                  {/* Scene Selector */}
+                  <div className="discovery-grid animate-up">
+                    {[
+                      ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []),
+                      ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic' })),
+                      ...(details.fanVideos || []).map(s => ({ ...s, type: 'Edit' })),
+                      ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
+                    ].map((v, i) => (
+                      <div 
+                        key={i} 
+                        className={`discovery-card ${currentVideoId === v.id ? 'active' : ''}`}
+                        onClick={() => setDetails({ ...details, activeVideoId: v.id })}
+                      >
+                        <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} alt="thumb" />
+                        <div className="card-info"><span className="tag">{v.type}</span></div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="info-panel glass-card">
+                    <h2 className="title-display">{details.title || details.name}</h2>
+                    <div className="meta-info">
+                       <span className="rating gold">⭐ {details.vote_average?.toFixed(1)}</span>
+                       <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
+                    </div>
+                    <p className="description-text">{details.overview}</p>
                   </div>
 
                 </div>
