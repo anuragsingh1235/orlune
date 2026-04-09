@@ -260,8 +260,12 @@ export default function Social() {
                   </div>
                </div>
                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-sm btn-ghost" onClick={() => removeFriend(activeChat.id)} style={{color: '#EBCB8B', borderColor: 'rgba(235, 203, 139, 0.2)'}}>Remove</button>
-                  <button className="btn btn-sm btn-ghost" onClick={() => blockUser(activeChat.id)} style={{color: '#BF616A', borderColor: 'rgba(191, 97, 106, 0.2)'}}>Block</button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => removeFriend(activeChat.id)} style={{color: '#EBCB8B', borderColor: 'rgba(235, 203, 139, 0.2)'}}>
+                    {activeChat.status === 'blocked' ? 'Unblock (Remove)' : 'Remove'}
+                  </button>
+                  {activeChat.status !== 'blocked' && (
+                    <button className="btn btn-sm btn-ghost" onClick={() => blockUser(activeChat.id)} style={{color: '#BF616A', borderColor: 'rgba(191, 97, 106, 0.2)'}}>Block</button>
+                  )}
                </div>
             </div>
 

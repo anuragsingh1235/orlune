@@ -1,0 +1,19 @@
+require('dotenv').config();
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+async function patch() {
+  try {
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)');
+    console.log("Added display_name column");
+  } catch(e) {
+    console.error(e);
+  } finally {
+    pool.end();
+  }
+}
+patch();
