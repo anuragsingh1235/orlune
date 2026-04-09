@@ -81,7 +81,10 @@ export default function Navbar() {
               <div className="user-menu">
                 <Link to="/profile" className="user-chip">
                   <div className="user-avatar">
-                    {user.username?.[0]?.toUpperCase()}
+                    {user.avatar_url
+                      ? <img src={user.avatar_url} alt="dp" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      : user.username?.[0]?.toUpperCase()
+                    }
                   </div>
                   <span>{user.username}</span>
                 </Link>
@@ -131,7 +134,10 @@ export default function Navbar() {
               <div className="mobile-user-info">
                 <Link to="/profile" className="mobile-user-card" onClick={() => setMenuOpen(false)} style={{ textDecoration: 'none' }}>
                   <div className="user-avatar large">
-                    {user.username?.[0]?.toUpperCase()}
+                    {user.avatar_url
+                      ? <img src={user.avatar_url} alt="dp" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      : user.username?.[0]?.toUpperCase()
+                    }
                   </div>
                   <div className="user-details">
                     <span className="user-name">{user.username}</span>

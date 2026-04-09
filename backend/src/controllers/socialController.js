@@ -160,3 +160,85 @@ exports.removeFriend = async (req, res) => {
     res.status(500).json({ error: "Failed to remove friend" });
   }
 };
+
+// ─── FOLLOW ──────────────────────────────────────────
+exports.followUser = async (req, res) => {
+  const followerId = req.user.id;
+  const { followingId } = req.body;
+  if (followerId === followingId) return res.status(400).json({ error: "Cannot follow yourself" });
+  try {
+    await pool.query(
+      "INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [followerId, followingId]
+    );
+    res.json({ message: "Followed" });
+  } catch (err) {
+    res.status(500).json({ error: "Follow failed" });
+  }
+};
+
+// ─── UNFOLLOW ──────────────────────────────────────────
+exports.unfollowUser = async (req, res) => {
+  const followerId = req.user.id;
+  const { followingId } = req.body;
+  try {
+    await pool.query(
+      "DELETE FROM follows WHERE follower_id=$1 AND following_id=$2",
+      [followerId, followingId]
+    );
+    res.json({ message: "Unfollowed" });
+  } catch (err) {
+    res.status(500).json({ error: "Unfollow failed" });
+  }
+};
+
+// ─── GET FOLLOWING ──────────────────────────────────────────
+exports.getFollowing = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.username, u.avatar_url, u.bio
+       FROM follows f JOIN users u ON f.following_id = u.id
+       WHERE f.follower_id = $1`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch following" });
+  }
+};
+
+// ─── GET FOLLOWERS ──────────────────────────────────────────
+exports.getFollowers = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.username, u.avatar_url, u.bio
+       FROM follows f JOIN users u ON f.follower_id = u.id
+       WHERE f.following_id = $1`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch followers" });
+  }
+};
+
+// ─── GET MUTUAL FRIENDS (both follow each other) ──────────────────────────────────────────
+exports.getMutualFriends = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.username, u.avatar_url, u.bio
+       FROM follows f1
+       JOIN follows f2 ON f1.follower_id = f2.following_id AND f1.following_id = f2.follower_id
+       JOIN users u ON u.id = f1.following_id
+       WHERE f1.follower_id = $1`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch mutual friends" });
+  }
+};
+
