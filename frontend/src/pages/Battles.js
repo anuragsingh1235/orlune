@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import notify from '../utils/notify';
 import { useAuth } from '../context/AuthContext';
@@ -103,6 +103,9 @@ export default function Battles() {
             const total = myVotes + theirVotes;
             const myPct = total ? Math.round((myVotes / total) * 100) : 50;
 
+            const myId = isChallenger ? b.challenger_id : b.opponent_id;
+            const theirId = isChallenger ? b.opponent_id : b.challenger_id;
+
             return (
               <div key={b.id} className="battle-card">
                 <div className="battle-header">
@@ -114,17 +117,17 @@ export default function Battles() {
                   </span>
                 </div>
                 <div className="battle-vs">
-                  <div className="battle-user">
+                  <Link to={`/profile/${myId}`} className="battle-user" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <div className="b-avatar">{myName?.[0]?.toUpperCase()}</div>
                     <span>{myName} <em>(You)</em></span>
                     <strong>{myVotes} votes</strong>
-                  </div>
+                  </Link>
                   <div className="vs-badge">VS</div>
-                  <div className="battle-user right">
+                  <Link to={`/profile/${theirId}`} className="battle-user right" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <div className="b-avatar">{theirName?.[0]?.toUpperCase()}</div>
                     <span>{theirName}</span>
                     <strong>{theirVotes} votes</strong>
-                  </div>
+                  </Link>
                 </div>
 
                 {b.status === 'active' && total > 0 && (
@@ -164,9 +167,9 @@ export default function Battles() {
               {searching && <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 12 }}>Searching...</p>}
               {searchResults.map((u) => (
                 <div key={u.id} className="challenge-user">
-                  <div className="b-avatar">{u.username?.[0]?.toUpperCase()}</div>
+                  <Link to={`/profile/${u.id}`} className="b-avatar" style={{ textDecoration: 'none', color: 'inherit' }}>{u.username?.[0]?.toUpperCase()}</Link>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 600 }}>{u.username}</p>
+                    <Link to={`/profile/${u.id}`} style={{ textDecoration: 'none', color: 'inherit' }}><p style={{ fontWeight: 600 }}>{u.username}</p></Link>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{u.battle_wins}W · {u.total_points} pts</p>
                   </div>
                   <button className="btn btn-primary btn-sm" onClick={() => challenge(u.id, u.username)}>Challenge ⚔️</button>
