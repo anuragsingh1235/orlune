@@ -158,12 +158,14 @@ export default function Home() {
         
         <Footer />
       </div>
-    );
-  }
+    </AnimatedPage>
+  );
+}
 
   // ── LANDING SPLASH VIEW (LOGGED OUT) ──
   return (
-    <div className="home-page landing-view animate-fade">
+    <AnimatedPage>
+      <div className="home-page landing-view animate-fade">
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="hero">
         <div className="hero-bg" />
@@ -319,5 +321,6 @@ export default function Home() {
         defaultMode={modalMode}
       />
     </div>
+    </AnimatedPage>
   );
 }
