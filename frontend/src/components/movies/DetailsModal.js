@@ -178,24 +178,13 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
   const filteredProviders = globalProviders.filter(p => providerFilter === 'all' || p.costCat === providerFilter || p.costCat === 'all');
 
-  // Instant Deep-Link Generator
-  const getDirectLink = (providerName, fallbackLink) => {
+  // Bulletproof Global Search Link Engine
+  const getDirectLink = (providerName) => {
     const titleObj = details?.title || details?.name || item?.title || item?.name || '';
     const title = encodeURIComponent(titleObj);
-    const name = providerName.toLowerCase();
-    
-    if (name.includes('netflix')) return `https://www.netflix.com/search?q=${title}`;
-    if (name.includes('amazon') || name.includes('prime')) return `https://www.amazon.com/s?k=${title}&i=instant-video`;
-    if (name.includes('disney')) return `https://www.disneyplus.com/search?q=${title}`;
-    if (name.includes('hulu')) return `https://www.hulu.com/search?q=${title}`;
-    if (name.includes('max') || name.includes('hbo')) return `https://play.max.com/search?q=${title}`;
-    if (name.includes('crunchyroll')) return `https://www.crunchyroll.com/search?q=${title}`;
-    if (name.includes('apple')) return `https://tv.apple.com/search?term=${title}`;
-    if (name.includes('youtube')) return `https://www.youtube.com/results?search_query=${title}+movie`;
-    if (name.includes('peacock')) return `https://www.peacocktv.com/watch/search?q=${title}`;
-    if (name.includes('paramount')) return `https://www.paramountplus.com/search/?q=${title}`;
-
-    return fallbackLink || `https://www.google.com/search?q=Watch+${title}+on+${encodeURIComponent(providerName)}`;
+    // Ignore internal APIs and direct domains to prevent blockers and broken routes.
+    // Instead, do a bulletproof global search to instantly deliver the user to the correct page via Google.
+    return `https://www.google.com/search?q=Watch+${title}+on+${encodeURIComponent(providerName)}`;
   };
 
   return (
@@ -265,7 +254,7 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                          {filteredProviders.map((p, idx) => (
                             <a 
                               key={`${p.provider_id}-${p.costCat}`} 
-                              href={getDirectLink(p.provider_name, watchLink)} 
+                              href={getDirectLink(p.provider_name)} 
                               target="_blank" 
                               rel="noreferrer" 
                               className="platform-card glass-card" 
