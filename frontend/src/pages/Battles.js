@@ -219,6 +219,15 @@ export default function Battles() {
     } catch { alert('Failed to create challenge'); }
   };
 
+  // ── DELETE/CANCEL CHALLENGE
+  const cancelBattle = async (id) => {
+    if (!window.confirm("Abort this mission? This battle record will be deleted.")) return;
+    try {
+      await api.delete(`/arena/challenge/${id}`);
+      fetchArena();
+    } catch { alert('Failed to cancel'); }
+  };
+
   // ── RESPOND TO CHALLENGE
   const respondChallenge = async (id, action) => {
     try {
@@ -442,6 +451,11 @@ export default function Battles() {
                 <div className="arena-card-header">
                   <div className="arena-genre-tag">{GENRE_ICONS[ch.genre] || '🎬'} {ch.genre}</div>
                   <div className="arena-status-info">
+                    {isCreator && (ch.status === 'pending' || ch.status === 'active') && (
+                      <button className="arena-cancel-btn" onClick={() => cancelBattle(ch.id)} title="Cancel Battle">
+                        ✕ Cancel
+                      </button>
+                    )}
                     {ch.status === 'active' && timeLeft !== null && (
                       <span className="arena-timer">⏱ {timeLeft}h left</span>
                     )}

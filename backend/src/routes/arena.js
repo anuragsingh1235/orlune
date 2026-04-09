@@ -15,5 +15,6 @@ router.put('/challenge/:id/respond', auth, c.respondChallenge);
 router.put('/challenge/:id/movie', auth, c.selectMovie);
 router.post('/challenge/:id/vote', auth, c.voteChallenge);
 router.get('/challenge/:id/my-vote', auth, c.getMyArenaVote);
+router.delete('/challenge/:id', auth, c.cancelChallenge);
 
 module.exports = router;

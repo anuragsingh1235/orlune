@@ -262,3 +262,16 @@ exports.getMyArenaVote = async (req, res) => {
     res.json({ voted: false });
   }
 };
+
+exports.cancelChallenge = async (req, res) => {
+  try {
+    const r = await pool.query(
+      `DELETE FROM arena_challenges WHERE id=$1 AND creator_id=$2 RETURNING *`,
+      [req.params.id, req.user.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Not authorized or challenge not found' });
+    res.json({ message: 'Battle cancelled' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to cancel' });
+  }
+};
