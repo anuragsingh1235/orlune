@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import AuthModal from '../components/AuthModal';
 import MovieCard from '../components/movies/MovieCard';
 import DetailsModal from '../components/movies/DetailsModal';
 import FactCard from '../components/dashboard/FactCard';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/layout/Footer';
+import AnimatedPage from '../components/layout/AnimatedPage';
 import api from '../utils/api';
 import './Home.css';
 
@@ -58,46 +60,59 @@ export default function Home() {
   if (user) {
     // ── DASHBOARD VIEW (LOGGED IN) ──
     return (
-      <div className="home-page dashboard-view animate-fade">
-        <section className="container" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
-          
-          {/* 🔥 DYNAMIC TRIVIA CARD */}
-          <FactCard />
+      <AnimatedPage>
+        <div className="home-page dashboard-view">
+          <section className="container" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+            
+            <FactCard />
 
-          <div className="dashboard-header animate-up" style={{ marginBottom: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontSize: '2.4rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-1.5px' }}>
-                Welcome back, <span className="text-gradient" style={{ display: 'inline' }}>{user.username}</span>
-              </h1>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your personal archive is awaiting further curation.</p>
+            <div className="dashboard-header" style={{ marginBottom: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ flex: 1 }}>
+                <motion.h1 
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  style={{ fontSize: '2.4rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-1.5px' }}
+                >
+                  Welcome back, <span className="text-gradient" style={{ display: 'inline' }}>{user.username}</span>
+                </motion.h1>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your personal archive is awaiting further curation.</p>
+              </div>
+              
+              <div className="dashboard-lottie hide-mobile" style={{ width: '120px', height: '120px' }}>
+                <lord-icon
+                    src="https://cdn.lordicon.com/dxjqoygy.json"
+                    trigger="hover"
+                    colors="primary:#ffffff,secondary:#7c4dff"
+                    style={{width:'120px',height:'120px'}}>
+                </lord-icon>
+              </div>
             </div>
             
-            <div className="dashboard-lottie hide-mobile" style={{ width: '150px' }}>
-              <lottie-player 
-                src="https://assets2.lottiefiles.com/packages/lf20_T6v6t6.json"
-                background="transparent"
-                speed="1"
-                style={{ width: '150px', height: '150px' }}
-                loop
-                autoplay>
-              </lottie-player>
+            <div className="section-header">
+              <h2 className="section-title">Trending for Members</h2>
+              <Link to="/search" className="btn btn-ghost btn-sm">Explore All →</Link>
             </div>
-          </div>
-          
-          <div className="section-header">
-            <h2 className="section-title">Trending for Members</h2>
-            <Link to="/search" className="btn btn-ghost btn-sm">Explore All →</Link>
-          </div>
 
-          {loading ? (
-            <div className="spinner" />
-          ) : (
-            <div className="movies-grid animate-up">
-              {trending?.map((item) => (
-                <MovieCard key={item.id} item={{ ...item, media_type: 'movie' }} onClick={setActiveMovie} />
-              ))}
-            </div>
-          )}
+            {loading ? (
+              <div className="spinner" />
+            ) : (
+              <motion.div 
+                layout
+                className="movies-grid"
+              >
+                {trending?.map((item, idx) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <MovieCard item={{ ...item, media_type: 'movie' }} onClick={setActiveMovie} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
 
           {/* ✨ SPOTLIGHT: ANIME */}
           <div className="section-header" style={{ marginTop: '60px' }}>

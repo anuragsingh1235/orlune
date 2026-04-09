@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import AnimatedPage from '../components/layout/AnimatedPage';
 import './Battles.css';
 
 const GENRES = ['All','Hollywood','Bollywood','KDrama','CDrama','Anime','Action','Romance','Thriller','Horror','Sci-Fi','Comedy','Drama'];
@@ -673,32 +675,67 @@ export default function Battles() {
   );
 
   return (
-    <div className="battles-premium-page">
-      <div className="battles-hero">
-        <div className="battles-hero-glow"/>
-        <h1 className="battles-hero-title">CINEMATIC <span>Gallery</span></h1>
-        <p className="battles-hero-sub">Rankings · Drops · Comparisons</p>
-      </div>
+    <AnimatedPage>
+      <div className="battles-premium-page">
+        <div className="battles-hero">
+          <div className="battles-hero-glow"/>
+          <motion.h1 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="battles-hero-title"
+          >
+            CINEMATIC <span>Gallery</span>
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="battles-hero-sub"
+          >
+            Rankings · Drops · Comparisons
+          </motion.p>
+        </div>
 
-      <div className="battles-tabs">
-        {[
-          { id: 'upcoming', label: '🚀 Arrivals', desc: 'Coming soon' },
-          { id: 'today', label: '🎉 Premiere', desc: 'Fresh drops' },
-          { id: 'arena', label: '✨ Gallery', desc: 'Comparisons' },
-        ].map(t => (
-          <button key={t.id} className={`battles-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
-            <span className="tab-label">{t.label}</span>
-            <span className="tab-desc">{t.desc}</span>
-          </button>
-        ))}
-      </div>
+        <div className="battles-tabs">
+          {[
+            { id: 'upcoming', label: '🚀 Arrivals', desc: 'Coming soon' },
+            { id: 'today', label: '🎉 Premiere', desc: 'Fresh drops' },
+            { id: 'arena', label: '✨ Gallery', desc: 'Comparisons' },
+          ].map((t, idx) => (
+            <motion.button 
+              key={t.id} 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: idx * 0.1 }}
+              className={`battles-tab ${activeTab === t.id ? 'active' : ''}`} 
+              onClick={() => setActiveTab(t.id)}
+            >
+              <span className="tab-label">{t.label}</span>
+              <span className="tab-desc">{t.desc}</span>
+              {activeTab === t.id && (
+                <motion.div layoutId="activeTab" className="tab-indicator" />
+              )}
+            </motion.button>
+          ))}
+        </div>
 
-      <div className="battles-content">
-        {activeTab === 'upcoming' && renderUpcoming()}
-        {activeTab === 'today' && renderToday()}
-        {activeTab === 'arena' && renderArena()}
+        <div className="battles-content">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              {activeTab === 'upcoming' && renderUpcoming()}
+              {activeTab === 'today' && renderToday()}
+              {activeTab === 'arena' && renderArena()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </AnimatedPage>
   );
 }
 
