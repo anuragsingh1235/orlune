@@ -11,10 +11,20 @@ exports.searchUsers = async (req, res) => {
     // Split query like "Aayush kumar" into ["%Aayush%", "%kumar%"]
     const searchTerms = query.split(' ').filter(t => t.trim().length > 0).map(term => `%${term}%`);
     const result = await pool.query(
-      `SELECT id, username, avatar_url, bio 
-       FROM users 
-       WHERE (username ILIKE ANY($1::text[]) OR email ILIKE ANY($1::text[]))
-         AND id != $2
+      `SELECT u.id, u.username, u.avatar_url, u.bio,
+         CASE 
+           WHEN f.status = 'accepted' THEN 'friends'
+           WHEN f.status = 'blocked' THEN 'blocked'
+           WHEN fr_sent.id IS NOT NULL THEN 'request_sent'
+           WHEN fr_received.id IS NOT NULL THEN 'request_received'
+           ELSE 'none'
+         END as connection_status
+       FROM users u
+       LEFT JOIN friendships f ON (f.user_id1 = u.id AND f.user_id2 = $2) OR (f.user_id1 = $2 AND f.user_id2 = u.id)
+       LEFT JOIN friend_requests fr_sent ON fr_sent.sender_id = $2 AND fr_sent.receiver_id = u.id AND fr_sent.status = 'pending'
+       LEFT JOIN friend_requests fr_received ON fr_received.sender_id = u.id AND fr_received.receiver_id = $2 AND fr_received.status = 'pending'
+       WHERE (u.username ILIKE ANY($1::text[]) OR u.email ILIKE ANY($1::text[]))
+         AND u.id != $2
        LIMIT 10`,
       [searchTerms, userId]
     );

@@ -91,8 +91,7 @@ export default function Social() {
     try {
       await api.post('/social/request', { receiver_id: receiverId });
       toast.success("Connection request sent");
-      setSearchQuery('');
-      setSearchResults([]);
+      setSearchResults(prev => prev.map(u => u.id === receiverId ? { ...u, connection_status: 'request_sent' } : u));
     } catch (err) {
       toast.error(err.response?.data?.error || "Request failed");
     }
@@ -161,11 +160,19 @@ export default function Social() {
             {searchResults.length > 0 && (
               <div className="search-results">
                  {searchResults.map(u => (
-                   <div key={u.id} className="search-item" onClick={() => sendFriendRequest(u.id)}>
+                   <div key={u.id} className="search-item" onClick={() => {
+                     if (u.connection_status === 'none') sendFriendRequest(u.id);
+                   }}>
                       <div className="contact-avatar">{u.username[0].toUpperCase()}</div>
                       <div className="contact-info">
                          <h4>{u.username}</h4>
-                         <p>Click to add friend</p>
+                         <p>
+                           {u.connection_status === 'friends' ? 'Already Friends' :
+                            u.connection_status === 'request_sent' ? 'Request Sent' :
+                            u.connection_status === 'request_received' ? 'Review Request in Pending Tab' :
+                            u.connection_status === 'blocked' ? 'Blocked' :
+                            'Click to add friend'}
+                         </p>
                       </div>
                    </div>
                  ))}
