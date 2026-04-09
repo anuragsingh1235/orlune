@@ -420,9 +420,11 @@
 .gallery-img:hover { transform: scale(1.1); border-color: var(--accent); z-index: 10; }
 
 /* 🎙️ VISUAL CAST GRID */
-.visual-cast {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+.visual-cast-grid {
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 16px;
+  margin-top: 24px;
 }
 
 /* 🎞️ SECTION-SPECIFIC VISUAL ARCHIVAL STRIP */
@@ -450,33 +452,52 @@
 .section-images-strip::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 .cast-profile-card {
-  display: flex; flex-direction: column; padding: 12px; border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex; 
+  flex-direction: column; 
+  align-items: center;
+  text-align: center;
+  padding: 12px; 
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02); 
+  border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cast-profile-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
 .actor-photo-wrap {
-  width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden;
-  background: #111; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);
+  width: 90px; 
+  height: 90px; 
+  border-radius: 50%; 
+  overflow: hidden;
+  background: #111; 
+  margin-bottom: 12px; 
+  border: 2px solid rgba(255,255,255,0.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .actor-photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
 .photo-placeholder {
   width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; opacity: 0.2;
+  font-size: 1.5rem; opacity: 0.2;
 }
 
-.cast-info { display: flex; flex-direction: column; gap: 4px; }
-.actor-name { font-size: 0.9rem; font-weight: 800; color: #fff; }
+.cast-info { display: flex; flex-direction: column; gap: 2px; }
+.actor-name { 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
 .char-tag {
-  font-size: 0.75rem; color: var(--accent); font-weight: 600; opacity: 0.8;
-  letter-spacing: 0.5px;
+  font-size: 0.7rem; 
+  color: var(--accent); 
+  font-weight: 500; 
+  opacity: 0.8;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 📜 ENCYCLOPEDIA HEADER & LANG BAR */
@@ -1124,4 +1145,32 @@
 .meta-divider {
   color: rgba(255,255,255,0.2);
   margin: 0 4px;
+}
+
+.cast-archive-section {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cast-archive-section .platforms-header {
+  margin-bottom: 24px;
+}
+
+.cast-archive-section .visual-cast-grid {
+  padding-bottom: 20px;
+  overflow-x: auto;
+  display: flex !important;
+  gap: 20px;
+  max-width: 100%;
+}
+
+.cast-archive-section .cast-profile-card {
+  flex: 0 0 110px;
+}
+
+@media (max-width: 768px) {
+  .cast-archive-section .visual-cast-grid {
+    gap: 12px;
+  }
 }

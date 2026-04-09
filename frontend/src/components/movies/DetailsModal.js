@@ -337,6 +337,41 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                     <p className="description-text">{details.overview}</p>
                   </div>
 
+                  {/* 🎭 PERSONNEL ARCHIVES (CAST) */}
+                  {details.credits?.cast?.length > 0 && (
+                    <div className="cast-archive-section animate-up">
+                      <div className="platforms-header">
+                        <h3 className="platforms-title">Personnel Archives <span>(Cast & Crew)</span></h3>
+                        <div className="platforms-filter">
+                           <button className={details._castFilter === 'acting' || !details._castFilter ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'acting'})}>Actors</button>
+                           <button className={details._castFilter === 'voice' ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'voice'})}>Voices</button>
+                           <button className={details._castFilter === 'crew' ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'crew'})}>Crew</button>
+                        </div>
+                      </div>
+
+                      <div className="visual-cast-grid custom-scrollbar">
+                        {(details._castFilter === 'crew' ? (details.credits.crew || []) : (details.credits.cast || []))
+                          .filter(m => {
+                            if (details._castFilter === 'voice') return m.known_for_department === 'Acting' && m.character?.toLowerCase().includes('(voice)');
+                            if (details._castFilter === 'acting') return !m.character?.toLowerCase().includes('(voice)');
+                            return true;
+                          })
+                          .slice(0, 15)
+                          .map((m, i) => (
+                            <div key={m.id || i} className="cast-profile-card">
+                              <div className="actor-photo-wrap">
+                                {m.profile_path ? <img src={`https://image.tmdb.org/t/p/w185${m.profile_path}`} alt={m.name} /> : <div className="photo-placeholder">👤</div>}
+                              </div>
+                              <div className="cast-info">
+                                <span className="actor-name">{m.name}</span>
+                                <span className="char-tag">{m.character || m.job}</span>
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
