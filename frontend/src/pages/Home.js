@@ -67,7 +67,14 @@ export default function Home() {
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your personal archive is awaiting further curation.</p>
             </div>
             <div className="dashboard-lottie hide-mobile" style={{ width: '150px' }}>
-              <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_T6v6t6.json" background="transparent" speed="1" style={{ width: '150px', height: '150px' }} loop autoplay />
+              <lottie-player 
+                src="https://assets2.lottiefiles.com/packages/lf20_T6v6t6.json" 
+                background="transparent" 
+                speed="1" 
+                style={{ width: '150px', height: '150px' }} 
+                loop 
+                autoplay
+              ></lottie-player>
             </div>
           </div>
           
