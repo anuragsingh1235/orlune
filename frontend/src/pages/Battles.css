@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════
    BATTLE ARENA — PREMIUM DARK UI
 ═══════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Outfit:wght@300;500;700;900&display=swap');
 
 .battles-premium-page {
   min-height: 100vh;
@@ -13,38 +13,45 @@
 /* ── HERO ──────────────────────────────────────── */
 .battles-hero {
   position: relative;
-  padding: 80px 24px 40px;
+  padding: 100px 24px 60px;
   text-align: center;
   overflow: hidden;
+  background: radial-gradient(circle at 50% -20%, rgba(124, 77, 255, 0.1), transparent 70%);
 }
 
 .battles-hero-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(229,9,20,0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%);
   pointer-events: none;
 }
 
 .battles-hero-title {
-  font-size: clamp(2.2rem, 6vw, 4rem);
-  font-weight: 900;
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 300;
   color: #fff;
   letter-spacing: -1px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   position: relative;
   z-index: 1;
 }
 
 .battles-hero-title span {
-  background: linear-gradient(135deg, #e50914 0%, #ff6b6b 100%);
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, #a8a8a8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  letter-spacing: -2px;
 }
 
 .battles-hero-sub {
-  font-size: 1rem;
-  color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: #a0a0a0;
+  letter-spacing: 4px;
+  text-transform: uppercase;
   position: relative;
   z-index: 1;
 }
@@ -481,9 +488,19 @@
 .arena-vote-count { font-size: 0.85rem; font-weight: 800; z-index: 1; }
 
 .arena-vs-badge {
-  font-size: 1.5rem; font-weight: 900; color: rgba(255,255,255,0.15);
-  align-self: center; padding: 0 4px; letter-spacing: 2px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.4);
+  align-self: center;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 40px;
+  background: rgba(255,255,255,0.02);
+  text-transform: lowercase;
+  letter-spacing: 2px;
   flex-shrink: 0;
+  box-shadow: inset 0 0 10px rgba(255,255,255,0.02);
 }
 
 .vote-btn {
@@ -567,16 +584,18 @@
 
 /* ── CREATE CHALLENGE BTN ────────────────────────── */
 .create-challenge-btn {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #e50914, #ff3333);
-  border: none; border-radius: 14px;
-  color: #fff; font-size: 0.95rem; font-weight: 800;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #7c4dff, #448aff);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 40px;
+  color: #fff; font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(229,9,20,0.3);
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: 0 4px 15px rgba(124, 77, 255, 0.2);
   margin-left: auto;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
-.create-challenge-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 24px rgba(229,9,20,0.4); }
+.create-challenge-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 30px rgba(124, 77, 255, 0.4); }
 
 /* ── ARENA MODAL ─────────────────────────────────── */
 .arena-modal-overlay {

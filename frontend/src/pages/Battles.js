@@ -413,11 +413,11 @@ export default function Battles() {
   const renderArena = () => (
     <div className="arena-section">
       <div className="arena-section-header">
-        <h2 className="arena-section-title">⚔️ Movie Battle Arena</h2>
-        <p className="arena-section-sub">Challenge someone — let the community decide who picked better</p>
+        <h2 className="arena-section-title">✨ Cinematic Gallery</h2>
+        <p className="arena-section-sub">Discover and compare the community's curated pairings</p>
         {user && (
           <button className="create-challenge-btn" onClick={() => setShowCreateModal(true)}>
-            ⚡ Create Challenge
+            🌌 START PAIRING
           </button>
         )}
       </div>
@@ -674,19 +674,17 @@ export default function Battles() {
 
   return (
     <div className="battles-premium-page">
-      {/* Hero */}
       <div className="battles-hero">
         <div className="battles-hero-glow"/>
-        <h1 className="battles-hero-title">⚔️ Battle <span>Arena</span></h1>
-        <p className="battles-hero-sub">Upcoming drops · Today's releases · Live movie battles</p>
+        <h1 className="battles-hero-title">CINEMATIC <span>Gallery</span></h1>
+        <p className="battles-hero-sub">Rankings · Drops · Comparisons</p>
       </div>
 
-      {/* Tabs */}
       <div className="battles-tabs">
         {[
-          { id: 'upcoming', label: '🚀 Upcoming', desc: 'Coming soon' },
-          { id: 'today', label: '🎉 Today', desc: 'Fresh drops' },
-          { id: 'arena', label: '⚔️ Arena', desc: 'Battle' },
+          { id: 'upcoming', label: '🚀 Arrivals', desc: 'Coming soon' },
+          { id: 'today', label: '🎉 Premiere', desc: 'Fresh drops' },
+          { id: 'arena', label: '✨ Gallery', desc: 'Comparisons' },
         ].map(t => (
           <button key={t.id} className={`battles-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
             <span className="tab-label">{t.label}</span>
@@ -695,7 +693,6 @@ export default function Battles() {
         ))}
       </div>
 
-      {/* Content */}
       <div className="battles-content">
         {activeTab === 'upcoming' && renderUpcoming()}
         {activeTab === 'today' && renderToday()}
