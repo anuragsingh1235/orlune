@@ -19,8 +19,18 @@ const detectPlatform = (url) => {
 };
 
 router.get('/info', async (req, res) => {
-  const { url } = req.query;
+  let { url } = req.query;
   if (!url) return res.status(400).json({ error: 'URL required' });
+
+  // 🧼 URL Sanitization: Remove tracking parameters that confuse some extractors
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.hostname.includes('instagram.com')) {
+      url = `${urlObj.origin}${urlObj.pathname}`; // Strip ?igsh= etc
+    }
+  } catch (e) {
+    // Keep original if parsing fails
+  }
 
   let lastError = null;
   for (const instance of COBALT_INSTANCES) {
@@ -28,14 +38,17 @@ router.get('/info', async (req, res) => {
       const platform = detectPlatform(url);
       const cobaltRes = await axios.post(instance, {
         url: url,
-        vQuality: '720', // Faster extraction
+        vQuality: '720',
         isNoTTWatermark: true,
       }, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Origin': instance.split('/api')[0],
+          'Referer': instance.split('/api')[0] + '/'
         },
-        timeout: 8000
+        timeout: 10000
       });
 
       const data = cobaltRes.data;
