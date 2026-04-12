@@ -40,9 +40,9 @@ export default function PdfEditor() {
     setStatus('Loading PDF…');
     try {
       const pdfjsLib = await import('pdfjs-dist');
-      // v5 ships the worker at this path — point to it via URL so no bundler issues
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString();
+      // Use official CDN for worker to ensure it works across all environments
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+      
       const ab  = await f.arrayBuffer();
       const doc = await pdfjsLib.getDocument({ data: new Uint8Array(ab) }).promise;
       setPdfJsDoc(doc);
@@ -51,10 +51,11 @@ export default function PdfEditor() {
       renderPage(doc, 1);
       setStatus('');
     } catch (err) {
-      console.error(err);
+      console.error('PDF.js Error:', err);
+      // Fallback: render without preview if JS fails
       setPdfJsDoc({ fallback: true });
       setNumPages(1);
-      setStatus('PDF loaded. Add text or images, then download.');
+      setStatus('Preview unavailable. You can still add text/images and download.');
     }
   }, []);
 
@@ -259,6 +260,10 @@ export default function PdfEditor() {
                     </>
                   )}
                   <div className="tool-sep" />
+                  <a href="https://www.sejda.com/pdf-editor" target="_blank" rel="noopener noreferrer" className="tool-btn pro-btn" title="Advanced complex editing">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    Pro Edit
+                  </a>
                   <button className="tool-btn dl-btn" onClick={download} disabled={processing}>
                     {processing
                       ? <><span className="pdfeditor-spinner" />Saving...</>

@@ -351,3 +351,17 @@
   color: #ef4444 !important;
   border-color: rgba(239,68,68,0.2) !important;
 }
+
+.pro-btn {
+  background: rgba(168, 85, 247, 0.1) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+  color: #a855f7 !important;
+  text-decoration: none;
+}
+
+.pro-btn:hover {
+  background: rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2) !important;
+}
+
+.pro-btn svg { color: #a855f7; }
