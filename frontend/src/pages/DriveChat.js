@@ -47,11 +47,13 @@ export default function DriveChat() {
       }, 1000);
 
     } catch (err) {
+      const errMsg = err.response?.data?.error || 'Extraction failed. This video might be restricted or require a different access protocol.';
       setTimeout(() => {
-        pushBot({ text: 'Extraction failed. Please ensure the link is public and properly formatted.', type: 'text' });
+        pushBot({ text: errMsg, type: 'text' });
         setIsTyping(false);
       }, 1000);
     }
+
   };
 
   const initiateDownload = (itag) => {

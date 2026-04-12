@@ -25,17 +25,21 @@ router.get('/info', async (req, res) => {
 
   try {
     if (platform === 'youtube') {
-      const info = await ytdl.getInfo(url);
+      // Use a more realistic user agent to avoid bot detection
+      const info = await ytdl.getInfo(url, {
+        requestOptions: {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          }
+        }
+      });
       
-      // Filter for video formats
       const videoFormats = ytdl.filterFormats(info.formats, 'videoonly');
       const combinedFormats = ytdl.filterFormats(info.formats, 'videoandaudio');
 
-      // We focus on video formats and will merge audio later
       const uniqueQualities = new Set();
       const results = [];
 
-      // Add combined formats first
       combinedFormats.forEach(f => {
         if (!uniqueQualities.has(f.qualityLabel)) {
           uniqueQualities.add(f.qualityLabel);
@@ -49,7 +53,6 @@ router.get('/info', async (req, res) => {
         }
       });
 
-      // Add high quality video-only formats
       videoFormats.forEach(f => {
         if (!uniqueQualities.has(f.qualityLabel)) {
           uniqueQualities.add(f.qualityLabel);
@@ -69,7 +72,7 @@ router.get('/info', async (req, res) => {
         duration: info.videoDetails.lengthSeconds,
         author: info.videoDetails.author?.name,
         platform: 'youtube',
-        formats: results.sort((a,b) => parseInt(b.quality) - parseInt(a.quality)).slice(0, 8)
+        formats: results.sort((a,b) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0)).slice(0, 8)
       });
     }
 
@@ -83,32 +86,44 @@ router.get('/info', async (req, res) => {
 
     return res.status(400).json({ error: 'Unsupported platform' });
   } catch (err) {
-    return res.status(500).json({ error: 'Fetch failed. Link may be private.' });
+    console.error('YTDL Info Error:', err.message);
+    return res.status(500).json({ error: `Extraction failed: ${err.message}` });
   }
 });
 
 // ── GET /api/download/stream?url=&itag= ──────────────────────
-// This route now uses ffmpeg to merge audio and video if needed
 router.get('/stream', async (req, res) => {
   const { url, itag } = req.query;
   if (!url) return res.status(400).json({ error: 'URL required' });
 
   try {
-    const info = await ytdl.getInfo(url);
+    const info = await ytdl.getInfo(url, {
+      requestOptions: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
+      }
+    });
+
     const title = info.videoDetails.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    
     const format = info.formats.find(f => String(f.itag) === String(itag));
     
     res.header('Content-Disposition', `attachment; filename="${title}.mp4"`);
     res.header('Content-Type', 'video/mp4');
 
-    if (format && format.hasAudio) {
-      // Direct stream for low quality combined formats
-      ytdl(url, { format }).pipe(res);
+    const options = {
+      requestOptions: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
+      }
+    };
+
+    if (format && (format.hasAudio || format.audioCodec)) {
+      ytdl(url, { ...options, format }).pipe(res);
     } else {
-      // Merge high quality video with best audio using FFMPEG
-      const videoStream = ytdl(url, { quality: itag });
-      const audioStream = ytdl(url, { quality: 'highestaudio' });
+      const videoStream = ytdl(url, { ...options, quality: itag });
+      const audioStream = ytdl(url, { ...options, quality: 'highestaudio' });
 
       ffmpeg()
         .input(videoStream)
@@ -116,11 +131,15 @@ router.get('/stream', async (req, res) => {
         .videoCodec('copy')
         .audioCodec('aac')
         .format('mp4')
-        .on('error', err => console.error('FFMPEG Error:', err))
+        .on('error', err => {
+          console.error('FFMPEG Error:', err);
+          if (!res.headersSent) res.status(500).send('FFMPEG processing failed');
+        })
         .pipe(res, { end: true });
     }
   } catch (err) {
-    res.status(500).send('Download failed');
+    console.error('YTDL Stream Error:', err.message);
+    if (!res.headersSent) res.status(500).send('Download failed: ' + err.message);
   }
 });
 
