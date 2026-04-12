@@ -20,7 +20,7 @@ async function migrate() {
       CREATE TABLE IF NOT EXISTS watchlist_items (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        tmdb_id INTEGER NOT NULL,
+        tmdb_id VARCHAR(255) NOT NULL,
         media_type VARCHAR(10) NOT NULL DEFAULT 'movie',
         title VARCHAR(255) NOT NULL,
         poster_path VARCHAR(500),
@@ -106,7 +106,7 @@ async function migrate() {
       await pool.query(`CREATE TABLE IF NOT EXISTS upcoming_reminders (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        tmdb_id INTEGER NOT NULL,
+        tmdb_id VARCHAR(255) NOT NULL,
         media_type VARCHAR(10) NOT NULL DEFAULT 'movie',
         title VARCHAR(255) NOT NULL,
         release_date VARCHAR(20),
@@ -120,7 +120,7 @@ async function migrate() {
       await pool.query(`CREATE TABLE IF NOT EXISTS movie_ratings (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        tmdb_id INTEGER NOT NULL,
+        tmdb_id VARCHAR(255) NOT NULL,
         media_type VARCHAR(10) NOT NULL DEFAULT 'movie',
         title VARCHAR(255) NOT NULL,
         rating INTEGER CHECK(rating >= 1 AND rating <= 10),
@@ -136,10 +136,10 @@ async function migrate() {
         opponent_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         status VARCHAR(20) DEFAULT 'pending',
         genre VARCHAR(100),
-        creator_movie_id INTEGER,
+        creator_movie_id VARCHAR(255),
         creator_movie_title VARCHAR(255),
         creator_movie_poster VARCHAR(500),
-        opponent_movie_id INTEGER,
+        opponent_movie_id VARCHAR(255),
         opponent_movie_title VARCHAR(255),
         opponent_movie_poster VARCHAR(500),
         creator_color VARCHAR(20) DEFAULT '#e50914',
@@ -160,12 +160,22 @@ async function migrate() {
         UNIQUE(challenge_id, voter_id)
       )`);
 
-      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS challenger_movie_id INTEGER');
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS challenger_movie_id VARCHAR(255)');
       await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS challenger_movie_title VARCHAR(255)');
       await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS challenger_movie_poster VARCHAR(500)');
-      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS opponent_movie_id INTEGER');
+      await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS opponent_movie_id VARCHAR(255)');
       await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS opponent_movie_title VARCHAR(255)');
       await pool.query('ALTER TABLE battles ADD COLUMN IF NOT EXISTS opponent_movie_poster VARCHAR(500)');
+
+      // 🦾 ID Universalization: Support Wiki String IDs
+      await pool.query('ALTER TABLE watchlist_items ALTER COLUMN tmdb_id TYPE VARCHAR(255)');
+      await pool.query('ALTER TABLE upcoming_reminders ALTER COLUMN tmdb_id TYPE VARCHAR(255)');
+      await pool.query('ALTER TABLE movie_ratings ALTER COLUMN tmdb_id TYPE VARCHAR(255)');
+      await pool.query('ALTER TABLE arena_challenges ALTER COLUMN creator_movie_id TYPE VARCHAR(255)');
+      await pool.query('ALTER TABLE arena_challenges ALTER COLUMN opponent_movie_id TYPE VARCHAR(255)');
+      await pool.query('ALTER TABLE battles ALTER COLUMN challenger_movie_id TYPE VARCHAR(255)');
+      await pool.query('ALTER TABLE battles ALTER COLUMN opponent_movie_id TYPE VARCHAR(255)');
+
     } catch(e) {
       console.log('Patch warning:', e.message);
     }
