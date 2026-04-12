@@ -41,17 +41,18 @@ export default function Social() {
   const fetchInitialData = async () => {
     try {
       const [fRes, rRes, cRes, myCRes] = await Promise.all([
-        api.get('/social/friends'),
-        api.get('/social/requests'),
-        api.get('/channels/list'),
-        api.get('/channels/my')
+        api.get('/social/friends').catch(() => ({ data: [] })),
+        api.get('/social/requests').catch(() => ({ data: [] })),
+        api.get('/channels/list').catch(() => ({ data: [] })),
+        api.get('/channels/my').catch(() => ({ data: [] }))
       ]);
-      setFriends(fRes.data);
-      setRequests(rRes.data);
-      setPublicChannels(cRes.data);
-      setMyChannels(myCRes.data);
-    } catch (err) { notify.error("Sync failed"); }
-    finally { setLoading(false); }
+      setFriends(Array.isArray(fRes.data) ? fRes.data : []);
+      setRequests(Array.isArray(rRes.data) ? rRes.data : []);
+      setPublicChannels(Array.isArray(cRes.data) ? cRes.data : []);
+      setMyChannels(Array.isArray(myCRes.data) ? myCRes.data : []);
+    } catch (err) { 
+      console.warn("Partial sync issue - utilizing offline state");
+    } finally { setLoading(false); }
   };
 
   const syncChat = async () => {
@@ -59,7 +60,7 @@ export default function Social() {
     try {
       const endpoint = activeChat.type === 'channel' ? `/channels/history/${activeChat.id}` : `/chat/history/${activeChat.id}`;
       const res = await api.get(endpoint);
-      setMessages(res.data);
+      setMessages(Array.isArray(res.data) ? res.data : []);
     } catch (err) {}
   };
 
@@ -67,17 +68,17 @@ export default function Social() {
     if (!activeChat || activeChat.type !== 'channel') return;
     try {
       const res = await api.get(`/channels/members/${activeChat.id}`);
-      setMembers(res.data);
+      setMembers(Array.isArray(res.data) ? res.data : []);
       setShowMembers(true);
-    } catch (err) { notify.error("Failed to load allies"); }
+    } catch (err) { notify.error("Syncing allies failed"); }
   };
 
   const setAdminStatus = async (userId, newStatus) => {
     try {
       await api.post('/channels/admin/toggle', { channel_id: activeChat.id, target_user_id: userId, status: newStatus });
-      notify.success("Rank updated");
+      notify.success("Rank modified");
       fetchMembers();
-    } catch (err) { notify.error("Promotion failed"); }
+    } catch (err) { notify.error("Authority change failed"); }
   };
 
   const handleSearch = async (val) => {
@@ -85,7 +86,7 @@ export default function Social() {
     if (val.length < 2) { setSearchResults([]); return; }
     try {
       const res = await api.get(`/social/search?query=${val}`);
-      setSearchResults(res.data);
+      setSearchResults(Array.isArray(res.data) ? res.data : []);
     } catch (e) {}
   };
 
@@ -96,36 +97,40 @@ export default function Social() {
       const endpoint = activeChat.type === 'channel' ? '/channels/message' : '/chat/send';
       const payload = activeChat.type === 'channel' ? { channel_id: activeChat.id, content: newMessage } : { receiver_id: activeChat.id, content: newMessage };
       const res = await api.post(endpoint, payload);
-      setMessages([...messages, res.data]);
+      if (res.data) setMessages(prev => [...prev, res.data]);
       setNewMessage('');
-    } catch (e) { notify.error("Relay failed"); }
+    } catch (e) { notify.error("Transmission relay failed"); }
   };
 
   const createChannel = async () => {
+    if (!newChan.name.trim()) return notify.error("Channel name required");
     try {
       const res = await api.post('/channels/create', newChan);
       notify.success("Hub online");
       fetchInitialData();
       setShowCreateModal(false);
       setActiveChat({...res.data, type: 'channel'});
-    } catch (e) { notify.error("Forge failed"); }
+    } catch (e) { notify.error("Hub forge failed"); }
   };
 
   const joinChannel = async (c) => {
-    const ok = window.confirm(`Join ${c.name}? All current messages will be decrypted.`);
+    const ok = window.confirm(`Initiate join sequence for ${c.name}?`);
     if (!ok) return;
     try {
       await api.post('/channels/join', { channel_id: c.id });
       fetchInitialData();
       setActiveChat({...c, type: 'channel'});
       setActiveTab('channels');
-    } catch (e) { notify.error("Access denied"); }
+    } catch (e) { notify.error("Join sequence failed"); }
   };
 
   const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
 
   if (loading) return <div className="spinner" />;
-  const meId = JSON.parse(localStorage.getItem('ww_user'))?.id;
+  
+  // Safe user ID detection
+  let meId = null;
+  try { meId = JSON.parse(localStorage.getItem('ww_user'))?.id; } catch(e) {}
 
   return (
     <div className="social-page animate-fade">
@@ -138,12 +143,10 @@ export default function Social() {
         {activeTab === 'messages' ? (
           <>
             <input className="m-input" style={{margin: '10px'}} placeholder="Search Matrix..." value={searchQuery} onChange={e => handleSearch(e.target.value)} />
-            {searchResults.length > 0 && (
-               <div className="search-results">{searchResults.map(u => (
-                 <Link key={u.id} to={`/profile/${u.id}`} className="search-item"><h4>{u.username}</h4></Link>
-               ))}</div>
-            )}
-            <div className="contacts-list">{friends.map(f => (
+            <div className="search-results">{(searchResults || []).map(u => (
+               <Link key={u.id} to={`/profile/${u.id}`} className="search-item"><h4>{u.username}</h4></Link>
+            ))}</div>
+            <div className="contacts-list">{(friends || []).map(f => (
               <div key={f.id} className={`contact-item ${activeChat?.id === f.id ? 'active' : ''}`} onClick={() => setActiveChat({...f, type: 'friend'})}>
                 <h4>{f.username}</h4>
               </div>
@@ -151,15 +154,15 @@ export default function Social() {
           </>
         ) : (
           <div className="contacts-list">
-             <button className="create-chan-btn" onClick={() => setShowCreateModal(true)}>+ New Channel</button>
+             <button className="create-chan-btn" onClick={() => setShowCreateModal(true)}>+ Forged New Channel</button>
              <h4 className="section-title">GLOBAL</h4>
-             {publicChannels.map(c => (
-               <div key={c.id} className="channel-card-global" onClick={() => joinChannel(c)}>
-                 <h4>{c.name}</h4><p>{c.member_count} joined</p>
+             {(publicChannels || []).map(c => (
+               <div key={c.id} className={`channel-card-global ${activeChat?.id === c.id ? 'active' : ''}`} onClick={() => joinChannel(c)}>
+                 <h4>{c.name}</h4><p>{c.member_count || 0} Joined</p>
                </div>
              ))}
              <h4 className="section-title" style={{marginTop: '20px'}}>JOINED</h4>
-             {myChannels.map(c => (
+             {(myChannels || []).map(c => (
                <div key={c.id} className={`channel-item ${activeChat?.id === c.id ? 'active' : ''}`} onClick={() => setActiveChat({...c, type: 'channel'})}>
                  <div className="chan-avatar">#</div><h4>{c.name}</h4>
                </div>
@@ -172,14 +175,14 @@ export default function Social() {
         {activeChat ? (
           <>
             <div className="chat-header">
-               <div><h3>{activeChat.name || activeChat.username}</h3><p style={{fontSize: '0.7rem'}}>{activeChat.type === 'channel' ? 'Alliance Feed' : 'Direct Sync'}</p></div>
+               <div><h3>{activeChat.name || activeChat.username}</h3><p style={{fontSize: '0.7rem'}}>{activeChat.type === 'channel' ? 'Alliance Hub' : 'Direct Sync'}</p></div>
                <div style={{display: 'flex', gap: '8px'}}>
-                 {activeChat.type === 'channel' && <button className="header-meta-btn" onClick={fetchMembers}>👥 Members</button>}
+                 {activeChat.type === 'channel' && <button className="header-meta-btn" onClick={fetchMembers}>👥 Allies</button>}
                </div>
             </div>
             
             <div className="chat-messages">
-               {messages.map((m, i) => (
+               {(messages || []).map((m, i) => (
                  <div key={i} className={m.is_system_msg ? "system-msg-bubble" : `message ${m.sender_id === meId ? 'sent' : 'received'}`}>
                     {!m.is_system_msg && activeChat.type === 'channel' && m.sender_id !== meId && <span className="msg-sender-name">{m.username}</span>}
                     <div className="message-bubble">{m.content}</div>
@@ -190,21 +193,21 @@ export default function Social() {
             </div>
 
             <form className="chat-input-area" onSubmit={sendMessage}>
-               <input className="chat-input" placeholder="Broadcasting..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
+               <input className="chat-input" placeholder="Broadcasting message..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
                <button className="btn btn-primary btn-sm" type="submit">SEND</button>
             </form>
           </>
-        ) : <div className="no-chat-selected"><h3>Matrix Idle</h3></div>}
+        ) : <div className="no-chat-selected"><h3>Neutral Standby</h3></div>}
       </div>
 
       {showCreateModal && (
         <div className="chan-modal-overlay"><div className="chan-modal">
-          <h2>Forged New Alliance</h2>
+          <h2>Forged Alliance Hub</h2>
           <div className="modal-grid">
-             <input className="m-input" placeholder="Name..." value={newChan.name} onChange={e => setNewChan({...newChan, name: e.target.value})}/>
-             <textarea className="m-input" placeholder="Mission..." value={newChan.description} onChange={e => setNewChan({...newChan, description: e.target.value})}/>
+             <input className="m-input" placeholder="Hub Name..." value={newChan.name} onChange={e => setNewChan({...newChan, name: e.target.value})}/>
+             <textarea className="m-input" placeholder="Primary Objective..." value={newChan.description} onChange={e => setNewChan({...newChan, description: e.target.value})}/>
              <select className="m-input" value={newChan.privacy} onChange={e => setNewChan({...newChan, privacy: e.target.value})}>
-                <option value="public">Global Feed</option><option value="private">Ghost (Invite Link)</option>
+                <option value="public">Global Feed</option><option value="private">Ghost (Invite Keys)</option>
              </select>
              <div style={{display:'flex', gap:'10px'}}>
                <button className="btn btn-primary" onClick={createChannel}>INITIATE</button>
@@ -216,15 +219,15 @@ export default function Social() {
 
       {showMembers && (
         <div className="chan-modal-overlay"><div className="chan-modal">
-          <h2>Alliance Allies</h2>
-          <div className="member-list">{members.map(m => (
+          <h2>Active Allies</h2>
+          <div className="member-list">{(members || []).map(m => (
             <div key={m.user_id} className="member-item">
                <div className="member-name-tag">
                  {m.username} 
                  {m.is_creator && <span className="founder-badge">Founder</span>}
                  {m.is_admin && !m.is_creator && <span className="admin-badge">Admin</span>}
                </div>
-               {members.find(u => u.user_id === meId)?.is_admin && !m.is_creator && (
+               {(members || []).find(u => u.user_id === meId)?.is_admin && !m.is_creator && (
                  <div className="member-actions">
                    <button className="btn btn-sm btn-ghost" onClick={() => setAdminStatus(m.user_id, !m.is_admin)}>
                      {m.is_admin ? 'Demote' : 'Promote'}
@@ -233,7 +236,7 @@ export default function Social() {
                )}
             </div>
           ))}</div>
-          <button className="btn btn-primary" style={{marginTop: '20px', width: '100%'}} onClick={() => setShowMembers(false)}>CLOSE</button>
+          <button className="btn btn-primary" style={{marginTop: '20px', width: '100%'}} onClick={() => setShowMembers(false)}>EXIT HUB</button>
         </div></div>
       )}
     </div>
