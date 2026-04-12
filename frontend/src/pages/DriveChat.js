@@ -56,11 +56,12 @@ export default function DriveChat() {
 
   };
 
-  const initiateDownload = (itag) => {
-    notify.success("Initializing FFMPEG Stream...");
-    const dlUrl = `${api.defaults.baseURL}/download/stream?url=${encodeURIComponent(activeLink)}&itag=${itag}`;
+  const initiateDownload = (f) => {
+    notify.success("Opening Professional Stream...");
+    const dlUrl = `${api.defaults.baseURL}/download/stream?directUrl=${encodeURIComponent(f.directUrl)}`;
     window.open(dlUrl, '_blank');
   };
+
 
   return (
     <div className="chat-container">
@@ -83,11 +84,12 @@ export default function DriveChat() {
                     <p className="media-author">{msg.info.author}</p>
                     <div className="res-grid-premium">
                       {msg.info.formats.map(f => (
-                        <button key={f.itag} className="res-btn-premium" onClick={() => initiateDownload(f.itag)}>
+                        <button key={f.itag} className="res-btn-premium" onClick={() => initiateDownload(f)}>
                           <span className="res-label">{f.quality} ({f.container})</span>
                           <span className="res-size">{f.size}</span>
                         </button>
                       ))}
+
                     </div>
                   </div>
                 )}

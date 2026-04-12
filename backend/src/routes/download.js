@@ -1,154 +1,100 @@
 const express = require('express');
 const router  = express.Router();
-const ytdl    = require('@distube/ytdl-core');
-const instagramGetUrl = require('instagram-url-direct');
-const ffmpeg  = require('fluent-ffmpeg');
-const ffmpegPath = require('ffmpeg-static');
 const axios   = require('axios');
 
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
-}
-
-// ── INVIDIOUS INSTANCES (Fallback for Bot Detection) ──
-const INVIDIOUS_INSTANCES = [
-  'https://yewtu.be',
-  'https://invidious.lunar.icu',
-  'https://inv.riverside.rocks',
-  'https://invidious.snopyta.org'
-];
-
-const getYouTubeInfoWithFallback = async (url) => {
-  const videoIdMatch = url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([^#&?]{11})/);
-  const videoId = videoIdMatch ? videoIdMatch[1] : null;
-
-  // 1. Try Standard YTDL Logic
-  try {
-    return await ytdl.getInfo(url, {
-      requestOptions: {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
-        }
-      }
-    });
-  } catch (err) {
-    if (!err.message.includes('Sign in') && !err.message.includes('bot')) throw err;
-    
-    console.warn("Blocked by YouTube. Switching to Invidious Fallback...");
-    
-    // 2. Try Invidious API (Public Instance Hopping)
-    if (!videoId) throw new Error("Could not extract Video ID for fallback.");
-
-    for (const instance of INVIDIOUS_INSTANCES) {
-      try {
-        const res = await axios.get(`${instance}/api/v1/videos/${videoId}`, { timeout: 5000 });
-        if (res.data && res.data.title) {
-          // Map Invidious response to a structure our frontend expects
-          return {
-            videoDetails: {
-              title: res.data.title,
-              thumbnails: res.data.videoThumbnails || [],
-              author: { name: res.data.author },
-              lengthSeconds: res.data.lengthSeconds
-            },
-            formats: res.data.formatStreams.map(s => ({
-              itag: s.itag,
-              quality: s.qualityLabel || s.quality,
-              container: s.container || 'mp4',
-              url: s.url,
-              hasAudio: true,
-              contentLength: 0
-            }))
-          };
-        }
-      } catch (e) {
-        continue; // Try next instance
-      }
-    }
-    throw new Error("YouTube and all fallback servers are currently blocking this request.");
-  }
-};
+// ── COBALT PREMIUM API CONFIG ─────────────────────────────
+// Cobalt is a professional grade media extraction service.
+const COBALT_API = 'https://co.wuk.sh/api/json';
 
 const detectPlatform = (url) => {
   if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
   if (url.includes('instagram.com')) return 'instagram';
-  return null;
+  return 'other';
 };
 
 router.get('/info', async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'URL required' });
 
-  const platform = detectPlatform(url);
-
   try {
-    if (platform === 'youtube') {
-      const info = await getYouTubeInfoWithFallback(url);
-      
-      let results = [];
-      if (info.formats) {
-        results = info.formats.map(f => ({
-          itag: f.itag,
-          quality: f.qualityLabel || f.quality || 'Auto',
-          container: f.container || 'mp4',
-          size: f.contentLength ? `${(f.contentLength / 1e6).toFixed(1)} MB` : '~ MB',
-          hasAudio: f.hasAudio
-        }));
+    const platform = detectPlatform(url);
+
+    // We make a request to Cobalt to see if the link is valid and get metadata
+    const cobaltRes = await axios.post(COBALT_API, {
+      url: url,
+      vQuality: '1080',
+      aFormat: 'mp3',
+      isAudioOnly: false,
+      isNoTTWatermark: true,
+    }, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
       }
+    });
 
+    const data = cobaltRes.data;
+
+    // Cobalt returns 'picker' if there are multiple files (like an Insta carousel)
+    // or 'url'/'stream' if it's a single video.
+    if (data.status === 'error') {
+      throw new Error(data.text || 'Extraction failed');
+    }
+
+    if (data.status === 'redirect' || data.url) {
+      // Single video/photo
       return res.json({
-        title: info.videoDetails.title,
-        thumbnail: info.videoDetails.thumbnails?.slice(-1)[0]?.url || info.videoDetails.thumbnails?.[0]?.url,
-        author: info.videoDetails.author?.name,
-        formats: results.sort((a,b) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0)).slice(0, 8)
+        title: platform === 'youtube' ? 'YouTube Media' : 'Instagram Media',
+        thumbnail: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=300&q=80', // Cobalt doesn't always return thumbs, so we use a pro placeholder
+        author: 'Orlune Extractor',
+        platform: platform,
+        formats: [
+          {
+            itag: 'cobalt-hd',
+            quality: 'High Quality (MP4)',
+            container: 'mp4',
+            size: 'Auto',
+            directUrl: data.url
+          }
+        ]
       });
     }
 
-    if (platform === 'instagram') {
-      const links = await instagramGetUrl(url);
-      return res.json({ 
-        platform: 'instagram',
-        title: 'Instagram Media',
-        thumbnail: links.url_list[0],
-        formats: links.url_list.map((link, i) => ({ itag: `insta-${i}`, quality: 'Original', container: 'mp4', size: 'Auto', directUrl: link }))
+    if (data.status === 'picker') {
+      // Multiple items (Insta Carousel)
+      return res.json({
+        title: 'Multi-Media Content',
+        thumbnail: data.picker[0].url,
+        author: 'Orlune Extractor',
+        platform: platform,
+        formats: data.picker.map((item, i) => ({
+          itag: `item-${i}`,
+          quality: `Media Item ${i+1}`,
+          container: 'media',
+          size: 'Auto',
+          directUrl: item.url
+        }))
       });
     }
 
-    return res.status(400).json({ error: 'Unsupported platform' });
+    throw new Error("Unknown response status from extraction engine.");
+
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error('Cobalt Error:', err.response?.data || err.message);
+    const msg = err.response?.data?.text || err.message;
+    return res.status(500).json({ error: `Orlune Engine Error: ${msg}` });
   }
 });
 
+// Since Cobalt gives a direct download URL that handles headers, we can just redirect
+// or we can proxy if we want to obscure the source. Redirecting is faster for the user.
 router.get('/stream', async (req, res) => {
-  const { url, itag } = req.query;
-  try {
-    const platform = detectPlatform(url);
-    if (platform === 'youtube') {
-      const info = await getYouTubeInfoWithFallback(url);
-      const title = info.videoDetails.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      
-      // If we got the info from Invidious, we use their direct URL
-      const targetFormat = info.formats.find(f => String(f.itag) === String(itag));
-      if (targetFormat && targetFormat.url) {
-        res.header('Content-Disposition', `attachment; filename="${title}.mp4"`);
-        const response = await axios({ method: 'get', url: targetFormat.url, responseType: 'stream' });
-        return response.data.pipe(res);
-      }
-
-      // Otherwise fall back to ytdl stream
-      res.header('Content-Disposition', `attachment; filename="${title}.mp4"`);
-      ytdl(url, { itag }).pipe(res);
-
-    } else if (platform === 'instagram') {
-      const links = await instagramGetUrl(url);
-      const response = await axios({ method: 'get', url: links.url_list[0], responseType: 'stream' });
-      res.header('Content-Disposition', `attachment; filename="instagram_media.mp4"`);
-      response.data.pipe(res);
-    }
-  } catch (err) {
-    if (!res.headersSent) res.status(500).send('Stream failed');
-  }
+  const { directUrl } = req.query;
+  if (!directUrl) return res.status(400).send('No direct URL provided');
+  
+  // Cobalt's links usually expire quickly or need regular browser download behavior.
+  // We will redirect the user to the final file link.
+  res.redirect(directUrl);
 });
 
 module.exports = router;
