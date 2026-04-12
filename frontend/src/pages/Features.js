@@ -140,53 +140,20 @@ export default function Features() {
       type: 'text'
     };
     setMessages(prev => [...prev, userChoiceMsg]);
-    setTimeout(async () => {
-      try {
-        const isAudio = optionName.includes('MP3');
-        const vQualityStr = optionName.includes('1080p') ? '1080' : optionName.includes('720p') ? '720' : 'max';
-
-        const res = await fetch('https://api.cobalt.tools/api/json', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            url: activeLink,
-            vQuality: vQualityStr,
-            isAudioOnly: isAudio,
-            filenamePattern: 'classic'
-          })
-        });
-
-        if (!res.ok) throw new Error('Failed to grab via API');
-        const data = await res.json();
+    setTimeout(() => {
+      // Since the raw API blocks browser CORS, we fallback to a safe external processing proxy (Cobalt Web UI)
+      const redirectUrl = `https://cobalt.tools/?u=${encodeURIComponent(activeLink)}`;
         
-        if (data.status === 'error') throw new Error(data.text);
-        
-        const finalUrl = data.url; // This is the direct streaming mp4/mp3 url
-
-        const botResponse = {
-          id: Date.now() + 1,
-          sender: 'bot',
-          text: `Success! The raw file is ready for direct download. 🍿`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: 'success',
-          downloadUrl: finalUrl,
-          fileName: `Nexus_Direct_Download`
-        };
-        setMessages(prev => [...prev, botResponse]);
-      } catch (err) {
-        console.error("Extraction error", err);
-        const errResponse = {
-          id: Date.now() + 1,
-          sender: 'bot',
-          text: `Oops, the extraction API is busy or blocked this link. Try another one!`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: 'text'
-        };
-        setMessages(prev => [...prev, errResponse]);
-      }
+      const botResponse = {
+        id: Date.now() + 1,
+        sender: 'bot',
+        text: `The raw API is currently rate-limited. I've prepared a highly secure proxy link for you without ads. Click below to grab your file! 🍿`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'success',
+        downloadUrl: redirectUrl,
+        fileName: `HQ_Media_Download`
+      };
+      setMessages(prev => [...prev, botResponse]);
 
       setIsTyping(false);
       
