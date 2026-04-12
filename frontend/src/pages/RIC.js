@@ -69,19 +69,21 @@ export default function RIC() {
     setLoading(true);
     try {
       const { data: extraction } = await api.get(`/download/info?url=${encodeURIComponent(url)}`);
+      
       if (extraction.url) {
         const { data: savedReel } = await api.post('/ric', { 
            url: extraction.url, 
-           caption: extraction.filename || 'Archive Entry', 
+           caption: extraction.title || 'Archive Entry', 
            username: 'RIC_NODE' 
         });
         setReels(prev => [savedReel, ...prev]);
         setUrl('');
       } else {
-        alert("Extraction Failed");
+        alert("Extraction failed: Node returned empty stream.");
       }
     } catch (err) {
-      alert("System Error");
+      const msg = err.response?.data?.error || err.message;
+      alert(`System Node Error: ${msg}`);
     }
     setLoading(false);
   };

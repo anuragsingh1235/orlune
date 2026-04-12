@@ -6,8 +6,9 @@ const axios   = require('axios');
 // Mirror: Night City (Current Active Stable Instance)
 const COBALT_INSTANCES = [
   'https://cobalt.night-city.top/api/json',
-  'https://api.cobalt.tools/api/json',
-  'https://co.wuk.sh/api/json',
+  'https://cobalt-api.v0.pw/api/json', // Mirror 1
+  'https://co.wuk.sh/api/json',        // Legacy
+  'https://api.cobalt.tools/api/json', // Official (Rate limited)
   'https://cobalt.hyra.workers.dev/api/json'
 ];
 
