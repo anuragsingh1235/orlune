@@ -17,6 +17,7 @@ const wikiRoutes     = require("./routes/wikipedia");
 const arenaRoutes    = require("./routes/arena");
 const downloadRoutes = require("./routes/download");
 const channelRoutes  = require("./routes/channel");
+const ricRoutes      = require("./routes/ric");
 
 const migrate = require("./config/migrate");
 migrate();
@@ -77,6 +78,7 @@ app.use("/api/wiki",      wikiRoutes);
 app.use("/api/arena",     arenaRoutes);
 app.use("/api/download",  downloadRoutes);
 app.use("/api/channels",  channelRoutes);
+app.use("/api/ric",       ricRoutes);
 
 // Serve React build only if files actually exist (not on Render backend-only)
 const buildPath = path.join(__dirname, "../../frontend/build");

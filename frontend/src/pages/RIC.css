@@ -1,0 +1,170 @@
+.ric-root {
+  height: 80vh; /* Fits inside the feature panel */
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Input Section ── */
+.ric-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 20px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+}
+
+.ric-input-box {
+  display: flex;
+  gap: 10px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.ric-input-box input {
+  flex: 1;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 12px 18px;
+  color: #fff;
+  outline: none;
+  font-size: 0.9rem;
+}
+
+.ric-input-box button {
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 0 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ric-input-box button:hover { transform: scale(1.05); }
+
+/* ── Feel & Feed ── */
+.ric-feed-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.ric-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  text-align: center;
+  padding: 40px;
+}
+
+.ric-empty-icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
+
+.ric-reels-container {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+.ric-reels-container::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome/Safari */
+
+.ric-reel-container {
+  height: 100%;
+  width: 100%;
+  scroll-snap-align: start;
+  position: relative;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ric-video {
+  height: 100%;
+  width: 100%;
+  object-fit: contain; /* Like Reels/TikTok */
+}
+
+/* ── Overlay ── */
+.ric-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 30px;
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%);
+}
+
+.ric-info {
+  pointer-events: auto;
+  color: #fff;
+  max-width: 80%;
+}
+
+.ric-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ric-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.8rem;
+}
+
+.ric-caption {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.ric-actions {
+  position: absolute;
+  right: 20px;
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  pointer-events: auto;
+}
+
+.ric-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: #fff;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ric-action span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.ric-action:hover { transform: scale(1.1); }

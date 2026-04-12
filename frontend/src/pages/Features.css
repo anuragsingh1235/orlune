@@ -159,8 +159,18 @@
   transition: color 0.2s;
 }
 
+.fhub-btn-ric::before {
+  background: radial-gradient(ellipse at left, rgba(220, 39, 67, 0.2), transparent 65%);
+}
+
+.fhub-btn-ric.fhub-btn-active {
+  background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%) !important;
+  border-color: transparent;
+}
+
 .fhub-btn-active .fhub-btn-chevron  { color: #a855f7; }
 .fhub-btn-active-pdf .fhub-btn-chevron { color: #f97316; }
+.fhub-btn-ric.fhub-btn-active .fhub-btn-chevron { color: #fff; }
 .fhub-btn:hover .fhub-btn-chevron   { color: #64748b; }
 
 /* ── Tool panel (below buttons) ── */

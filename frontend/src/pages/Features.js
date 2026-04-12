@@ -1,17 +1,19 @@
 import React, { useState, lazy, Suspense } from 'react';
 import './Features.css';
 import DriveChat from './DriveChat';
-import PdfEditor from './PdfEditor'; // Static import for stability
+import PdfEditor from './PdfEditor';
+import RIC from './RIC';
 
 export default function Features() {
-  const [active, setActive] = useState(null); // null | 'drive' | 'pdf'
-  const [unlocked, setUnlocked] = useState(false);
+  const [active, setActive] = useState(null); // null | 'drive' | 'pdf' | 'ric'
+  const [unlocked, setUnlocked] = useState({ drive: false, pdf: false, ric: false });
   const [passcode, setPasscode] = useState('');
 
   const handleUnlock = (e) => {
     e.preventDefault();
-    if (passcode === '1764') {
-      setUnlocked(true);
+    const codes = { drive: '1764', pdf: '1764', ric: '1999' };
+    if (passcode === codes[active]) {
+      setUnlocked({ ...unlocked, [active]: true });
     } else {
       alert("Invalid Beta Authorization Code");
     }
@@ -27,7 +29,7 @@ export default function Features() {
           type="password" 
           placeholder="Access Code" 
           value={passcode}
-          onChange={(e) => setPasscode(e.target.value)}
+          onChange={(e) => { setPasscode(e.target.value); }}
           style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: '#fff', outline: 'none' }}
         />
         <button type="submit" className="fhub-btn" style={{ padding: '0 20px', background: 'var(--primary)', color: '#fff' }}>Override</button>
@@ -42,15 +44,15 @@ export default function Features() {
       <div className="fhub-head">
         <p className="fhub-eyebrow">ORLUNE FEATURES</p>
         <h1 className="fhub-title">
-          {active === 'drive' ? 'Downloader' : active === 'pdf' ? 'PDF Studio' : 'What would you like to do?'}
+          {active === 'drive' ? 'Downloader' : active === 'pdf' ? 'PDF Studio' : active === 'ric' ? 'RIC Reel Hub' : 'What would you like to do?'}
         </h1>
       </div>
 
-      {/* ── TWO BUTTONS ── */}
+      {/* ── BUTTONS GRID ── */}
       <div className="fhub-buttons">
         <button
           className={`fhub-btn fhub-btn-drive ${active === 'drive' ? 'fhub-btn-active' : ''}`}
-          onClick={() => setActive(active === 'drive' ? null : 'drive')}
+          onClick={() => { setActive(active === 'drive' ? null : 'drive'); setPasscode(''); }}
         >
           <span className="fhub-btn-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -72,7 +74,7 @@ export default function Features() {
 
         <button
           className={`fhub-btn fhub-btn-pdf ${active === 'pdf' ? 'fhub-btn-active-pdf' : ''}`}
-          onClick={() => setActive(active === 'pdf' ? null : 'pdf')}
+          onClick={() => { setActive(active === 'pdf' ? null : 'pdf'); setPasscode(''); }}
         >
           <span className="fhub-btn-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -92,20 +94,53 @@ export default function Features() {
             </svg>
           </span>
         </button>
+
+        <button
+          className={`fhub-btn fhub-btn-ric ${active === 'ric' ? 'fhub-btn-active' : ''}`}
+          onClick={() => { setActive(active === 'ric' ? null : 'ric'); setPasscode(''); }}
+        >
+          <span className="fhub-btn-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+          </span>
+          <span className="fhub-btn-label">
+            <span className="fhub-btn-name">RIC Reel Hub</span>
+            <span className="fhub-btn-hint">Interactive Instagram Experience</span>
+          </span>
+          <span className="fhub-btn-chevron">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points={active === 'ric' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'} />
+            </svg>
+          </span>
+        </button>
       </div>
 
       {/* ── TOOL PANEL ── */}
       {active === 'drive' && (
         <div className="ftool-panel fade-in">
-          {unlocked ? <DriveChat /> : renderMaintenance()}
+          {unlocked.drive ? <DriveChat /> : renderMaintenance()}
         </div>
       )}
 
       {active === 'pdf' && (
         <div className="ftool-panel fade-in">
-          {unlocked ? <PdfEditor /> : renderMaintenance()}
+          {unlocked.pdf ? <PdfEditor /> : renderMaintenance()}
         </div>
       )}
+
+      {active === 'ric' && (
+        <div className="ftool-panel fade-in">
+          {unlocked.ric ? <RIC /> : renderMaintenance()}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 
     </div>
   );

@@ -229,6 +229,21 @@ async function migrate() {
       console.log('Channel Migration warning:', e.message);
     }
 
+    // 📱 RIC PERSISTENCE
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS ric_reels (
+          id SERIAL PRIMARY KEY,
+          url TEXT NOT NULL,
+          caption TEXT,
+          username VARCHAR(100),
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+    } catch (e) {
+      console.log('RIC Migration warning:', e.message);
+    }
+
     console.log('✅ Migration check complete!');
   } catch (err) {
     console.error('❌ Migration failed:', err);
