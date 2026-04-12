@@ -276,5 +276,3 @@ export default function VideoCallRoom({ channel, mode = 'video', onLeave }) {
     </div>
   );
 }
-
-}

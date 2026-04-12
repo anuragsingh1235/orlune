@@ -62,6 +62,8 @@ export default function Battles() {
   const [opponentResults, setOpponentResults] = useState([]);
   const [myVotes, setMyVotes] = useState({}); // challenge_id -> voted_for
   const [winner, setWinner] = useState(null); // battle that just ended (for animation)
+  const [activeComparison, setActiveComparison] = useState(null); // challenge_id
+
 
   // ── FETCH UPCOMING
   const fetchUpcoming = useCallback(async (genre) => {
@@ -190,19 +192,45 @@ export default function Battles() {
   const [movieSearchResults, setMovieSearchResults] = useState([]);
   const [movieSearching, setMovieSearching] = useState(false);
 
-  // Search movies for battle pick
+  // Search movies for battle pick with Hybrid TMDB + Wiki Engine
   useEffect(() => {
     if (!movieSearchQ.trim()) { setMovieSearchResults([]); return; }
     const t = setTimeout(async () => {
       setMovieSearching(true);
       try {
-        const { data } = await api.get('/movies/search', { params: { q: movieSearchQ, type: 'movie' } });
-        setMovieSearchResults((data.results || []).slice(0, 8));
+        const [tmdbRes, wikiRes] = await Promise.allSettled([
+          api.get('/movies/search', { params: { q: movieSearchQ, type: 'movie' } }),
+          api.get('/wiki/search',   { params: { query: movieSearchQ } })
+        ]);
+        
+        let merged = [];
+        if (tmdbRes.status === 'fulfilled') {
+          merged = [...(tmdbRes.value.data || [])];
+        }
+        
+        // Merge Wiki results if TMDB missed some or for extra variety
+        if (wikiRes.status === 'fulfilled') {
+          const wikiItems = (wikiRes.value.data.results || []).map(w => ({
+            id: `wiki-${w.id}`,
+            title: w.title,
+            poster_path: w.thumbnail,
+            overview: w.overview,
+            _api_source: 'wikipedia'
+          }));
+          // Avoid duplicates by title
+          const existingTitles = new Set(merged.map(m => (m.title || m.name)?.toLowerCase()));
+          wikiItems.forEach(w => {
+            if (!existingTitles.has(w.title.toLowerCase())) merged.push(w);
+          });
+        }
+
+        setMovieSearchResults(merged.slice(0, 10));
       } catch {}
       setMovieSearching(false);
     }, 400);
     return () => clearTimeout(t);
   }, [movieSearchQ]);
+
 
   const resetCreateModal = () => {
     setShowCreateModal(false);
@@ -502,7 +530,10 @@ export default function Battles() {
                     <div className="arena-vote-count" style={{ color: ch.creator_color }}>{ch.creator_votes || 0} votes</div>
                   </div>
 
-                  <div className="arena-vs-badge">VS</div>
+                  <div className="arena-vs-badge" onClick={() => (ch.creator_movie_id && ch.opponent_movie_id) && setActiveComparison(ch.id)}>
+                    {ch.creator_movie_id && ch.opponent_movie_id ? '🔍 COMPARE' : 'VS'}
+                  </div>
+
 
                   {/* Opponent Side */}
                   <div className="arena-side" style={{ '--side-color': ch.opponent_color }}>
@@ -710,6 +741,121 @@ export default function Battles() {
         {activeTab === 'today' && renderToday()}
         {activeTab === 'arena' && renderArena()}
       </div>
+
+      {activeComparison && (
+        <ComparisonModal 
+          battle={arenaChallenges.find(c => c.id === activeComparison)} 
+          onClose={() => setActiveComparison(null)} 
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Comparison Modal (TMDB + WIKI Hybrid)
+function ComparisonModal({ battle, onClose }) {
+  const [dataA, setDataA] = useState(null);
+  const [dataB, setDataB] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBoth() {
+      setLoading(true);
+      try {
+        const [resA, resB, wikiA, wikiB] = await Promise.allSettled([
+          api.get(`/movies/details/${battle.creator_movie_id}`),
+          api.get(`/movies/details/${battle.opponent_movie_id}`),
+          api.get(`/wiki/wiki`, { params: { title: battle.creator_movie_title } }),
+          api.get(`/wiki/wiki`, { params: { title: battle.opponent_movie_title } })
+        ]);
+
+        if (resA.status === 'fulfilled') setDataA({ tmdb: resA.value.data, wiki: wikiA.status === 'fulfilled' ? wikiA.value.data : null });
+        if (resB.status === 'fulfilled') setDataB({ tmdb: resB.value.data, wiki: wikiB.status === 'fulfilled' ? wikiB.value.data : null });
+      } catch (e) {}
+      setLoading(false);
+    }
+    fetchBoth();
+  }, [battle]);
+
+  return (
+    <div className="arena-modal-overlay" onClick={onClose}>
+      <div className="comparison-modal glass-card" onClick={e => e.stopPropagation()}>
+        <div className="comp-header">
+          <h3>Gallery Insights</h3>
+          <button className="arena-modal-close" onClick={onClose}>×</button>
+        </div>
+        
+        {loading ? (
+          <div className="comp-loading pulse">Synthesizing Archive Data...</div>
+        ) : (
+          <div className="comp-grid-wrap custom-scrollbar">
+            <div className="comp-grid">
+              {/* SIDE A */}
+              <div className="comp-side side-creator">
+                <div className="comp-poster-box">
+                   <img src={`https://image.tmdb.org/t/p/w400${battle.creator_movie_poster}`} alt="A" />
+                   <div className="comp-title-bar">{battle.creator_movie_title}</div>
+                </div>
+                <div className="comp-data-block">
+                   <div className="comp-source">ARCHIVE (TMDB)</div>
+                   <div className="comp-stats">
+                      <span>⭐ {dataA?.tmdb?.vote_average || '—'}</span>
+                      <span>📅 {dataA?.tmdb?.release_date?.slice(0,4)}</span>
+                      <span>🎭 {dataA?.tmdb?.runtime}m</span>
+                   </div>
+                   <p className="comp-desc">{(dataA?.tmdb?.overview || '').slice(0, 150)}...</p>
+                </div>
+                {dataA?.wiki && (
+                  <div className="comp-data-block wiki">
+                    <div className="comp-source">INSIGHTS (WIKIPEDIA)</div>
+                    <p className="comp-desc">{(dataA.wiki.summary || '').slice(0, 200)}...</p>
+                    <div className="comp-cast-mini">
+                       {dataA.wiki.sections?.find(s=>/cast/i.test(s.title))?.members?.slice(0,3).map(m => (
+                          <div key={m.name} className="cast-pill">{m.name}</div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="comp-vs-divider">VS</div>
+
+              {/* SIDE B */}
+              <div className="comp-side side-opponent">
+                <div className="comp-poster-box">
+                   <img src={`https://image.tmdb.org/t/p/w400${battle.opponent_movie_poster}`} alt="B" />
+                   <div className="comp-title-bar">{battle.opponent_movie_title}</div>
+                </div>
+                <div className="comp-data-block">
+                   <div className="comp-source">ARCHIVE (TMDB)</div>
+                   <div className="comp-stats">
+                      <span>⭐ {dataB?.tmdb?.vote_average || '—'}</span>
+                      <span>📅 {dataB?.tmdb?.release_date?.slice(0,4)}</span>
+                      <span>🎭 {dataB?.tmdb?.runtime}m</span>
+                   </div>
+                   <p className="comp-desc">{(dataB?.tmdb?.overview || '').slice(0, 150)}...</p>
+                </div>
+                {dataB?.wiki && (
+                  <div className="comp-data-block wiki">
+                    <div className="comp-source">INSIGHTS (WIKIPEDIA)</div>
+                    <p className="comp-desc">{(dataB.wiki.summary || '').slice(0, 200)}...</p>
+                    <div className="comp-cast-mini">
+                       {dataB.wiki.sections?.find(s=>/cast/i.test(s.title))?.members?.slice(0,3).map(m => (
+                          <div key={m.name} className="cast-pill">{m.name}</div>
+                       ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="comp-footer-insight">
+               <h4>Curator's Tip</h4>
+               <p>Notice how {battle.creator_movie_title} ({dataA?.tmdb?.vote_average}) compares to {battle.opponent_movie_title} ({dataB?.tmdb?.vote_average}) in critical reception. Choose your side wisely.</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -726,12 +872,32 @@ function MoviePicker({ challengeId, side, onPicked }) {
     if (!query.trim()) { setResults([]); return; }
     const t = setTimeout(async () => {
       try {
-        const { data } = await api.get('/movies/search', { params: { q: query, type: 'movie' } });
-        setResults((data.results || []).slice(0, 6));
+        const [tmdbRes, wikiRes] = await Promise.allSettled([
+          api.get('/movies/search', { params: { q: query, type: 'movie' } }),
+          api.get('/wiki/search',   { params: { query: query } })
+        ]);
+
+        let merged = [];
+        if (tmdbRes.status === 'fulfilled') merged = [...(tmdbRes.value.data || [])];
+        
+        if (wikiRes.status === 'fulfilled') {
+          const wikiItems = (wikiRes.value.data.results || []).map(w => ({
+            id: `wiki-${w.id}`,
+            title: w.title,
+            poster_path: w.thumbnail,
+            _api_source: 'wikipedia'
+          }));
+          const existingTitles = new Set(merged.map(m => (m.title || m.name)?.toLowerCase()));
+          wikiItems.forEach(w => {
+            if (!existingTitles.has(w.title.toLowerCase())) merged.push(w);
+          });
+        }
+        setResults(merged.slice(0, 10));
       } catch {}
     }, 400);
     return () => clearTimeout(t);
   }, [query]);
+
 
   const confirm = async () => {
     if (!selected) return;
@@ -757,9 +923,15 @@ function MoviePicker({ challengeId, side, onPicked }) {
       <div className="picker-results">
         {results.map(m => (
           <div key={m.id} className={`picker-item ${selected?.id === m.id ? 'selected' : ''}`} onClick={() => setSelected(m)}>
-            {m.poster_path && <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt={m.title}/>}
+            {m.poster_path && (
+              <img 
+                src={m.poster_path.startsWith('http') ? m.poster_path : `https://image.tmdb.org/t/p/w92${m.poster_path}`} 
+                alt={m.title}
+              />
+            )}
             <span>{m.title || m.name}</span>
           </div>
+
         ))}
       </div>
       {selected && (
