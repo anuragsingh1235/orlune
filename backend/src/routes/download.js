@@ -5,12 +5,11 @@ const axios   = require('axios');
 // ── COBALT PREMIUM API CONFIG ─────────────────────────────
 // Mirror: Night City (Current Active Stable Instance)
 const COBALT_INSTANCES = [
-  'https://cobalt.night-city.top/api/json',
   'https://cobalt-api.v0.pw/api/json',
+  'https://cobalt.k00.dev/api/json',    // Stable v10
   'https://co.wuk.sh/api/json',
-  'https://cobalt.api.unv.me/api/json', // High success rate mirror
-  'https://api.cobalt.tools/api/json',
-  'https://cobalt.qwedl.com/api/json'
+  'https://cobalt.night-city.top/api/json',
+  'https://cobalt.api.unv.me/api/json'
 ];
 
 const detectPlatform = (url) => {
@@ -36,8 +35,9 @@ router.get('/info', async (req, res) => {
       const platform = detectPlatform(url);
       const cobaltRes = await axios.post(instance, {
         url: url,
-        vQuality: '720',
-        filenameStyle: 'nerdy', // Latest spec recommendation
+        videoQuality: '720',    // v10 spec
+        filenameStyle: 'nerdy', // v10 spec
+        downloadMode: 'video', 
         isNoTTWatermark: true,
       }, {
         headers: {
@@ -45,7 +45,7 @@ router.get('/info', async (req, res) => {
           'Content-Type': 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
-        timeout: 12000
+        timeout: 15000
       });
 
       const data = cobaltRes.data;
