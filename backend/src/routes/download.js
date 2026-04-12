@@ -3,8 +3,9 @@ const router  = express.Router();
 const axios   = require('axios');
 
 // ── COBALT PREMIUM API CONFIG ─────────────────────────────
-// Cobalt is a professional grade media extraction service.
-const COBALT_API = 'https://co.wuk.sh/api/json';
+// Mirror: Night City (Current Active Stable Instance)
+const COBALT_API = 'https://cobalt.night-city.top/api/json';
+
 
 const detectPlatform = (url) => {
   if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
