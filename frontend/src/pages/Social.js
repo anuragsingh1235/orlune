@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import notify from '../utils/notify';
+import VideoCallRoom from './VideoCallRoom';
 import './Social.css';
 
 export default function Social() {
@@ -22,29 +23,7 @@ export default function Social() {
   
   const [showMembers, setShowMembers] = useState(false);
   const [members, setMembers] = useState([]);
-  const [callState, setCallState] = useState(null); // null | 'voice' | 'video'
-  const localVideoRef = useRef(null);
-  let localStream = null;
-
-  const startCall = async (type) => {
-    try {
-      const constraints = type === 'video' ? { video: true, audio: true } : { audio: true, video: false };
-      localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setCallState(type);
-      if (type === 'video' && localVideoRef.current) {
-        localVideoRef.current.srcObject = localStream;
-      }
-      notify.success(type === 'video' ? 'Video call started' : 'Voice call started');
-    } catch (err) {
-      notify.error('Camera/Mic permission denied');
-    }
-  };
-
-  const endCall = () => {
-    if (localStream) localStream.getTracks().forEach(t => t.stop());
-    localStream = null;
-    setCallState(null);
-  };
+  const [callRoom, setCallRoom] = useState(null); // null or channel obj
 
   const messagesEndRef = useRef(null);
   const imgInputRef = useRef(null);
@@ -263,10 +242,10 @@ export default function Social() {
 
                {/* Action buttons */}
                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                 <button className="header-meta-btn" title="Voice Call" onClick={() => startCall('voice')} style={{background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.4)', color:'#34d399', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
+                 <button className="header-meta-btn" title="Voice Call" onClick={() => setCallRoom(activeChat)} style={{background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.4)', color:'#34d399', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
                    📞 Voice
                  </button>
-                 <button className="header-meta-btn" title="Video Call" onClick={() => startCall('video')} style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.4)', color:'#60a5fa', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
+                 <button className="header-meta-btn" title="Video Call" onClick={() => setCallRoom(activeChat)} style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.4)', color:'#60a5fa', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
                    🎥 Video
                  </button>
                  {activeChat.type === 'channel' && (
@@ -317,25 +296,8 @@ export default function Social() {
         ) : <div className="no-chat-selected"><div style={{fontSize:'3rem', marginBottom:'10px'}}>💬</div><h3>Select a chat</h3><p style={{color:'var(--text-muted)'}}>Choose a friend or channel to start messaging.</p></div>}
       </div>
 
-      {/* CALL MODAL */}
-      {callState && (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:9999, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'20px'}}>
-          <div style={{fontSize:'5rem'}}>{callState === 'video' ? '🎥' : '📞'}</div>
-          <h2 style={{color:'#fff', margin:0}}>{callState === 'video' ? 'Video Call' : 'Voice Call'}</h2>
-          <p style={{color:'#94a3b8'}}>{activeChat?.username || activeChat?.name}</p>
-          
-          {callState === 'video' && (
-            <video ref={localVideoRef} autoPlay muted playsInline style={{width:'300px', height:'220px', borderRadius:'16px', background:'#000', objectFit:'cover', border:'2px solid rgba(59,130,246,0.5)'}} />
-          )}
-
-          {callState === 'voice' && (
-            <div style={{width:'100px', height:'100px', borderRadius:'50%', background:'rgba(52,211,153,0.2)', border:'2px solid #34d399', display:'flex', alignItems:'center', justifyContent:'center', animation:'pulse 1.5s infinite', fontSize:'2.5rem'}}>🎙️</div>
-          )}
-
-          <p style={{color:'#64748b', fontSize:'0.85rem'}}>Connected to your mic{callState === 'video' ? ' & camera' : ''}...</p>
-          <button onClick={endCall} style={{background:'#ef4444', color:'#fff', border:'none', borderRadius:'50%', width:'64px', height:'64px', fontSize:'1.5rem', cursor:'pointer', boxShadow:'0 4px 20px rgba(239,68,68,0.5)'}}>📵</button>
-        </div>
-      )}
+      {/* PREMIUM CALL ROOM */}
+      {callRoom && <VideoCallRoom channel={callRoom} onLeave={() => setCallRoom(null)} />}
 
       {showCreateModal && (
         <div className="chan-modal-overlay"><div className="chan-modal">
