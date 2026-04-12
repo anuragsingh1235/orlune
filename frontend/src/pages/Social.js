@@ -15,9 +15,6 @@ export default function Social() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [downloadUrl, setDownloadUrl] = useState('');
-  const [downloadInfo, setDownloadInfo] = useState(null);
-  const [downloading, setDownloading] = useState(false);
   
   const [publicChannels, setPublicChannels] = useState([]);
   const [myChannels, setMyChannels] = useState([]);
@@ -166,34 +163,14 @@ export default function Social() {
     } catch (e) { notify.error("Forbidden"); }
   };
 
-  const getDownloadInfo = async () => {
-    if (!downloadUrl.trim()) return notify.error("URL required");
-    setDownloading(true);
-    setDownloadInfo(null);
-    try {
-      const res = await api.get(`/download/info?url=${encodeURIComponent(downloadUrl)}`);
-      setDownloadInfo(res.data);
-    } catch (err) {
-      notify.error(err.response?.data?.error || "Fetch failed");
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const startDownload = (itag) => {
-    const url = `${api.defaults.baseURL}/download/stream?url=${encodeURIComponent(downloadUrl)}&itag=${itag}`;
-    window.open(url, '_blank');
-  };
-
   const scrollToBottom = () => { if(messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: "smooth" }); };
 
   if (loading) return <div className="spinner" style={{marginTop: '20vh'}} />;
   
-  // ── DEEP PARSER SAFETY ──────────────────────────────────────
   let meId = null;
-  const rawUser = localStorage.getItem('ww_user');
-  if (rawUser && rawUser !== "undefined" && rawUser !== "null") {
-    try { meId = JSON.parse(rawUser)?.id; } catch(e) { console.error("Session Corrupt"); }
+  const rawUserStr = localStorage.getItem('ww_user');
+  if (rawUserStr && rawUserStr !== "undefined" && rawUserStr !== "null") {
+    try { meId = JSON.parse(rawUserStr)?.id; } catch(e) { console.error("Session Corrupt"); }
   }
 
   return (
@@ -202,7 +179,6 @@ export default function Social() {
         <div className="social-tabs">
           <button className={`social-tab ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>DIRECT</button>
           <button className={`social-tab ${activeTab === 'channels' ? 'active' : ''}`} onClick={() => setActiveTab('channels')}>HUB</button>
-          <button className={`social-tab ${activeTab === 'features' ? 'active' : ''}`} onClick={() => setActiveTab('features')}>✨ TOOLS</button>
         </div>
 
         {activeTab === 'messages' && (
@@ -246,60 +222,12 @@ export default function Social() {
              ))}
           </div>
         )}
-
-        {activeTab === 'features' && (
-          <div className="features-list" style={{padding: '15px'}}>
-            <h4 className="section-title">MEDIA EXTRACTOR</h4>
-            <div className="feature-card" style={{background: 'var(--bg-tertiary)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'}}>
-              <p style={{fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '15px'}}>Premium Video & Audio Downloader</p>
-              <input 
-                className="m-input" 
-                placeholder="YouTube / Instagram URL" 
-                value={downloadUrl} 
-                onChange={e => setDownloadUrl(e.target.value)}
-                style={{marginBottom: '15px', padding: '12px'}}
-              />
-              <button 
-                className="btn btn-primary" 
-                style={{width: '100%', padding: '12px', fontWeight: 'bold'}} 
-                onClick={getDownloadInfo}
-                disabled={downloading}
-              >
-                {downloading ? 'Searching Matrix...' : 'SCAN LINK'}
-              </button>
-
-              {downloadInfo && (
-                <div className="download-results animate-fade-in" style={{marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px'}}>
-                  {downloadInfo.thumbnail && <img src={downloadInfo.thumbnail} style={{width: '100%', borderRadius: '12px', marginBottom: '15px', border: '2px solid var(--border-color)'}} alt="" />}
-                  <h5 style={{fontSize: '1rem', marginBottom: '5px', color: '#fff'}}>{downloadInfo.title}</h5>
-                  <p style={{fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '15px'}}>Source: {downloadInfo.author || 'Unknown'}</p>
-                  
-                  <div className="format-list" style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                    {downloadInfo.formats.map(f => (
-                      <button 
-                        key={f.itag} 
-                        className="btn btn-sm" 
-                        style={{background: 'rgba(255,255,255,0.03)', color: '#fff', textAlign: 'left', display: 'flex', justifyContent: 'space-between', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)'}}
-                        onClick={() => startDownload(f.itag)}
-                      >
-                        <span style={{fontWeight: '500'}}>{f.quality} ({f.container})</span>
-                        <span style={{opacity: 0.6, fontSize: '0.75rem'}}>{f.size}</span>
-                      </button>
-                    ))}
-                    {downloadInfo.formats.length === 0 && <p style={{fontSize: '0.8rem', color: '#f87171'}}>No direct public formats found. Try another link.</p>}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="chat-window">
         {activeChat ? (
           <>
             <div className="chat-header">
-               {/* Clickable avatar + name — opens member list for channels */}
                <div style={{display: 'flex', alignItems: 'center', gap: '12px', cursor: activeChat.type === 'channel' ? 'pointer' : 'default'}} onClick={() => { if(activeChat.type === 'channel') fetchMembers(); }}>
                  <div style={{width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem'}}>
                    {activeChat.profile_pic
@@ -315,7 +243,6 @@ export default function Social() {
                  </div>
                </div>
 
-               {/* Action buttons */}
                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
                  <button className="header-meta-btn" title="Voice Call" onClick={() => startCallRoom(activeChat, 'voice')} style={{background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.4)', color:'#34d399', padding:'8px 14px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px', fontWeight:600}}>
                    📞 Voice
@@ -332,7 +259,6 @@ export default function Social() {
             <div className="chat-messages">
                {(messages || []).map((m, i) => m && (
                  <div key={m?.id || i} className={m?.is_system_msg ? "system-msg-bubble" : `message ${m?.sender_id === meId ? 'sent' : 'received'}`}>
-                    {/* Show avatar + sender name for received channel messages */}
                     {!m?.is_system_msg && m?.sender_id !== meId && (
                       <div style={{display:'flex', alignItems:'center', gap:'6px', marginBottom:'4px'}}>
                         <div style={{width:'24px', height:'24px', borderRadius:'50%', background:'#334155', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.75rem', fontWeight:'bold', color:'#fff', flexShrink:0}}>
@@ -371,7 +297,6 @@ export default function Social() {
         ) : <div className="no-chat-selected"><div style={{fontSize:'3rem', marginBottom:'10px'}}>💬</div><h3>Select a chat</h3><p style={{color:'var(--text-muted)'}}>Choose a friend or channel to start messaging.</p></div>}
       </div>
 
-      {/* PREMIUM CALL ROOM */}
       {callRoom && <VideoCallRoom channel={callRoom} mode={callMode} onLeave={() => setCallRoom(null)} />}
 
       {showCreateModal && (
@@ -405,14 +330,14 @@ export default function Social() {
           <div className="member-list" style={{maxHeight:'300px', overflowY:'auto'}}>{(members || []).map(m => m && (
              <div key={m?.user_id || Math.random()} className="member-item" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--border-color)'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                  <div style={{width: '34px', height: '34px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight:'bold'}}>{(m?.username || 'U')[0].toUpperCase()}</div>
-                  <div>
+                   <div style={{width: '34px', height: '34px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight:'bold'}}>{(m?.username || 'U')[0].toUpperCase()}</div>
+                   <div>
                     <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
                       <span style={{fontWeight: 'bold'}}>{m?.username || 'User'}</span>
                       {m?.is_creator && <span style={{background:'#EBCB8B', color:'#000', padding:'1px 6px', borderRadius:'4px', fontSize:'0.65rem', fontWeight:'bold'}}>OWNER</span>}
                       {m?.is_admin && !m?.is_creator && <span style={{background:'var(--primary)', color:'#fff', padding:'1px 6px', borderRadius:'4px', fontSize:'0.65rem'}}>ADMIN</span>}
                     </div>
-                  </div>
+                   </div>
                 </div>
                 {(members || []).find(u => u?.user_id === meId)?.is_admin && !m?.is_creator && (
                   <div style={{display: 'flex', gap: '5px'}}>
