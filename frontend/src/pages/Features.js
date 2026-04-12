@@ -87,19 +87,20 @@ export default function Features() {
     setIsTyping(true);
     const videoId = extractYTId(activeLink);
     
-    // Y2Mate is the most famous and working downloader
-    // We point directly to their processing page for this video id
-    const finalRedir = videoId 
-      ? `https://www.y2mate.com/youtube-mp4/${videoId}` 
-      : `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
+    // Generating 3 different famous downloader links for redundancy
+    const url1 = videoId ? `https://www.y2mate.com/youtube-mp4/${videoId}` : `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
+    const url2 = `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
+    const url3 = videoId ? `https://yt5s.io/en/download?q=${videoId}` : `https://9xbuddy.online/analyze?url=${encodeURIComponent(activeLink)}`;
 
     setTimeout(() => {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'bot',
-        text: `Boom! Your direct download tunnel is ready. Get your file below. 🍿`,
+        text: `Extraction Complete. Your direct download tunnels are ready:`,
         type: 'success',
-        downloadUrl: finalRedir,
+        downloadUrl: url1,
+        downloadUrl2: url2,
+        downloadUrl3: url3,
         fileName: `Media_Download`
       }]);
       setIsTyping(false);
@@ -153,16 +154,16 @@ export default function Features() {
                         {msg.type === 'success' && (
                           <div className="success-dl-box">
                              <p>{msg.text}</p>
-                             <div className="dl-card">
-                                 <div className="dl-icon-large">
-                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                 </div>
-                                 <div className="dl-info">
-                                     <span className="dl-name">{msg.fileName}</span>
-                                     <span className="dl-meta">Redirecting to raw cloud file...</span>
-                                 </div>
-                                 <a href={msg.downloadUrl} target="_blank" rel="noopener noreferrer" className="dl-action-btn">
-                                     GRAB FILE
+                             <div className="dl-card-grid">
+                                 <a href={msg.downloadUrl} target="_blank" rel="noopener noreferrer" className="dl-server-btn primary">
+                                     <span className="sv-name">SERVER 1 (Y2MATE)</span>
+                                     <span className="sv-status">RECOMMENDED</span>
+                                 </a>
+                                 <a href={msg.downloadUrl2} target="_blank" rel="noopener noreferrer" className="dl-server-btn">
+                                     <span className="sv-name">SERVER 2 (SAVEFROM)</span>
+                                 </a>
+                                 <a href={msg.downloadUrl3} target="_blank" rel="noopener noreferrer" className="dl-server-btn">
+                                     <span className="sv-name">SERVER 3 (YT5S)</span>
                                  </a>
                              </div>
                           </div>

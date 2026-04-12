@@ -129,28 +129,56 @@
 }
 .res-btn:hover { background: #7c3aed; border-color: #7c3aed; transform: translateY(-2px); }
 
-.dl-card {
-  margin-top: 15px; background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 16px; padding: 12px;
-  display: flex; align-items: center; gap: 12px;
+.dl-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 20px;
 }
 
-.dl-icon-large {
-  width: 44px; height: 44px; background: rgba(16, 185, 129, 0.2);
-  border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #10b981;
+.dl-server-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  min-height: 60px;
 }
 
-.dl-info { flex: 1; }
-.dl-name { font-weight: 700; color: #fff; font-size: 14px; display: block; }
-.dl-meta { font-size: 11px; color: #10b981; }
-
-.dl-action-btn {
-  background: #10b981; color: #fff; padding: 10px 16px;
-  border-radius: 10px; font-weight: 700; font-size: 13px;
-  text-decoration: none; transition: 0.2s;
+.dl-server-btn.primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
 }
-.dl-action-btn:hover { background: #059669; transform: scale(1.05); }
+
+.dl-server-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: #a855f7;
+}
+
+.dl-server-btn.primary:hover {
+  box-shadow: 0 15px 35px rgba(16, 185, 129, 0.5);
+  filter: brightness(1.1);
+}
+
+.sv-name {
+  font-weight: 800;
+  font-size: 15px;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.sv-status {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 4px;
+}
 
 .chat-typing-dot { display: flex; gap: 4px; padding: 10px; align-self: flex-start; }
 .chat-typing-dot span {
