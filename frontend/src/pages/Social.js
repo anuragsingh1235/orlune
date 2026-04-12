@@ -24,6 +24,42 @@ export default function Social() {
   const [members, setMembers] = useState([]);
 
   const messagesEndRef = useRef(null);
+  const imgInputRef = useRef(null);
+
+  const handleFileUpload = async (e, type) => {
+    e.preventDefault();
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return notify.error("File exceeds 5MB limit");
+    
+    notify.success("Encrypting Media...");
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const endpoint = activeChat.type === 'channel' ? '/channels/message' : '/chat/send';
+        const payload = activeChat.type === 'channel' 
+            ? { channel_id: activeChat.id, content: "", attachment_url: reader.result, attachment_type: type } 
+            : { receiver_id: activeChat.id, content: "", attachment_url: reader.result, attachment_type: type };
+        const res = await api.post(endpoint, payload);
+        if (res.data) setMessages(prev => [...prev, res.data]);
+      } catch (err) { notify.error("Media Transmission Failed"); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const updateProfilePic = async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    notify.success("Updating Alliance Designation Profile...");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setActiveChat({...activeChat, profile_pic: reader.result});
+      setMyChannels(myChannels.map(c => c.id === activeChat.id ? {...c, profile_pic: reader.result} : c));
+      notify.success("Profile Interface Updated");
+    };
+    reader.readAsDataURL(file);
+  };
+
 
   useEffect(() => { fetchInitialData(); }, []);
   useEffect(() => {
@@ -171,7 +207,7 @@ export default function Social() {
              <h4 className="section-title" style={{marginTop: '20px'}}>MY ALLIANCES</h4>
              {(myChannels || []).map(c => (
                <div key={c?.id || Math.random()} className={`channel-item ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => setActiveChat({...c, type: 'channel'})} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>
-                 <div className="chan-avatar" style={{width: '35px', height: '35px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'}}>{c?.profile_pic ? <img src={c.profile_pic} style={{width:'100%', height:'100%', borderRadius:'8px'}} alt=""/> : '#'}</div>
+                 <div className="chan-avatar" style={{width: '35px', height: '35px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'}}>{c?.profile_pic ? <img src={c.profile_pic} style={{width:'100%', height:'100%', borderRadius:'8px'}} alt=""/> : '💠'}</div>
                  <div style={{flex: 1}}>
                     <h4 style={{margin: 0, fontSize: '0.95rem'}}>{c?.name || 'Group'}</h4>
                     <p style={{margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)'}}>{c.privacy === 'private' ? '🔒 Invite Only' : '🌍 Public Feed'}</p>
@@ -186,11 +222,11 @@ export default function Social() {
         {activeChat ? (
           <>
             <div className="chat-header">
-               <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+               <div style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: activeChat.type === 'channel' ? 'pointer' : 'default', padding: '5px', borderRadius: '8px', transition: '0.2s', ...((activeChat.type==='channel') && {':hover': {background: 'rgba(255,255,255,0.05)'}})}} onClick={() => {if(activeChat.type==='channel') fetchMembers()}}>
                  {activeChat.type === 'channel' && activeChat.id === 'global' ? 
                    <img src="/global-cat.jpg" alt="Global" style={{width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover'}} /> :
                    <div className="chan-avatar" style={{width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary)', color: '#fff', fontSize: '1.2rem', fontWeight: 'bold'}}>
-                     {activeChat.profile_pic ? <img src={activeChat.profile_pic} style={{width: '100%', height: '100%', borderRadius: '50%'}} alt="dp" /> : (activeChat.name ? '#' : activeChat.username?.[0]?.toUpperCase() || '?')}
+                     {activeChat.profile_pic ? <img src={activeChat.profile_pic} style={{width: '100%', height: '100%', borderRadius: '50%'}} alt="dp" /> : (activeChat.name ? '💠' : activeChat.username?.[0]?.toUpperCase() || '?')}
                    </div>
                  }
                  <div>
@@ -223,10 +259,17 @@ export default function Social() {
                <div ref={messagesEndRef} />
             </div>
 
-            <form className="chat-input-area" onSubmit={sendMessage}>
-               <input className="chat-input" placeholder="Transmission..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
-               <button className="btn btn-primary btn-sm" type="submit">SEND</button>
-            </form>
+            <form className="chat-input-area" onSubmit={sendMessage} style={{display: 'flex', flexDirection: 'column', gap: '5px', background: 'var(--bg-secondary)', padding: '10px'}}>
+               <div style={{display: 'flex', gap: '15px', padding: '0 10px'}}>
+                 <button type="button" title="Send Image" onClick={() => imgInputRef.current.click()} style={{background: 'none', border:'none', cursor:'pointer', fontSize:'1.3rem'}}>📷</button>
+                 <button type="button" title="Send GIF/Video" onClick={() => imgInputRef.current.click()} style={{background: 'none', border:'none', cursor:'pointer', fontSize:'1.3rem'}}>🎬</button>
+                 <input type="file" ref={imgInputRef} hidden accept="image/*,video/*" onChange={e => handleFileUpload(e, 'media')} />
+               </div>
+               <div style={{display:'flex', gap: '10px'}}>
+                 <input className="chat-input" style={{flex: 1, padding: '12px 20px', borderRadius: '20px', border: '1px solid var(--border-color)', background: 'var(--bg-tertiary)', color: '#fff'}} placeholder="Transmission..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
+                 <button className="btn btn-primary" style={{borderRadius: '20px', padding: '0 25px'}} type="submit">SEND</button>
+               </div>
+             </form>
           </>
         ) : <div className="no-chat-selected"><h3>Matrix Standby</h3><p>Select a node to initiate synchronization.</p></div>}
       </div>
@@ -250,8 +293,16 @@ export default function Social() {
 
       {showMembers && (
         <div className="chan-modal-overlay"><div className="chan-modal">
-          <h2>Alliance Roster</h2>
-          <div className="member-list">{(members || []).map(m => m && (
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-color)', paddingBottom:'10px', marginBottom:'15px'}}>
+             <h2 style={{margin:0}}>Alliance Roster</h2>
+             {(members || []).find(u => u?.user_id === meId)?.is_admin && (
+                <label className="btn btn-sm" style={{background:'var(--bg-tertiary)', border:'1px solid var(--primary)', color:'var(--primary)', cursor:'pointer'}}>
+                   Change Picture
+                   <input type="file" hidden accept="image/*" onChange={updateProfilePic} />
+                </label>
+             )}
+          </div>
+          <div className="member-list" style={{maxHeight:'300px', overflowY:'auto'}}>{(members || []).map(m => m && (
              <div key={m?.user_id || Math.random()} className="member-item" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--border-color)'}}>
                 <div className="member-name-tag" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                   <div style={{width: '30px', height: '30px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{(m?.username || 'U')[0].toUpperCase()}</div>
