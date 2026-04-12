@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './Features.css';
-import Workshop from './Workshop';
+
+const Workshop = lazy(() => import('./Workshop'));
+
 
 export default function Features() {
   const [messages, setMessages] = useState([
@@ -221,7 +223,9 @@ export default function Features() {
         <div className="divider-line" />
       </div>
 
-      <Workshop />
+      <Suspense fallback={<div className="workshop-loading">Loading Workshop...</div>}>
+        <Workshop />
+      </Suspense>
     </div>
   );
 }

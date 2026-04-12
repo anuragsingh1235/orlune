@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import './Workshop.css';
+
 
 const CONVERT_FORMATS = [
   { ext: 'docx', label: 'Word (.docx)', icon: 'W', color: '#2b579a' },
@@ -90,6 +90,8 @@ export default function Workshop() {
     setProcessing(true);
     setEditorMsg('');
     try {
+      // Dynamically import pdf-lib only when the user hits Apply
+      const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
       const bytes = await editorFile.arrayBuffer();
       const pdfDoc = await PDFDocument.load(bytes);
       const pages = pdfDoc.getPages();
