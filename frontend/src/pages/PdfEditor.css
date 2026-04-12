@@ -1,0 +1,309 @@
+.pdfeditor-section {
+  padding: 80px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  width: 100%;
+}
+
+/* Header */
+.pdfeditor-header {
+  text-align: center;
+}
+
+.pdfeditor-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  background: rgba(249, 115, 22, 0.07);
+  margin-bottom: 18px;
+  animation: pdfGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes pdfGlow {
+  from { box-shadow: 0 0 8px rgba(249, 115, 22, 0.1); }
+  to   { box-shadow: 0 0 22px rgba(249, 115, 22, 0.35); }
+}
+
+.pdfeditor-title {
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+  margin: 0 0 10px;
+}
+
+.pdfeditor-sub {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0;
+  max-width: 480px;
+}
+
+/* Card */
+.pdfeditor-card {
+  width: 100%;
+  max-width: 760px;
+  background: rgba(20, 20, 28, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  backdrop-filter: blur(12px);
+}
+
+/* Drop Zone */
+.pdfeditor-dropzone {
+  border: 2px dashed rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.pdfeditor-dropzone:hover,
+.pdfeditor-dropzone.drag-active {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.04);
+}
+
+.pdfeditor-dropzone.has-file {
+  border-style: solid;
+  border-color: rgba(249, 115, 22, 0.25);
+  background: rgba(249, 115, 22, 0.04);
+}
+
+.pdfeditor-dropprompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.pdfeditor-dropicon {
+  color: #334155;
+  transition: color 0.25s;
+}
+
+.pdfeditor-dropzone:hover .pdfeditor-dropicon,
+.pdfeditor-dropzone.drag-active .pdfeditor-dropicon {
+  color: #f97316;
+}
+
+.pdfeditor-droptext {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.pdfeditor-drophint {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+/* File Info */
+.pdfeditor-fileinfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.pdfeditor-fileicon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f97316;
+  flex-shrink: 0;
+}
+
+.pdfeditor-filemeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.pdfeditor-filename {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdfeditor-filesize {
+  font-size: 12px;
+  color: #475569;
+}
+
+.pdfeditor-fileremove {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #475569;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: 0.2s;
+}
+
+.pdfeditor-fileremove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Controls */
+.pdfeditor-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pdfeditor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdfeditor-field.full { width: 100%; }
+
+.pdfeditor-field label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.pdfeditor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.pdfeditor-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #e2e8f0;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.pdfeditor-input:focus {
+  border-color: rgba(249, 115, 22, 0.5);
+  background: rgba(249, 115, 22, 0.04);
+}
+
+.pdfeditor-colorpick {
+  width: 100%;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Apply Button */
+.pdfeditor-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);
+}
+
+.pdfeditor-btn:hover:not(.disabled):not(.loading) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.4);
+}
+
+.pdfeditor-btn.disabled {
+  opacity: 0.4;
+  cursor: default;
+  box-shadow: none;
+}
+
+.pdfeditor-btn.loading {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.pdfeditor-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin-pdf 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin-pdf { to { transform: rotate(360deg); } }
+
+/* Message */
+.pdfeditor-msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+.pdfeditor-msg.success {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.pdfeditor-msg.error {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}

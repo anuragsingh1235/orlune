@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './Features.css';
+import PdfEditor from './PdfEditor';
 
 const Workshop = lazy(() => import('./Workshop'));
 
@@ -219,7 +220,15 @@ export default function Features() {
        </div>
       <div className="features-divider">
         <div className="divider-line" />
-        <span className="divider-label">MORE FEATURES</span>
+        <span className="divider-label">ORLUNE PDF EDIT</span>
+        <div className="divider-line" />
+      </div>
+
+      <PdfEditor />
+
+      <div className="features-divider">
+        <div className="divider-line" />
+        <span className="divider-label">ORLUNE WORKSHOP</span>
         <div className="divider-line" />
       </div>
 
