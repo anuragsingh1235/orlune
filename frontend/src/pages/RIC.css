@@ -1,159 +1,170 @@
 .ric-root {
-  height: 80vh; /* Fits inside the feature panel */
+  height: 85vh;
   display: flex;
   flex-direction: column;
   background: #000;
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
   position: relative;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* ── Input Section ── */
-.ric-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: 20px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-}
-
-.ric-input-box {
+/* ── Mystery Nav ── */
+.ric-nav {
   display: flex;
-  gap: 10px;
-  max-width: 500px;
-  margin: 0 auto;
+  background: rgba(12,12,12,0.95);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 0 10px;
+  z-index: 100;
 }
 
-.ric-input-box input {
+.ric-nav button {
   flex: 1;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
+  padding: 18px;
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.ric-nav button.active {
+  color: #fff;
+}
+
+.ric-nav button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 25%; right: 25%;
+  height: 2px;
+  background: #fff;
+  box-shadow: 0 0 10px #fff;
+}
+
+/* ── Layout Panels ── */
+.ric-main-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.ric-visualizer-view { height: 100%; }
+
+/* ── Archive View ── */
+.ric-archive-view {
+  height: 100%;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  background: #080808;
+}
+
+.ric-archive-header h3 {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: #fff;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.ric-archive-input {
+  display: flex;
+  gap: 12px;
+}
+
+.ric-archive-input input {
+  flex: 1;
+  background: #0c0c0c;
+  border: 1px solid #1a1a1a;
   border-radius: 12px;
-  padding: 12px 18px;
+  padding: 14px 20px;
   color: #fff;
   outline: none;
   font-size: 0.9rem;
 }
 
-.ric-input-box button {
+.ric-archive-input button {
   background: #fff;
   color: #000;
   border: none;
   border-radius: 12px;
-  padding: 0 20px;
-  font-weight: 700;
+  padding: 0 24px;
+  font-weight: 900;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
   cursor: pointer;
-  transition: transform 0.2s;
 }
 
-.ric-input-box button:hover { transform: scale(1.05); }
-
-/* ── Feel & Feed ── */
-.ric-feed-wrapper {
+.ric-archive-list-wrap {
   flex: 1;
-  position: relative;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
-.ric-empty {
-  height: 100%;
+.ric-archive-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ric-archive-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: #777;
-  text-align: center;
-  padding: 40px;
+  gap: 16px;
+  padding: 16px;
+  background: #0c0c0c;
+  border: 1px solid #151515;
+  border-radius: 16px;
+  transition: all 0.3s ease;
 }
 
-.ric-empty-icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
+.ric-archive-item:hover { border-color: rgba(255,255,255,0.1); }
 
-.ric-reels-container {
-  height: 100%;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none; /* Hide scrollbar Firefox */
-}
-.ric-reels-container::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome/Safari */
-
-.ric-reel-container {
-  height: 100%;
-  width: 100%;
-  scroll-snap-align: start;
-  position: relative;
+.ric-item-preview {
+  width: 50px;
+  height: 70px;
   background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 8px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
-.ric-video {
-  height: 100%;
-  width: 100%;
-  object-fit: contain;
-  transition: opacity 0.5s ease;
+.ric-item-preview video { width: 100%; height: 100%; object-fit: cover; }
+
+.ric-item-info { flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.ric-item-title { font-size: 0.82rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ric-item-date { font-size: 0.7rem; color: #444; }
+
+.ric-item-remove {
+  padding: 6px 12px;
+  border: 1px solid #222;
+  background: transparent;
+  color: #ef4444;
+  font-size: 0.6rem;
+  font-weight: 900;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* ── Overlay ── */
-.ric-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 40px 30px;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 30%, transparent 60%);
-}
+.ric-item-remove:hover { background: rgba(239,68,68,0.1); border-color: #ef4444; }
 
-.ric-info {
-  pointer-events: auto;
+/* ── Visualizer Polish ── */
+.ric-avatar {
+  background: #111;
   color: #fff;
-  max-width: 80%;
-  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  border: 1px solid #222;
 }
 
 .ric-curated-badge {
-  font-size: 0.6rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #fff;
-  background: rgba(255,255,255,0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  display: inline-block;
-}
-
-.ric-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.ric-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 0.85rem;
-  border: 2px solid #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.4);
 }
 
 .ric-caption {

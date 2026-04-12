@@ -25,4 +25,14 @@ router.post('/', async (req, res) => {
   }
 });
 
+// DELETE a reel
+router.delete('/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM ric_reels WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 module.exports = router;
