@@ -1,10 +1,10 @@
 const express = require('express');
 const router  = express.Router();
 const ytdl    = require('@distube/ytdl-core');
+const instagramGetUrl = require('instagram-url-direct');
 const ffmpeg  = require('fluent-ffmpeg');
 const ffmpegPath = require('ffmpeg-static');
-const path = require('path');
-const fs = require('fs');
+const axios   = require('axios');
 
 if (ffmpegPath) {
   ffmpeg.setFfmpegPath(ffmpegPath);
@@ -25,7 +25,6 @@ router.get('/info', async (req, res) => {
 
   try {
     if (platform === 'youtube') {
-      // Use a more realistic user agent to avoid bot detection
       const info = await ytdl.getInfo(url, {
         requestOptions: {
           headers: {
@@ -77,16 +76,29 @@ router.get('/info', async (req, res) => {
     }
 
     if (platform === 'instagram') {
+      const links = await instagramGetUrl(url);
+      if (!links || !links.url_list || links.url_list.length === 0) {
+        throw new Error("Could not extract Instagram media. Ensure the account is public.");
+      }
+
       return res.json({ 
         platform: 'instagram',
-        message: 'Instagram downloader — ensure link is public.',
-        formats: [{ itag: 'insta', quality: 'High Quality', container: 'mp4', size: 'Auto' }]
+        title: 'Instagram Media',
+        thumbnail: links.url_list[0], // Often the video itself can be a preview
+        author: 'Instagram User',
+        formats: links.url_list.map((link, i) => ({
+          itag: `insta-${i}`,
+          quality: i === 0 ? 'Original Quality' : `Mirror ${i}`,
+          container: 'mp4',
+          size: 'Auto',
+          directUrl: link
+        }))
       });
     }
 
     return res.status(400).json({ error: 'Unsupported platform' });
   } catch (err) {
-    console.error('YTDL Info Error:', err.message);
+    console.error('Download Info Error:', err.message);
     return res.status(500).json({ error: `Extraction failed: ${err.message}` });
   }
 });
@@ -97,48 +109,68 @@ router.get('/stream', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'URL required' });
 
   try {
-    const info = await ytdl.getInfo(url, {
-      requestOptions: {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    const platform = detectPlatform(url);
+
+    if (platform === 'youtube') {
+      const info = await ytdl.getInfo(url, {
+        requestOptions: {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          }
         }
-      }
-    });
+      });
 
-    const title = info.videoDetails.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const format = info.formats.find(f => String(f.itag) === String(itag));
-    
-    res.header('Content-Disposition', `attachment; filename="${title}.mp4"`);
-    res.header('Content-Type', 'video/mp4');
+      const title = info.videoDetails.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const format = info.formats.find(f => String(f.itag) === String(itag));
+      
+      res.header('Content-Disposition', `attachment; filename="${title}.mp4"`);
+      res.header('Content-Type', 'video/mp4');
 
-    const options = {
-      requestOptions: {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      const options = {
+        requestOptions: {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          }
         }
+      };
+
+      if (format && (format.hasAudio || format.audioCodec)) {
+        ytdl(url, { ...options, format }).pipe(res);
+      } else {
+        const videoStream = ytdl(url, { ...options, quality: itag });
+        const audioStream = ytdl(url, { ...options, quality: 'highestaudio' });
+
+        ffmpeg()
+          .input(videoStream)
+          .input(audioStream)
+          .videoCodec('copy')
+          .audioCodec('aac')
+          .format('mp4')
+          .on('error', err => {
+            console.error('FFMPEG Error:', err);
+            if (!res.headersSent) res.status(500).send('FFMPEG processing failed');
+          })
+          .pipe(res, { end: true });
       }
-    };
+    } else if (platform === 'instagram') {
+      // For Instagram, we often get a direct URL from getInfo (info.formats.directUrl)
+      // We can proxy the download through our server to fix CORS and force download
+      const links = await instagramGetUrl(url);
+      const directUrl = links.url_list[0];
 
-    if (format && (format.hasAudio || format.audioCodec)) {
-      ytdl(url, { ...options, format }).pipe(res);
-    } else {
-      const videoStream = ytdl(url, { ...options, quality: itag });
-      const audioStream = ytdl(url, { ...options, quality: 'highestaudio' });
+      res.header('Content-Disposition', `attachment; filename="instagram_media.mp4"`);
+      res.header('Content-Type', 'video/mp4');
 
-      ffmpeg()
-        .input(videoStream)
-        .input(audioStream)
-        .videoCodec('copy')
-        .audioCodec('aac')
-        .format('mp4')
-        .on('error', err => {
-          console.error('FFMPEG Error:', err);
-          if (!res.headersSent) res.status(500).send('FFMPEG processing failed');
-        })
-        .pipe(res, { end: true });
+      const response = await axios({
+        method: 'get',
+        url: directUrl,
+        responseType: 'stream'
+      });
+
+      response.data.pipe(res);
     }
   } catch (err) {
-    console.error('YTDL Stream Error:', err.message);
+    console.error('Download Stream Error:', err.message);
     if (!res.headersSent) res.status(500).send('Download failed: ' + err.message);
   }
 });
