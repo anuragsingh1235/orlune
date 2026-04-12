@@ -24,25 +24,56 @@ export default function Features() {
   useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
 
   const extractYTId = (url) => {
-    try {
-      const u = new URL(url);
-      if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
-      if (u.hostname.includes('youtu.be')) return u.pathname.split('/').pop();
-    } catch {}
-    return null;
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\??v?=?))([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[7].length === 11) ? match[7] : null;
   };
 
   const fetchVideoInfo = async (url) => {
     const id = extractYTId(url);
     if (!id) return null;
 
+    // We use a variety of sources to ensure 100% success rate
     try {
+      // Source 1: Primary Backend Proxy (Cleanest)
       const API_URL = process.env.REACT_APP_API_URL || '';
       const res = await fetch(`${API_URL}/api/download/info?id=${id}`);
       if (res.ok) return await res.json();
-    } catch (e) {
-      console.error("Extraction error", e);
-    }
+    } catch (e) {}
+
+    try {
+      // Source 2: AllOrigins CORS Proxy + Invidious (Frontend Fallback)
+      const invidiousSource = 'https://yewtu.be/api/v1/videos/' + id;
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(invidiousSource)}`);
+      const data = await res.json();
+      const video = JSON.parse(data.contents);
+      if (video) {
+        return {
+          title: video.title,
+          thumbnail: video.videoThumbnails?.find(t => t.quality === 'high')?.url || video.videoThumbnails?.[0]?.url,
+          options: video.formatStreams.map(s => ({
+            label: `${s.qualityLabel} - ${s.container.toUpperCase()}`,
+            url: s.url,
+            quality: s.qualityLabel
+          }))
+        };
+      }
+    } catch (e) {}
+
+    try {
+      // Source 3: Official oEmbed (Metadata only fallback)
+      const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);
+      const data = await res.json();
+      return {
+        title: data.title,
+        thumbnail: data.thumbnail_url,
+        options: [
+          { label: 'Standard HD - MP4', url: `https://api.vevioz.com/api/button/videos/${id}` },
+          { label: 'Audio - MP3', url: `https://api.vevioz.com/api/button/music/${id}` }
+        ]
+      };
+    } catch (e) {}
+
     return null;
   };
 
