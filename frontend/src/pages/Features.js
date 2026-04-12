@@ -140,31 +140,61 @@ export default function Features() {
       type: 'text'
     };
     setMessages(prev => [...prev, userChoiceMsg]);
-    setIsTyping(true);
-    setChatStep('DONE');
+    setTimeout(async () => {
+      try {
+        const isAudio = optionName.includes('MP3');
+        const vQualityStr = optionName.includes('1080p') ? '1080' : optionName.includes('720p') ? '720' : 'max';
 
-    setTimeout(() => {
-      // Due to Vercel Serverless Function 50MB limits, running a full YouTube Extraction engine crashes the site.
-      // We fall back to a streamlined direct integration.
-      const downloadServiceUrl = `https://loader.to/api/button/?url=${encodeURIComponent(activeLink)}&f=1080&color=10b981`;
+        const res = await fetch('https://api.cobalt.tools/api/json', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: activeLink,
+            vQuality: vQualityStr,
+            isAudioOnly: isAudio,
+            filenamePattern: 'classic'
+          })
+        });
 
-      const botResponse = {
-        id: Date.now() + 1,
-        sender: 'bot',
-        text: `Here is your direct extraction panel. (Due to Vercel limits, we provide this widget instead of a direct file flow! Click below.) 🍿`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'success',
-        downloadUrl: downloadServiceUrl,
-        fileName: `HQ_Media_Download`
-      };
-      setMessages(prev => [...prev, botResponse]);
+        if (!res.ok) throw new Error('Failed to grab via API');
+        const data = await res.json();
+        
+        if (data.status === 'error') throw new Error(data.text);
+        
+        const finalUrl = data.url; // This is the direct streaming mp4/mp3 url
+
+        const botResponse = {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: `Success! The raw file is ready for direct download. 🍿`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'success',
+          downloadUrl: finalUrl,
+          fileName: `Nexus_Direct_Download`
+        };
+        setMessages(prev => [...prev, botResponse]);
+      } catch (err) {
+        console.error("Extraction error", err);
+        const errResponse = {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: `Oops, the extraction API is busy or blocked this link. Try another one!`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'text'
+        };
+        setMessages(prev => [...prev, errResponse]);
+      }
+
       setIsTyping(false);
       
       setTimeout(() => {
           setChatStep('IDLE');
           setActiveLink('');
-      }, 1000);
-    }, 2000);
+      }, 1500);
+    }, 1500);
   };
 
   return (
