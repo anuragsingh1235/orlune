@@ -31,6 +31,7 @@ export default function Navbar() {
     { to: '/anime', label: 'Anime' },
     { to: '/watchlist', label: 'Watchlist' },
     { to: '/battles', label: 'Gallery' },
+    { to: '/features', label: 'Features' },
     { to: '/social', label: 'Social' },
     { to: '/leaderboard', label: 'Rankings' },
   ];
