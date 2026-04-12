@@ -114,7 +114,7 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
           )}
           {/* 🎬 Deep Link Play Button */}
           <a 
-            href={`https://net22.cc/search?q=${encodeURIComponent(title)}`} 
+            href={`https://www.google.com/search?q=site:net22.cc+${encodeURIComponent(title)}`} 
             target="_blank" 
             rel="noopener noreferrer" 
             className="play-now-btn"
