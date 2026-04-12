@@ -47,6 +47,106 @@
   padding: 10px;
 }
 
+/* Member List & Admin Styles */
+.member-list {
+  margin-top: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 300px; overflow-y: auto;
+}
+.member-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);
+}
+.member-name-tag { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 600; }
+.admin-badge {
+  font-size: 9px; padding: 2px 8px; border-radius: 4px;
+  background: var(--primary); color: #fff; text-transform: uppercase;
+}
+.founder-badge {
+  font-size: 9px; padding: 2px 8px; border-radius: 4px;
+  background: #EBCB8B; color: #000; text-transform: uppercase; font-weight: 800;
+}
+.member-actions { display: flex; gap: 5px; }
+
+.header-meta-btn {
+  background: rgba(255,255,255,0.05); border: none; color: #94a3b8;
+  padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+}
+.header-meta-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.social-tab {
+  flex: 1; padding: 10px; border-radius: 10px; border: none;
+  background: transparent; color: #64748b; font-weight: 700;
+  cursor: pointer; transition: 0.2s; font-size: 0.85rem;
+}
+.social-tab.active {
+  background: var(--primary); color: #fff;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.channel-card-global {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border-radius: 16px; padding: 18px; margin-bottom: 12px;
+  color: #fff; cursor: pointer; transition: 0.3s;
+  position: relative; overflow: hidden;
+}
+.channel-card-global:hover { transform: scale(1.02); filter: brightness(1.1); }
+.channel-card-global .icon-bg {
+  position: absolute; right: -10px; bottom: -10px;
+  font-size: 80px; opacity: 0.15;
+}
+
+.create-chan-btn {
+  width: 100%; padding: 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2);
+  color: #94a3b8; font-weight: 600; cursor: pointer;
+  margin-bottom: 15px; transition: 0.2s;
+}
+.create-chan-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--primary); color: #fff; }
+
+.channel-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  border-radius: 14px; cursor: pointer; transition: 0.2s;
+}
+.channel-item:hover { background: rgba(255,255,255,0.05); }
+.channel-item.active { background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.2); }
+
+.chan-avatar {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(255,255,255,0.07); display: flex;
+  align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem;
+}
+
+.system-msg-bubble {
+  align-self: center; background: rgba(255,255,255,0.05);
+  padding: 6px 16px; border-radius: 20px; font-size: 0.75rem;
+  color: #64748b; margin: 10px 0; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.msg-sender-name {
+  font-size: 0.72rem; font-weight: 800; color: #a855f7;
+  margin-bottom: 2px; display: block;
+}
+
+/* Modal for creation */
+.chan-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.chan-modal {
+  width: 100%; max-width: 500px; background: #1a1a24;
+  border-radius: 24px; padding: 30px; border: 1px solid rgba(255,255,255,0.08);
+}
+.chan-modal h2 { font-size: 1.5rem; margin-bottom: 8px; }
+.chan-modal p { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
+
+.modal-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+.m-input-group label { display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 6px; text-transform: uppercase; }
+.m-input { width: 100%; padding: 12px; border-radius: 12px; background: #0f0f16; border: 1px solid rgba(255,255,255,0.05); color: #fff; }
+
 .contact-item {
   display: flex;
   align-items: center;

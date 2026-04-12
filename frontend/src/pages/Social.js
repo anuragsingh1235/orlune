@@ -5,386 +5,237 @@ import notify from '../utils/notify';
 import './Social.css';
 
 export default function Social() {
+  const [activeTab, setActiveTab] = useState('messages');
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [friendWatchlist, setFriendWatchlist] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [watchlistLoading, setWatchlistLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  
+  // Channels
+  const [publicChannels, setPublicChannels] = useState([]);
+  const [myChannels, setMyChannels] = useState([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newChan, setNewChan] = useState({ name: '', description: '', reason: '', category: 'General', privacy: 'public' });
+  
+  // Members Management
+  const [showMembers, setShowMembers] = useState(false);
+  const [members, setMembers] = useState([]);
+
   const messagesEndRef = useRef(null);
-  const imgInputRef = useRef(null);
-  const docInputRef = useRef(null);
-  const vidInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
+  useEffect(() => { fetchInitialData(); }, []);
   useEffect(() => {
     let interval;
     if (activeChat) {
-      fetchMessages(activeChat.id);
-      fetchFriendWatchlist(activeChat.id);
-      interval = setInterval(() => fetchMessages(activeChat.id), 3000);
+      syncChat();
+      interval = setInterval(syncChat, 3000);
     }
     return () => clearInterval(interval);
   }, [activeChat]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => { scrollToBottom(); }, [messages]);
 
   const fetchInitialData = async () => {
     try {
-      const [fRes, rRes] = await Promise.all([
+      const [fRes, rRes, cRes, myCRes] = await Promise.all([
         api.get('/social/friends'),
         api.get('/social/requests'),
+        api.get('/channels/list'),
+        api.get('/channels/my')
       ]);
       setFriends(fRes.data);
       setRequests(rRes.data);
-    } catch (err) {
-      notify.error("Failed to load friends");
-    } finally {
-      setLoading(false);
-    }
+      setPublicChannels(cRes.data);
+      setMyChannels(myCRes.data);
+    } catch (err) { notify.error("Sync failed"); }
+    finally { setLoading(false); }
   };
 
-  const fetchMessages = async (friendId) => {
+  const syncChat = async () => {
+    if (!activeChat) return;
     try {
-      const res = await api.get(`/chat/history/${friendId}`);
+      const endpoint = activeChat.type === 'channel' ? `/channels/history/${activeChat.id}` : `/chat/history/${activeChat.id}`;
+      const res = await api.get(endpoint);
       setMessages(res.data);
-    } catch (err) {
-      console.error("Chat sync failed");
-    }
+    } catch (err) {}
   };
 
-  const fetchFriendWatchlist = async (friendId) => {
-    setWatchlistLoading(true);
+  const fetchMembers = async () => {
+    if (!activeChat || activeChat.type !== 'channel') return;
     try {
-      const res = await api.get(`/watchlist/user/${friendId}`);
-      setFriendWatchlist(res.data);
-    } catch (err) {
-      console.error("Failed to fetch friend archive");
-    } finally {
-      setWatchlistLoading(false);
-    }
+      const res = await api.get(`/channels/members/${activeChat.id}`);
+      setMembers(res.data);
+      setShowMembers(true);
+    } catch (err) { notify.error("Failed to load allies"); }
+  };
+
+  const setAdminStatus = async (userId, newStatus) => {
+    try {
+      await api.post('/channels/admin/toggle', { channel_id: activeChat.id, target_user_id: userId, status: newStatus });
+      notify.success("Rank updated");
+      fetchMembers();
+    } catch (err) { notify.error("Promotion failed"); }
   };
 
   const handleSearch = async (val) => {
     setSearchQuery(val);
-    if (val.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setSearchLoading(true);
+    if (val.length < 2) { setSearchResults([]); return; }
     try {
       const res = await api.get(`/social/search?query=${val}`);
       setSearchResults(res.data);
-    } catch (err) {
-      console.error("Search failed");
-    } finally {
-      setSearchLoading(false);
-    }
+    } catch (e) {}
   };
 
-  const sendFriendRequest = async (receiverId) => {
-    try {
-      await api.post('/social/request', { receiver_id: receiverId });
-      notify.success("Connection request sent");
-      setSearchResults(prev => prev.map(u => u.id === receiverId ? { ...u, connection_status: 'request_sent' } : u));
-    } catch (err) {
-      notify.error(err.response?.data?.error || "Request failed");
-    }
-  };
-
-  const respondToRequest = async (requestId, status) => {
-    try {
-      await api.post('/social/respond', { requestId, status });
-      notify.success(`Request ${status}`);
-      fetchInitialData();
-    } catch (err) {
-      notify.error("Action failed");
-    }
-  };
-
-  const sendMessage = async (e, forcedContent = null, attachment = null) => {
+  const sendMessage = async (e) => {
     if (e) e.preventDefault();
-    const contentToSend = forcedContent !== null ? forcedContent : newMessage;
-    if (!contentToSend.trim() && !attachment) return;
-
+    if (!newMessage.trim()) return;
     try {
-      const payload = {
-        receiver_id: activeChat.id,
-        content: contentToSend
-      };
-      
-      if (attachment) {
-        payload.attachment_url = attachment.url;
-        payload.attachment_type = attachment.type;
-      }
-
-      const res = await api.post('/chat/send', payload);
+      const endpoint = activeChat.type === 'channel' ? '/channels/message' : '/chat/send';
+      const payload = activeChat.type === 'channel' ? { channel_id: activeChat.id, content: newMessage } : { receiver_id: activeChat.id, content: newMessage };
+      const res = await api.post(endpoint, payload);
       setMessages([...messages, res.data]);
-      if (forcedContent === null) setNewMessage('');
-    } catch (err) {
-      notify.error("Transmission failed");
-    }
+      setNewMessage('');
+    } catch (e) { notify.error("Relay failed"); }
   };
 
-  const handleFileSelect = (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) return notify.error("File exceeds 10MB limit");
-
-    setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      sendMessage(null, "", { url: reader.result, type });
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const blockUser = async (friendId) => {
-    if (!window.confirm("Sever connection and block this user?")) return;
+  const createChannel = async () => {
     try {
-      await api.post('/social/block', { friendId });
-      notify.success("User blacklisted");
-      setActiveChat(null);
+      const res = await api.post('/channels/create', newChan);
+      notify.success("Hub online");
       fetchInitialData();
-    } catch (err) {
-      notify.error("Block failed");
-    }
+      setShowCreateModal(false);
+      setActiveChat({...res.data, type: 'channel'});
+    } catch (e) { notify.error("Forge failed"); }
   };
 
-  const removeFriend = async (friendId) => {
-    if (!window.confirm("Are you sure you want to remove this connection?")) return;
+  const joinChannel = async (c) => {
+    const ok = window.confirm(`Join ${c.name}? All current messages will be decrypted.`);
+    if (!ok) return;
     try {
-      await api.post('/social/remove', { friendId });
-      notify.success("Connection removed");
-      setActiveChat(null);
+      await api.post('/channels/join', { channel_id: c.id });
       fetchInitialData();
-    } catch (err) {
-      notify.error("Removal failed");
-    }
+      setActiveChat({...c, type: 'channel'});
+      setActiveTab('channels');
+    } catch (e) { notify.error("Access denied"); }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
 
   if (loading) return <div className="spinner" />;
+  const meId = JSON.parse(localStorage.getItem('ww_user'))?.id;
 
   return (
     <div className="social-page animate-fade">
-      
-      {/* 👤 SIDEBAR ARCHIVE */}
       <div className="social-sidebar">
-        
-        {/* User Search */}
-        <div className="social-card" style={{ position: 'relative' }}>
-          <div className="social-card-header">
-            <h3>Find Users</h3>
-          </div>
-          <div style={{ padding: '12px' }}>
-            <input 
-              type="text" 
-              className="input btn-sm" 
-              placeholder="Search by ID or username..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
+        <div className="social-tabs">
+          <button className={`social-tab ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>DIRECT</button>
+          <button className={`social-tab ${activeTab === 'channels' ? 'active' : ''}`} onClick={() => setActiveTab('channels')}>ALLIANCES</button>
+        </div>
+
+        {activeTab === 'messages' ? (
+          <>
+            <input className="m-input" style={{margin: '10px'}} placeholder="Search Matrix..." value={searchQuery} onChange={e => handleSearch(e.target.value)} />
             {searchResults.length > 0 && (
-              <div className="search-results">
-                 {searchResults.map(u => (
-                   <Link key={u.id} to={`/profile/${u.id}`} className="search-item">
-                      <div className="contact-avatar">{u.username[0].toUpperCase()}</div>
-                      <div className="contact-info">
-                         <h4>{u.username}</h4>
-                         <p>
-                           {u.connection_status === 'friends' ? 'Already Friends' :
-                            u.connection_status === 'request_sent' ? 'Request Sent' :
-                            u.connection_status === 'request_received' ? 'Review Request in Pending Tab' :
-                            u.connection_status === 'blocked' ? 'Blocked' :
-                            'View Profile'}
-                         </p>
-                      </div>
-                   </Link>
-                 ))}
-              </div>
+               <div className="search-results">{searchResults.map(u => (
+                 <Link key={u.id} to={`/profile/${u.id}`} className="search-item"><h4>{u.username}</h4></Link>
+               ))}</div>
             )}
-          </div>
-        </div>
-
-        {/* Pending Requests */}
-        {requests.length > 0 && (
-           <div className="social-card requests-shimmer">
-              <div className="social-card-header">
-                <h3>Friend Requests <span className="badge-count pulse">{requests.length}</span></h3>
+            <div className="contacts-list">{friends.map(f => (
+              <div key={f.id} className={`contact-item ${activeChat?.id === f.id ? 'active' : ''}`} onClick={() => setActiveChat({...f, type: 'friend'})}>
+                <h4>{f.username}</h4>
               </div>
-              <div className="contacts-list">
-                 {requests.map(req => (
-                   <div key={req.id} className="request-item">
-                      <div className="contact-avatar">{req.username[0].toUpperCase()}</div>
-                      <div className="contact-info"><h4>{req.username}</h4><p className="request-text">Wants to align</p></div>
-                      <div className="request-actions">
-                         <button className="premium-btn accept" onClick={() => respondToRequest(req.id, 'accepted')} title="Accept">
-                           <span className="premium-icon">✓</span>
-                         </button>
-                         <button className="premium-btn reject" onClick={() => respondToRequest(req.id, 'rejected')} title="Reject">
-                           <span className="premium-icon">✕</span>
-                         </button>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-           </div>
-        )}
-
-        {/* My Friends */}
-        <div className="social-card" style={{ flex: 1 }}>
-          <div className="social-card-header">
-            <h3>Friends</h3>
-          </div>
+            ))}</div>
+          </>
+        ) : (
           <div className="contacts-list">
-            {friends.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                 No friends found. Find users to start a chat.
-              </div>
-            ) : (
-              friends.map(f => (
-                <div 
-                  key={f.id} 
-                  className={`contact-item ${activeChat?.id === f.id ? 'active' : ''}`}
-                  onClick={() => setActiveChat(f)}
-                >
-                  <div className="contact-avatar">{f.username[0].toUpperCase()}</div>
-                  <div className="contact-info">
-                    <h4>{f.username}</h4>
-                    <p className="online-dot">{f.status === 'blocked' ? '🔴 Blocked' : '🟢 Active'}</p>
-                  </div>
-                </div>
-              ))
-            )}
+             <button className="create-chan-btn" onClick={() => setShowCreateModal(true)}>+ New Channel</button>
+             <h4 className="section-title">GLOBAL</h4>
+             {publicChannels.map(c => (
+               <div key={c.id} className="channel-card-global" onClick={() => joinChannel(c)}>
+                 <h4>{c.name}</h4><p>{c.member_count} joined</p>
+               </div>
+             ))}
+             <h4 className="section-title" style={{marginTop: '20px'}}>JOINED</h4>
+             {myChannels.map(c => (
+               <div key={c.id} className={`channel-item ${activeChat?.id === c.id ? 'active' : ''}`} onClick={() => setActiveChat({...c, type: 'channel'})}>
+                 <div className="chan-avatar">#</div><h4>{c.name}</h4>
+               </div>
+             ))}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* 📡 TRANSMISSION CENTER (Chat) */}
       <div className="chat-window">
         {activeChat ? (
           <>
             <div className="chat-header">
-               <div className="chat-header-info">
-                  <div className="contact-avatar">{activeChat.username[0].toUpperCase()}</div>
-                  <div>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{activeChat.username}</h3>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Online</p>
-                  </div>
-               </div>
-               <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-sm btn-ghost" onClick={() => removeFriend(activeChat.id)} style={{color: '#EBCB8B', borderColor: 'rgba(235, 203, 139, 0.2)'}}>
-                    {activeChat.status === 'blocked' ? 'Unblock (Remove)' : 'Remove'}
-                  </button>
-                  {activeChat.status !== 'blocked' && (
-                    <button className="btn btn-sm btn-ghost" onClick={() => blockUser(activeChat.id)} style={{color: '#BF616A', borderColor: 'rgba(191, 97, 106, 0.2)'}}>Block</button>
-                  )}
+               <div><h3>{activeChat.name || activeChat.username}</h3><p style={{fontSize: '0.7rem'}}>{activeChat.type === 'channel' ? 'Alliance Feed' : 'Direct Sync'}</p></div>
+               <div style={{display: 'flex', gap: '8px'}}>
+                 {activeChat.type === 'channel' && <button className="header-meta-btn" onClick={fetchMembers}>👥 Members</button>}
                </div>
             </div>
-
-            {/* Friend's Watchlist Preview */}
-            {activeChat.status === 'accepted' ? (
-              <div className="friend-watchlist-preview">
-                 <div className="preview-header">
-                    <span>WATCHLIST ARCHIVE</span>
-                    {watchlistLoading ? <div className="mini-spinner" /> : <span>{friendWatchlist.length} Records</span>}
-                 </div>
-                 <div className="preview-grid">
-                    {friendWatchlist.length > 0 ? (
-                      friendWatchlist.map(item => (
-                        <div key={item.id} className="preview-item">
-                           <img src={item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : 'https://via.placeholder.com/92x138'} alt={item.title} />
-                        </div>
-                      ))
-                    ) : (
-                      <div className="empty-preview">No records discovered in this vault.</div>
-                    )}
-                 </div>
-              </div>
-            ) : (
-              <div className="locked-archive">
-                 <div className="locked-icon">🔒</div>
-                 <div className="locked-info">
-                    <h4>Archive Classified</h4>
-                    <p>Requires an active alliance to access this user's records.</p>
-                 </div>
-              </div>
-            )}
-
+            
             <div className="chat-messages">
-                {messages.map((m, idx) => {
-                  const meId = JSON.parse(localStorage.getItem('ww_user'))?.id;
-                  const isSentByMe = m.sender_id === meId;
-
-                  return (
-                    <div key={idx} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
-                       {m.attachment_url && (
-                          <div className="message-attachment">
-                             {m.attachment_type === 'image' && <img src={m.attachment_url} alt="Shared" className="chat-img" />}
-                             {m.attachment_type === 'video' && <video src={m.attachment_url} controls className="chat-vid" />}
-                             {m.attachment_type === 'document' && (
-                                <a href={m.attachment_url} download="attachment" className="chat-doc">
-                                   <span className="doc-icon">📄</span> Download Document
-                                </a>
-                             )}
-                          </div>
-                       )}
-                       {m.content && <div className="message-bubble">{m.content}</div>}
-                       <span className="message-time">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                  );
-                })}
+               {messages.map((m, i) => (
+                 <div key={i} className={m.is_system_msg ? "system-msg-bubble" : `message ${m.sender_id === meId ? 'sent' : 'received'}`}>
+                    {!m.is_system_msg && activeChat.type === 'channel' && m.sender_id !== meId && <span className="msg-sender-name">{m.username}</span>}
+                    <div className="message-bubble">{m.content}</div>
+                    <span className="message-time">{new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                 </div>
+               ))}
                <div ref={messagesEndRef} />
             </div>
 
-            <div className="chat-input-area">
-               {isUploading && <div className="upload-progress">Encrypting & Uploading...</div>}
-               <div className="chat-attachments">
-                  <button type="button" className="attachment-btn" title="Send Document" onClick={() => docInputRef.current.click()}>📄</button>
-                  <button type="button" className="attachment-btn" title="Send Image" onClick={() => imgInputRef.current.click()}>🖼️</button>
-                  <button type="button" className="attachment-btn" title="Send Video" onClick={() => vidInputRef.current.click()}>🎬</button>
-                  
-                  <input type="file" ref={docInputRef} hidden onChange={(e) => handleFileSelect(e, 'document')} />
-                  <input type="file" ref={imgInputRef} hidden accept="image/*" onChange={(e) => handleFileSelect(e, 'image')} />
-                  <input type="file" ref={vidInputRef} hidden accept="video/*" onChange={(e) => handleFileSelect(e, 'video')} />
-               </div>
-                   <form className="chat-input-container" onSubmit={sendMessage}>
-                  <input 
-                    type="text" 
-                    className="chat-input" 
-                    placeholder="Message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                  />
-                  <button type="submit" className="btn btn-primary btn-sm">Send</button>
-               </form>
-            </div>
+            <form className="chat-input-area" onSubmit={sendMessage}>
+               <input className="chat-input" placeholder="Broadcasting..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
+               <button className="btn btn-primary btn-sm" type="submit">SEND</button>
+            </form>
           </>
-        ) : (
-              <div className="no-chat-selected">
-               <div className="icon">💬</div>
-               <h3>Your Messages</h3>
-               <p>Select a friend to start chatting.</p>
-            </div>
-        )}
+        ) : <div className="no-chat-selected"><h3>Matrix Idle</h3></div>}
       </div>
 
+      {showCreateModal && (
+        <div className="chan-modal-overlay"><div className="chan-modal">
+          <h2>Forged New Alliance</h2>
+          <div className="modal-grid">
+             <input className="m-input" placeholder="Name..." value={newChan.name} onChange={e => setNewChan({...newChan, name: e.target.value})}/>
+             <textarea className="m-input" placeholder="Mission..." value={newChan.description} onChange={e => setNewChan({...newChan, description: e.target.value})}/>
+             <select className="m-input" value={newChan.privacy} onChange={e => setNewChan({...newChan, privacy: e.target.value})}>
+                <option value="public">Global Feed</option><option value="private">Ghost (Invite Link)</option>
+             </select>
+             <div style={{display:'flex', gap:'10px'}}>
+               <button className="btn btn-primary" onClick={createChannel}>INITIATE</button>
+               <button className="btn btn-ghost" onClick={() => setShowCreateModal(false)}>ABORT</button>
+             </div>
+          </div>
+        </div></div>
+      )}
+
+      {showMembers && (
+        <div className="chan-modal-overlay"><div className="chan-modal">
+          <h2>Alliance Allies</h2>
+          <div className="member-list">{members.map(m => (
+            <div key={m.user_id} className="member-item">
+               <div className="member-name-tag">
+                 {m.username} 
+                 {m.is_creator && <span className="founder-badge">Founder</span>}
+                 {m.is_admin && !m.is_creator && <span className="admin-badge">Admin</span>}
+               </div>
+               {members.find(u => u.user_id === meId)?.is_admin && !m.is_creator && (
+                 <div className="member-actions">
+                   <button className="btn btn-sm btn-ghost" onClick={() => setAdminStatus(m.user_id, !m.is_admin)}>
+                     {m.is_admin ? 'Demote' : 'Promote'}
+                   </button>
+                 </div>
+               )}
+            </div>
+          ))}</div>
+          <button className="btn btn-primary" style={{marginTop: '20px', width: '100%'}} onClick={() => setShowMembers(false)}>CLOSE</button>
+        </div></div>
+      )}
     </div>
   );
 }

@@ -170,6 +170,55 @@ async function migrate() {
       console.log('Patch warning:', e.message);
     }
 
+    // 🌐 CHANNEL SYSTEM TABLES
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS channels (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          description TEXT,
+          reason TEXT,
+          category VARCHAR(50),
+          privacy VARCHAR(20) DEFAULT 'public',
+          avatar_url TEXT,
+          invite_link VARCHAR(100) UNIQUE,
+          creator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS channel_members (
+          id SERIAL PRIMARY KEY,
+          channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          is_admin BOOLEAN DEFAULT FALSE,
+          is_creator BOOLEAN DEFAULT FALSE,
+          joined_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(channel_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS channel_messages (
+          id SERIAL PRIMARY KEY,
+          channel_id INTEGER REFERENCES channels(id) ON DELETE CASCADE,
+          sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          content TEXT,
+          attachment_url TEXT,
+          attachment_type VARCHAR(50),
+          is_system_msg BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+
+      // Ensure Global channel exists
+      const globalCheck = await pool.query("SELECT * FROM channels WHERE name = 'Global'");
+      if (globalCheck.rows.length === 0) {
+        await pool.query(
+          "INSERT INTO channels (name, description, privacy, category) VALUES ('Global', 'The official Orlune Global hub for all users.', 'public', 'General')"
+        );
+      }
+    } catch (e) {
+      console.log('Channel Migration warning:', e.message);
+    }
+
     console.log('✅ Migration check complete!');
   } catch (err) {
     console.error('❌ Migration failed:', err);
