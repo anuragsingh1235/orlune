@@ -1,14 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './VideoCallRoom.css';
 
-/* ─────────────────────────────────────────────
-   Participants mock – replace with real WebRTC
-   peer array once signaling backend is wired
-───────────────────────────────────────────── */
-const MOCK_PEERS = [
-  { id: 'p1', name: 'Anurag', stream: null, muted: false, videoOff: false },
-  { id: 'p2', name: 'Priya',  stream: null, muted: true,  videoOff: false },
-];
+// ── Real WebRTC peers will be added here via Socket.io signaling
+// ── Requires a persistent backend server (not Vercel serverless)
 
 export default function VideoCallRoom({ channel, onLeave }) {
   const localVideoRef  = useRef(null);
@@ -16,7 +10,7 @@ export default function VideoCallRoom({ channel, onLeave }) {
 
   const [localStream,  setLocalStream]  = useState(null);
   const [screenStream, setScreenStream] = useState(null);
-  const [peers,        setPeers]        = useState(MOCK_PEERS);
+  const [peers,        setPeers]        = useState([]); // empty — filled by real WebRTC signaling
 
   const [micOn,    setMicOn]    = useState(true);
   const [camOn,    setCamOn]    = useState(true);
@@ -130,10 +124,16 @@ export default function VideoCallRoom({ channel, onLeave }) {
           {speaking === 'me' && <div className="vcr-speaking-ring" />}
         </div>
 
-        {/* Remote peer tiles */}
-        {peers.map(p => (
+        {/* Remote peer tiles — populated by WebRTC signaling */}
+        {peers.length === 0 ? (
+          <div className="vcr-tile vcr-waiting">
+            <div className="vcr-waiting-icon">⏳</div>
+            <p className="vcr-waiting-text">Waiting for others to join...</p>
+            <p className="vcr-waiting-sub">Share the channel link to invite people</p>
+          </div>
+        ) : peers.map(p => (
           <div key={p.id} className={`vcr-tile ${speaking === p.id ? 'vcr-speaking' : ''}`}>
-            {!p.videoOff && p.stream
+            {p.stream
               ? <video autoPlay playsInline className="vcr-video" ref={el => { if(el) el.srcObject = p.stream; }} />
               : <div className="vcr-avatar">{p.name[0]}</div>
             }
