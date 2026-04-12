@@ -158,7 +158,77 @@
 .pdf-canvas { display: block; }
 
 /* Overlays */
-.pdf-overlay { position: absolute; cursor: move; }
+.pdf-overlay { 
+  position: absolute; 
+  cursor: grab; 
+  user-select: none;
+  transition: box-shadow 0.2s;
+}
+
+.pdf-overlay:active { cursor: grabbing; }
+.pdf-overlay.is-dragging { 
+  opacity: 0.8; 
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); 
+}
+
+/* OMR Section */
+.omr-container {
+  width: 100%; max-width: 760px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px; padding: 60px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 24px;
+}
+
+.omr-scanner-ui {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+
+.scan-visual {
+  width: 120px; height: 120px;
+  background: rgba(16, 185, 129, 0.05);
+  border: 2px solid rgba(16, 185, 129, 0.1);
+  border-radius: 20px; margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  color: #10b981;
+}
+
+.scan-line {
+  position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+  background: #10b981; box-shadow: 0 0 15px #10b981;
+  opacity: 0;
+}
+
+.scan-visual.scanning .scan-line {
+  opacity: 1;
+  animation: scanAnim 2s infinite ease-in-out;
+}
+
+@keyframes scanAnim {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+.omr-title { font-size: 24px; font-weight: 800; color: #fff; margin: 0; }
+.omr-desc { font-size: 14px; color: #64748b; margin: 8px 0 24px; max-width: 320px; }
+
+.omr-btn {
+  padding: 14px 32px; border-radius: 12px; border: none;
+  background: #10b981; color: #fff; font-weight: 700;
+  cursor: pointer; transition: 0.3s;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+}
+
+.omr-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(16, 185, 129, 0.3); }
+.omr-btn.loading { opacity: 0.7; cursor: default; }
+
+.omr-empty { color: #475569; text-align: center; }
+.tab-switch-btn {
+  margin-top: 16px; background: none; border: 1px solid #f97316;
+  color: #f97316; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+}
 
 .ov-text {
   position: relative; white-space: nowrap;
