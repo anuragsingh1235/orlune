@@ -272,6 +272,36 @@
   height: 28px;
 }
 
+.ffmpeg-proc {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a855f7;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  background: rgba(168, 85, 247, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 3px solid #a855f7;
+}
+
+.proc-dot {
+  width: 8px;
+  height: 8px;
+  background: #a855f7;
+  border-radius: 50%;
+  animation: procPulse 1s infinite alternate;
+}
+
+@keyframes procPulse {
+  from { opacity: 0.3; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1.2); }
+}
+
+.proc-text {
+  letter-spacing: 1px;
+}
+
 .dl-info {
   flex: 1;
   display: flex;
@@ -283,6 +313,10 @@
   color: #fff;
   font-size: 14px;
   margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 
 .dl-meta {
