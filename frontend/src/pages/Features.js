@@ -144,9 +144,8 @@ export default function Features() {
     setChatStep('DONE');
 
     setTimeout(() => {
-      // Instead of fake blob, we give them an actual working external link to download it.
-      // Cobalt.tools is the most reliable ad-free multi-downloader.
-      const downloadServiceUrl = `https://cobalt.tools/?u=${encodeURIComponent(activeLink)}`;
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const downloadServiceUrl = `${API_URL}/api/download?url=${encodeURIComponent(activeLink)}`;
 
       const botResponse = {
         id: Date.now() + 1,
