@@ -22,6 +22,29 @@ export default function Social() {
   
   const [showMembers, setShowMembers] = useState(false);
   const [members, setMembers] = useState([]);
+  const [callState, setCallState] = useState(null); // null | 'voice' | 'video'
+  const localVideoRef = useRef(null);
+  let localStream = null;
+
+  const startCall = async (type) => {
+    try {
+      const constraints = type === 'video' ? { video: true, audio: true } : { audio: true, video: false };
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setCallState(type);
+      if (type === 'video' && localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream;
+      }
+      notify.success(type === 'video' ? 'Video call started' : 'Voice call started');
+    } catch (err) {
+      notify.error('Camera/Mic permission denied');
+    }
+  };
+
+  const endCall = () => {
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+    setCallState(null);
+  };
 
   const messagesEndRef = useRef(null);
   const imgInputRef = useRef(null);
@@ -222,70 +245,110 @@ export default function Social() {
         {activeChat ? (
           <>
             <div className="chat-header">
-               <div style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: activeChat.type === 'channel' ? 'pointer' : 'default', padding: '5px', borderRadius: '8px', transition: '0.2s', ...((activeChat.type==='channel') && {':hover': {background: 'rgba(255,255,255,0.05)'}})}} onClick={() => {if(activeChat.type==='channel') fetchMembers()}}>
-                 {activeChat.type === 'channel' && activeChat.id === 'global' ? 
-                   <img src="https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80" alt="Global" style={{width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover'}} /> :
-                   <div className="chan-avatar" style={{width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary)', color: '#fff', fontSize: '1.2rem', fontWeight: 'bold'}}>
-                     {activeChat.profile_pic ? <img src={activeChat.profile_pic} style={{width: '100%', height: '100%', borderRadius: '50%'}} alt="dp" /> : (activeChat.name ? '💠' : activeChat.username?.[0]?.toUpperCase() || '?')}
-                   </div>
-                 }
+               {/* Clickable avatar + name — opens member list for channels */}
+               <div style={{display: 'flex', alignItems: 'center', gap: '12px', cursor: activeChat.type === 'channel' ? 'pointer' : 'default'}} onClick={() => { if(activeChat.type === 'channel') fetchMembers(); }}>
+                 <div style={{width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem'}}>
+                   {activeChat.profile_pic
+                     ? <img src={activeChat.profile_pic} style={{width:'100%', height:'100%', objectFit:'cover'}} alt="dp" />
+                     : activeChat.type === 'channel'
+                       ? <img src={activeChat.name === 'Global' || activeChat.name === 'Orlune Global' ? "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80" : `https://ui-avatars.com/api/?name=${activeChat.name}&background=1e293b&color=fff`} style={{width:'100%', height:'100%', objectFit:'cover'}} alt="ch" />
+                       : <span style={{color:'#fff', fontWeight:'bold'}}>{activeChat.username?.[0]?.toUpperCase() || '?'}</span>
+                   }
+                 </div>
                  <div>
-                   <h3 style={{margin: 0, fontSize: '1.2rem'}}>{activeChat.name || activeChat.username || 'Encrypted Chat'}</h3>
-                   <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)'}}>{activeChat.type === 'channel' ? 'Alliance Feed' : 'Encrypted DM'}</p>
+                   <h3 style={{margin: 0, fontSize: '1.1rem'}}>{activeChat.name || activeChat.username}</h3>
+                   <p style={{margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)'}}>{activeChat.type === 'channel' ? 'Tap to view members' : 'Direct Message'}</p>
                  </div>
                </div>
-               
+
+               {/* Action buttons */}
                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                 <button className="header-meta-btn" title="Voice Call" onClick={() => startCall('voice')} style={{background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.4)', color:'#34d399', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
+                   📞 Voice
+                 </button>
+                 <button className="header-meta-btn" title="Video Call" onClick={() => startCall('video')} style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.4)', color:'#60a5fa', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
+                   🎥 Video
+                 </button>
                  {activeChat.type === 'channel' && (
-                   <>
-                     <button className="header-meta-btn" onClick={() => notify.success("Live Voice Channel connected (Beta)")} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'linear-gradient(90deg, rgba(88,101,242,0.2), rgba(139,92,246,0.2))', border: '1px solid rgba(88,101,242,0.5)', color: '#fff', padding: '6px 12px', borderRadius: '15px' }}>
-                       🎙️ Voice Room
-                     </button>
-                     <button className="header-meta-btn" onClick={fetchMembers}>👥 Network</button>
-                     <button className="header-meta-btn" onClick={() => { if(window.confirm("Leave this alliance?")) { setActiveChat(null); fetchInitialData(); notify.success("Alliance abandoned."); } }} style={{color: '#BF616A', border: '1px solid rgba(191,97,106, 0.4)'}}>Leave</button>
-                   </>
+                   <button className="header-meta-btn" onClick={() => { if(window.confirm("Leave this channel?")) { setActiveChat(null); fetchInitialData(); }}} style={{color: '#f87171', border: '1px solid rgba(248,113,113,0.3)', padding:'8px 12px', borderRadius:'20px'}}>Leave</button>
                  )}
                </div>
             </div>
-            
+
             <div className="chat-messages">
                {(messages || []).map((m, i) => m && (
                  <div key={m?.id || i} className={m?.is_system_msg ? "system-msg-bubble" : `message ${m?.sender_id === meId ? 'sent' : 'received'}`}>
-                    {!m?.is_system_msg && activeChat.type === 'channel' && m?.sender_id !== meId && <span className="msg-sender-name">{m?.username || 'Pilot'}</span>}
-                    <div className="message-bubble">{m?.content || 'Incoming data...'}</div>
+                    {/* Show avatar + sender name for received channel messages */}
+                    {!m?.is_system_msg && m?.sender_id !== meId && (
+                      <div style={{display:'flex', alignItems:'center', gap:'6px', marginBottom:'4px'}}>
+                        <div style={{width:'24px', height:'24px', borderRadius:'50%', background:'#334155', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.75rem', fontWeight:'bold', color:'#fff', flexShrink:0}}>
+                          {m?.avatar ? <img src={m.avatar} style={{width:'100%', height:'100%', borderRadius:'50%'}} alt="" /> : (m?.username || 'U')[0].toUpperCase()}
+                        </div>
+                        {activeChat.type === 'channel' && <span className="msg-sender-name" style={{margin:0}}>{m?.username || 'User'}</span>}
+                      </div>
+                    )}
+                    {m?.attachment_url && (
+                      <div style={{marginBottom:'6px', borderRadius:'12px', overflow:'hidden', maxWidth:'300px'}}>
+                        {m.attachment_type === 'media' && m.attachment_url.startsWith('data:video') 
+                          ? <video src={m.attachment_url} controls style={{width:'100%', borderRadius:'12px'}} />
+                          : <img src={m.attachment_url} alt="media" style={{width:'100%', borderRadius:'12px', objectFit:'cover'}} />
+                        }
+                      </div>
+                    )}
+                    {m?.content && <div className="message-bubble">{m.content}</div>}
                     <span className="message-time">{m?.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</span>
                  </div>
                ))}
                <div ref={messagesEndRef} />
             </div>
 
-            <form className="chat-input-area" onSubmit={sendMessage} style={{display: 'flex', flexDirection: 'column', gap: '5px', background: 'var(--bg-secondary)', padding: '10px'}}>
-               <div style={{display: 'flex', gap: '15px', padding: '0 10px'}}>
-                 <button type="button" title="Send Image" onClick={() => imgInputRef.current.click()} style={{background: 'none', border:'none', cursor:'pointer', fontSize:'1.3rem'}}>📷</button>
-                 <button type="button" title="Send GIF/Video" onClick={() => imgInputRef.current.click()} style={{background: 'none', border:'none', cursor:'pointer', fontSize:'1.3rem'}}>🎬</button>
+            <form className="chat-input-area" onSubmit={sendMessage} style={{display: 'flex', flexDirection: 'column', gap: '5px', background: 'var(--bg-secondary)', padding: '10px 15px', borderTop: '1px solid var(--border-color)'}}>
+               <div style={{display: 'flex', gap: '15px', padding: '0 5px', marginBottom: '5px'}}>
+                 <button type="button" title="Send Image/Video" onClick={() => imgInputRef.current.click()} style={{background: 'none', border:'none', cursor:'pointer', fontSize:'1.3rem', opacity:'0.7'}}>📷</button>
+                 <button type="button" title="Send GIF" onClick={() => imgInputRef.current.click()} style={{background: 'none', border:'none', cursor:'pointer', fontSize:'1rem', opacity:'0.7', fontWeight:'bold', color:'#60a5fa'}}>GIF</button>
                  <input type="file" ref={imgInputRef} hidden accept="image/*,video/*" onChange={e => handleFileUpload(e, 'media')} />
                </div>
                <div style={{display:'flex', gap: '10px'}}>
-                 <input className="chat-input" style={{flex: 1, padding: '12px 20px', borderRadius: '20px', border: '1px solid var(--border-color)', background: 'var(--bg-tertiary)', color: '#fff'}} placeholder="Transmission..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
-                 <button className="btn btn-primary" style={{borderRadius: '20px', padding: '0 25px'}} type="submit">SEND</button>
+                 <input className="chat-input" style={{flex: 1, padding: '12px 20px', borderRadius: '25px', border: '1px solid var(--border-color)', background: 'var(--bg-tertiary)', color: '#fff', outline:'none'}} placeholder="Message..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
+                 <button className="btn btn-primary" style={{borderRadius: '50%', width:'46px', height:'46px', padding: '0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.2rem'}} type="submit">➤</button>
                </div>
              </form>
           </>
-        ) : <div className="no-chat-selected"><h3>Matrix Standby</h3><p>Select a node to initiate synchronization.</p></div>}
+        ) : <div className="no-chat-selected"><div style={{fontSize:'3rem', marginBottom:'10px'}}>💬</div><h3>Select a chat</h3><p style={{color:'var(--text-muted)'}}>Choose a friend or channel to start messaging.</p></div>}
       </div>
+
+      {/* CALL MODAL */}
+      {callState && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', zIndex:9999, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'20px'}}>
+          <div style={{fontSize:'5rem'}}>{callState === 'video' ? '🎥' : '📞'}</div>
+          <h2 style={{color:'#fff', margin:0}}>{callState === 'video' ? 'Video Call' : 'Voice Call'}</h2>
+          <p style={{color:'#94a3b8'}}>{activeChat?.username || activeChat?.name}</p>
+          
+          {callState === 'video' && (
+            <video ref={localVideoRef} autoPlay muted playsInline style={{width:'300px', height:'220px', borderRadius:'16px', background:'#000', objectFit:'cover', border:'2px solid rgba(59,130,246,0.5)'}} />
+          )}
+
+          {callState === 'voice' && (
+            <div style={{width:'100px', height:'100px', borderRadius:'50%', background:'rgba(52,211,153,0.2)', border:'2px solid #34d399', display:'flex', alignItems:'center', justifyContent:'center', animation:'pulse 1.5s infinite', fontSize:'2.5rem'}}>🎙️</div>
+          )}
+
+          <p style={{color:'#64748b', fontSize:'0.85rem'}}>Connected to your mic{callState === 'video' ? ' & camera' : ''}...</p>
+          <button onClick={endCall} style={{background:'#ef4444', color:'#fff', border:'none', borderRadius:'50%', width:'64px', height:'64px', fontSize:'1.5rem', cursor:'pointer', boxShadow:'0 4px 20px rgba(239,68,68,0.5)'}}>📵</button>
+        </div>
+      )}
 
       {showCreateModal && (
         <div className="chan-modal-overlay"><div className="chan-modal">
-          <h2>Forged Channel</h2>
+          <h2>New Channel</h2>
           <div className="modal-grid">
-             <input className="m-input" placeholder="Identity..." value={newChan.name} onChange={e => setNewChan({...newChan, name: e.target.value})}/>
-             <textarea className="m-input" placeholder="Mission..." style={{height: '100px'}} value={newChan.description} onChange={e => setNewChan({...newChan, description: e.target.value})}/>
+             <input className="m-input" placeholder="Channel Name" value={newChan.name} onChange={e => setNewChan({...newChan, name: e.target.value})}/>
+             <textarea className="m-input" placeholder="Description..." style={{height: '80px'}} value={newChan.description} onChange={e => setNewChan({...newChan, description: e.target.value})}/>
              <select className="m-input" value={newChan.privacy} onChange={e => setNewChan({...newChan, privacy: e.target.value})}>
-                <option value="public">Global Feed</option><option value="private">Ghost (Invite Keys)</option>
+                <option value="public">Public (Anyone can join)</option><option value="private">Private (Invite Only)</option>
              </select>
              <div style={{display:'flex', gap:'10px', marginTop: '10px'}}>
-               <button className="btn btn-primary" style={{flex: 1}} onClick={createChannel}>INITIATE</button>
-               <button className="btn btn-ghost" style={{flex: 1}} onClick={() => setShowCreateModal(false)}>ABORT</button>
+               <button className="btn btn-primary" style={{flex: 1}} onClick={createChannel}>Create</button>
+               <button className="btn btn-ghost" style={{flex: 1}} onClick={() => setShowCreateModal(false)}>Cancel</button>
              </div>
           </div>
         </div></div>
@@ -294,7 +357,7 @@ export default function Social() {
       {showMembers && (
         <div className="chan-modal-overlay"><div className="chan-modal">
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-color)', paddingBottom:'10px', marginBottom:'15px'}}>
-             <h2 style={{margin:0}}>Network Members</h2>
+             <h2 style={{margin:0}}>Members</h2>
              {(members || []).find(u => u?.user_id === meId)?.is_admin && (
                 <label className="btn btn-sm" style={{background:'var(--bg-tertiary)', border:'1px solid var(--primary)', color:'var(--primary)', cursor:'pointer'}}>
                    Change Picture
@@ -304,27 +367,29 @@ export default function Social() {
           </div>
           <div className="member-list" style={{maxHeight:'300px', overflowY:'auto'}}>{(members || []).map(m => m && (
              <div key={m?.user_id || Math.random()} className="member-item" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--border-color)'}}>
-                <div className="member-name-tag" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                  <div style={{width: '30px', height: '30px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{(m?.username || 'U')[0].toUpperCase()}</div>
-                  <span style={{fontWeight: 'bold'}}>{m?.username || 'Unit'}</span>
-                  {m?.is_creator && <span className="founder-badge" style={{background: 'var(--accent)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold'}}>Founder</span>}
-                  {m?.is_admin && !m?.is_creator && <span className="admin-badge" style={{background: 'var(--primary)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem'}}>Admin</span>}
+                <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                  <div style={{width: '34px', height: '34px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight:'bold'}}>{(m?.username || 'U')[0].toUpperCase()}</div>
+                  <div>
+                    <div style={{display:'flex', alignItems:'center', gap:'6px'}}>
+                      <span style={{fontWeight: 'bold'}}>{m?.username || 'User'}</span>
+                      {m?.is_creator && <span style={{background:'#EBCB8B', color:'#000', padding:'1px 6px', borderRadius:'4px', fontSize:'0.65rem', fontWeight:'bold'}}>OWNER</span>}
+                      {m?.is_admin && !m?.is_creator && <span style={{background:'var(--primary)', color:'#fff', padding:'1px 6px', borderRadius:'4px', fontSize:'0.65rem'}}>ADMIN</span>}
+                    </div>
+                  </div>
                 </div>
                 {(members || []).find(u => u?.user_id === meId)?.is_admin && !m?.is_creator && (
-                  <div className="member-actions" style={{display: 'flex', gap: '5px'}}>
+                  <div style={{display: 'flex', gap: '5px'}}>
                     <button className="btn btn-sm btn-ghost" onClick={() => setAdminStatus(m.user_id, !m.is_admin)}>
                       {m?.is_admin ? 'Demote' : 'Promote'}
                     </button>
                     {(members || []).find(u => u?.user_id === meId)?.is_creator && (
-                      <button className="btn btn-sm" style={{background: 'rgba(191,97,106,0.2)', color: '#BF616A', border: '1px solid rgba(191,97,106,0.5)'}} onClick={() => { if(window.confirm("Remove user from alliance?")) { notify.success("User Expelled"); fetchMembers(); } }}>
-                        Kick
-                      </button>
+                      <button className="btn btn-sm" style={{background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)'}} onClick={() => { if(window.confirm("Remove user?")) { notify.success("User removed"); fetchMembers(); }}}>Kick</button>
                     )}
                   </div>
                 )}
              </div>
           ))}</div>
-          <button className="btn btn-primary" style={{marginTop: '20px', width: '100%'}} onClick={() => setShowMembers(false)}>EXIT ROSTER</button>
+          <button className="btn" style={{marginTop: '15px', width: '100%', background:'var(--bg-tertiary)'}} onClick={() => setShowMembers(false)}>Close</button>
         </div></div>
       )}
     </div>
