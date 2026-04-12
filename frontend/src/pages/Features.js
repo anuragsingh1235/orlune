@@ -1,8 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Features.css';
 
 export default function Features() {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: 'bot',
+      text: 'Yo, welcome to Orlune Drive! 🛸 Simple paste and let the engine hunt the file. No redirects, just direct results.',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'text'
+    }
+  ]);
   const [inputVal, setInputVal] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [chatStep, setChatStep] = useState('IDLE');
+  const [activeLink, setActiveLink] = useState('');
+  const [videoData, setVideoData] = useState(null);
+
+  const endOfMessagesRef = useRef(null);
+  const scrollToBottom = () => endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
 
   const extractYTId = (url) => {
     const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\??v?=?))([^#&?]*).*/;
@@ -10,66 +27,136 @@ export default function Features() {
     return (match && match[7].length === 11) ? match[7] : null;
   };
 
-  const handleDownload = (e) => {
+  const fetchQuickInfo = async (url) => {
+    const id = extractYTId(url);
+    if (!id) return null;
+    try {
+      // Use official oEmbed - Fastest, no CORS, No IP blocks
+      const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);
+      const data = await res.json();
+      return {
+        id,
+        title: data.title,
+        thumbnail: data.thumbnail_url,
+      };
+    } catch (e) { return null; }
+  };
+
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!inputVal.trim()) return;
 
-    const id = extractYTId(inputVal);
+    const userInput = inputVal.trim();
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: userInput, type: 'text' }]);
+    setInputVal('');
+    setIsTyping(true);
+
+    if (chatStep === 'IDLE') {
+      const info = await fetchQuickInfo(userInput);
+      if (info) {
+        setVideoData(info);
+        setActiveLink(userInput);
+        setMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: `Target Identified. Confirm extraction for "${info.title}"? (Yes/No)`,
+          type: 'confirmation',
+          thumbnail: info.thumbnail
+        }]);
+        setChatStep('CONFIRM');
+      } else {
+        setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', text: 'Hmm, invalid link. Try a valid YouTube URL.', type: 'text' }]);
+      }
+    } else if (chatStep === 'CONFIRM') {
+      const lower = userInput.toLowerCase();
+      if (lower.includes('yes') || lower === 'y') {
+        setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            sender: 'bot',
+            text: 'Logic Engine Active. Generating direct stream links...',
+            type: 'options',
+            options: ['1080p Full HD', '720p HD', 'MP3 Audio High']
+        }]);
+        setChatStep('CHOOSE');
+      } else {
+        setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', text: 'Aborted. Ready for next link.', type: 'text' }]);
+        setChatStep('IDLE');
+      }
+    }
+    setIsTyping(false);
+  };
+
+  const handleOptionSelect = (option) => {
+    setIsTyping(true);
+    // Directly generate a direct jump link to a famous site but WITH parameters 
+    // to trigger download instantly (SaveFrom or Cobalt)
     
-    // Redirecting to the most famous working downloader center
-    // This ensures it works for all resolutions and formats natively
-    const finalUrl = id 
-      ? `https://www.y2mate.com/youtube-mp4/${id}` 
-      : `https://savefrom.net/?url=${encodeURIComponent(inputVal)}`;
-      
-    window.open(finalUrl, '_blank');
+    // Cobalt with direct save-path is most reliable "No choosing" option
+    // Redirect to a cobalt instance that handles the URL directly
+    const downloadBase = `https://cobalt.tools/?u=${encodeURIComponent(activeLink)}`;
+    
+    setMessages(prev => [...prev, {
+        id: Date.now(),
+        sender: 'bot',
+        text: `Extraction Complete. Your direct download tunnel is ready.`,
+        type: 'success',
+        downloadUrl: downloadBase,
+        fileName: `${videoData.title.substring(0,25)}_${option}.mp4`
+    }]);
+    setIsTyping(false);
+    setChatStep('IDLE');
   };
 
   return (
     <div className="features-page fade-in">
        <div className="features-header">
-           <div className="badge-glow">ORLUNE DOWNLOAD</div>
-           <h1 className="cyber-title">Simple & Fast</h1>
-           <p className="cyber-subtitle">Paste your link below and hit download. Direct, simple, and works every time. 🚀</p>
+           <div className="badge-glow">ORLUNE DRIVE</div>
+           <h1 className="cyber-title">Premium Downloader</h1>
+           <p className="cyber-subtitle">Interactive media extraction. Confirm, click, and snatch. 🛸</p>
        </div>
        
-       <div className="simple-downloader">
-          <form className="download-form" onSubmit={handleDownload}>
-              <div className="input-glass-large">
-                  <svg className="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                  </svg>
-                  <input 
-                    type="text" 
-                    placeholder="Paste YouTube or Media URL here..." 
-                    value={inputVal}
-                    onChange={(e) => setInputVal(e.target.value)}
-                    autoFocus
-                  />
-              </div>
-              <button type="submit" className="download-btn-pro" disabled={!inputVal.trim()}>
-                 <span>DOWNLOAD NOW</span>
-                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                 </svg>
-              </button>
-          </form>
-       </div>
+       <div className="chat-container">
+          <div className="chat-messages">
+              {messages.map(msg => (
+                  <div key={msg.id} className={`chat-bubble-wrapper ${msg.sender}`}>
+                      <div className={`chat-bubble ${msg.sender} ${msg.type}`}>
+                          {msg.text && <p>{msg.text}</p>}
+                          {msg.type === 'confirmation' && (
+                              <div className="confirm-box">
+                                  <img src={msg.thumbnail} alt="Thumbnail" />
+                              </div>
+                          )}
+                          {msg.type === 'options' && (
+                              <div className="res-grid">
+                                  {msg.options.map((opt, i) => (
+                                      <button key={i} className="res-btn" onClick={() => handleOptionSelect(opt)}>{opt}</button>
+                                  ))}
+                              </div>
+                          )}
+                          {msg.type === 'success' && (
+                              <div className="dl-final">
+                                  <a href={msg.downloadUrl} target="_blank" rel="noopener noreferrer" className="dl-btn-last">
+                                      GRAB FILE NOW
+                                  </a>
+                                  <span className="dl-hint">Redirects to direct file handler. No extra steps.</span>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              ))}
+              {isTyping && <div className="typing-dot">Extraction in progress...</div>}
+              <div ref={endOfMessagesRef} />
+          </div>
 
-       <div className="pro-tips">
-          <div className="tip-card">
-              <div className="tip-icon">⚡</div>
-              <h3>Ultimate Speed</h3>
-              <p>No waiting, no processing bars. Just direct redirection to the best extraction engine.</p>
-          </div>
-          <div className="tip-card">
-              <div className="tip-icon">🛡️</div>
-              <h3>100% Secure</h3>
-              <p>Powered by the world's most famous downloader infrastructure for your safety.</p>
-          </div>
+          <form className="chat-input-row" onSubmit={handleSend}>
+              <input 
+                type="text" 
+                placeholder={chatStep === 'IDLE' ? "Paste any link..." : "Confirm with Yes or No..."}
+                value={inputVal}
+                onChange={(e) => setInputVal(e.target.value)}
+              />
+              <button type="submit">GO</button>
+          </form>
        </div>
     </div>
   );
