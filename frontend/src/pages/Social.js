@@ -196,7 +196,7 @@ export default function Social() {
              {(publicChannels || []).map(c => (
                <div key={c?.id || Math.random()} className={`channel-card-global ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => joinChannel(c)} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', border: '1px solid var(--border-color)', borderRadius: '12px', cursor: 'pointer', marginBottom: '10px' }}>
                  <div style={{width: '60px', height: '60px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: 'var(--bg-tertiary)'}}>
-                    <img src={c?.name === 'Orlune Global' ? "/global-cat.jpg" : "https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=100&q=80"} alt="Global" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                    <img src={c?.name === 'Orlune Global' ? "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80" : "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80"} alt="Global" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                  </div>
                  <div>
                    <h4 style={{margin: '0 0 5px 0', fontSize: '1.1rem'}}>{c?.name || 'Untitled'}</h4>
@@ -224,7 +224,7 @@ export default function Social() {
             <div className="chat-header">
                <div style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: activeChat.type === 'channel' ? 'pointer' : 'default', padding: '5px', borderRadius: '8px', transition: '0.2s', ...((activeChat.type==='channel') && {':hover': {background: 'rgba(255,255,255,0.05)'}})}} onClick={() => {if(activeChat.type==='channel') fetchMembers()}}>
                  {activeChat.type === 'channel' && activeChat.id === 'global' ? 
-                   <img src="/global-cat.jpg" alt="Global" style={{width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover'}} /> :
+                   <img src="https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80" alt="Global" style={{width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover'}} /> :
                    <div className="chan-avatar" style={{width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary)', color: '#fff', fontSize: '1.2rem', fontWeight: 'bold'}}>
                      {activeChat.profile_pic ? <img src={activeChat.profile_pic} style={{width: '100%', height: '100%', borderRadius: '50%'}} alt="dp" /> : (activeChat.name ? '💠' : activeChat.username?.[0]?.toUpperCase() || '?')}
                    </div>
@@ -241,7 +241,7 @@ export default function Social() {
                      <button className="header-meta-btn" onClick={() => notify.success("Live Voice Channel connected (Beta)")} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'linear-gradient(90deg, rgba(88,101,242,0.2), rgba(139,92,246,0.2))', border: '1px solid rgba(88,101,242,0.5)', color: '#fff', padding: '6px 12px', borderRadius: '15px' }}>
                        🎙️ Voice Room
                      </button>
-                     <button className="header-meta-btn" onClick={fetchMembers}>👥 Roster</button>
+                     <button className="header-meta-btn" onClick={fetchMembers}>👥 Network</button>
                      <button className="header-meta-btn" onClick={() => { if(window.confirm("Leave this alliance?")) { setActiveChat(null); fetchInitialData(); notify.success("Alliance abandoned."); } }} style={{color: '#BF616A', border: '1px solid rgba(191,97,106, 0.4)'}}>Leave</button>
                    </>
                  )}
@@ -294,7 +294,7 @@ export default function Social() {
       {showMembers && (
         <div className="chan-modal-overlay"><div className="chan-modal">
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-color)', paddingBottom:'10px', marginBottom:'15px'}}>
-             <h2 style={{margin:0}}>Alliance Roster</h2>
+             <h2 style={{margin:0}}>Network Members</h2>
              {(members || []).find(u => u?.user_id === meId)?.is_admin && (
                 <label className="btn btn-sm" style={{background:'var(--bg-tertiary)', border:'1px solid var(--primary)', color:'var(--primary)', cursor:'pointer'}}>
                    Change Picture
