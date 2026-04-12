@@ -15,13 +15,11 @@ export default function Social() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // Channels
   const [publicChannels, setPublicChannels] = useState([]);
   const [myChannels, setMyChannels] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newChan, setNewChan] = useState({ name: '', description: '', reason: '', category: 'General', privacy: 'public' });
   
-  // Members Management
   const [showMembers, setShowMembers] = useState(false);
   const [members, setMembers] = useState([]);
 
@@ -51,7 +49,7 @@ export default function Social() {
       setPublicChannels(Array.isArray(cRes.data) ? cRes.data : []);
       setMyChannels(Array.isArray(myCRes.data) ? myCRes.data : []);
     } catch (err) { 
-      console.warn("Partial sync issue - utilizing offline state");
+      console.warn("Handled Background Sync Error");
     } finally { setLoading(false); }
   };
 
@@ -70,15 +68,15 @@ export default function Social() {
       const res = await api.get(`/channels/members/${activeChat.id}`);
       setMembers(Array.isArray(res.data) ? res.data : []);
       setShowMembers(true);
-    } catch (err) { notify.error("Syncing allies failed"); }
+    } catch (err) { notify.error("Connection Interrupted"); }
   };
 
   const setAdminStatus = async (userId, newStatus) => {
     try {
       await api.post('/channels/admin/toggle', { channel_id: activeChat.id, target_user_id: userId, status: newStatus });
-      notify.success("Rank modified");
+      notify.success("Rank Authority Modified");
       fetchMembers();
-    } catch (err) { notify.error("Authority change failed"); }
+    } catch (err) { notify.error("Authority Shift Failed"); }
   };
 
   const handleSearch = async (val) => {
@@ -99,72 +97,75 @@ export default function Social() {
       const res = await api.post(endpoint, payload);
       if (res.data) setMessages(prev => [...prev, res.data]);
       setNewMessage('');
-    } catch (e) { notify.error("Transmission relay failed"); }
+    } catch (e) { notify.error("Transmission Failed"); }
   };
 
   const createChannel = async () => {
-    if (!newChan.name.trim()) return notify.error("Channel name required");
+    if (!newChan.name.trim()) return notify.error("Identity Required");
     try {
       const res = await api.post('/channels/create', newChan);
-      notify.success("Hub online");
+      notify.success("Hub Forged");
       fetchInitialData();
       setShowCreateModal(false);
       setActiveChat({...res.data, type: 'channel'});
-    } catch (e) { notify.error("Hub forge failed"); }
+    } catch (e) { notify.error("Forge Failed"); }
   };
 
   const joinChannel = async (c) => {
-    const ok = window.confirm(`Initiate join sequence for ${c.name}?`);
+    const ok = window.confirm(`Initiate Join Protocol for ${c.name}?`);
     if (!ok) return;
     try {
       await api.post('/channels/join', { channel_id: c.id });
       fetchInitialData();
       setActiveChat({...c, type: 'channel'});
       setActiveTab('channels');
-    } catch (e) { notify.error("Join sequence failed"); }
+    } catch (e) { notify.error("Forbidden"); }
   };
 
-  const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); };
+  const scrollToBottom = () => { if(messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: "smooth" }); };
 
-  if (loading) return <div className="spinner" />;
+  if (loading) return <div className="spinner" style={{marginTop: '20vh'}} />;
   
-  // Safe user ID detection
+  // ── DEEP PARSER SAFETY ──────────────────────────────────────
   let meId = null;
-  try { meId = JSON.parse(localStorage.getItem('ww_user'))?.id; } catch(e) {}
+  const rawUser = localStorage.getItem('ww_user');
+  if (rawUser && rawUser !== "undefined" && rawUser !== "null") {
+    try { meId = JSON.parse(rawUser)?.id; } catch(e) { console.error("Session Corrupt"); }
+  }
 
   return (
     <div className="social-page animate-fade">
       <div className="social-sidebar">
         <div className="social-tabs">
           <button className={`social-tab ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>DIRECT</button>
-          <button className={`social-tab ${activeTab === 'channels' ? 'active' : ''}`} onClick={() => setActiveTab('channels')}>ALLIANCES</button>
+          <button className={`social-tab ${activeTab === 'channels' ? 'active' : ''}`} onClick={() => setActiveTab('channels')}>HUB</button>
         </div>
 
         {activeTab === 'messages' ? (
           <>
             <input className="m-input" style={{margin: '10px'}} placeholder="Search Matrix..." value={searchQuery} onChange={e => handleSearch(e.target.value)} />
             <div className="search-results">{(searchResults || []).map(u => (
-               <Link key={u.id} to={`/profile/${u.id}`} className="search-item"><h4>{u.username}</h4></Link>
+               <Link key={u?.id || Math.random()} to={`/profile/${u?.id}`} className="search-item"><h4>{u?.username || 'Unknown'}</h4></Link>
             ))}</div>
             <div className="contacts-list">{(friends || []).map(f => (
-              <div key={f.id} className={`contact-item ${activeChat?.id === f.id ? 'active' : ''}`} onClick={() => setActiveChat({...f, type: 'friend'})}>
-                <h4>{f.username}</h4>
+              <div key={f?.id || Math.random()} className={`contact-item ${activeChat?.id === f?.id ? 'active' : ''}`} onClick={() => setActiveChat({...f, type: 'friend'})}>
+                <h4>{f?.username || 'System User'}</h4>
               </div>
             ))}</div>
           </>
         ) : (
           <div className="contacts-list">
-             <button className="create-chan-btn" onClick={() => setShowCreateModal(true)}>+ Forged New Channel</button>
+             <button className="create-chan-btn" onClick={() => setShowCreateModal(true)}>+ New Channel</button>
              <h4 className="section-title">GLOBAL</h4>
              {(publicChannels || []).map(c => (
-               <div key={c.id} className={`channel-card-global ${activeChat?.id === c.id ? 'active' : ''}`} onClick={() => joinChannel(c)}>
-                 <h4>{c.name}</h4><p>{c.member_count || 0} Joined</p>
+               <div key={c?.id || Math.random()} className={`channel-card-global ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => joinChannel(c)}>
+                 <h4>{c?.name || 'Untitled'}</h4><p>{c?.member_count || 0} Allies</p>
                </div>
              ))}
-             <h4 className="section-title" style={{marginTop: '20px'}}>JOINED</h4>
+             <h4 className="section-title" style={{marginTop: '20px'}}>MY ALLIANCES</h4>
              {(myChannels || []).map(c => (
-               <div key={c.id} className={`channel-item ${activeChat?.id === c.id ? 'active' : ''}`} onClick={() => setActiveChat({...c, type: 'channel'})}>
-                 <div className="chan-avatar">#</div><h4>{c.name}</h4>
+               <div key={c?.id || Math.random()} className={`channel-item ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => setActiveChat({...c, type: 'channel'})}>
+                 <div className="chan-avatar">#</div><h4>{c?.name || 'Group'}</h4>
                </div>
              ))}
           </div>
@@ -175,43 +176,43 @@ export default function Social() {
         {activeChat ? (
           <>
             <div className="chat-header">
-               <div><h3>{activeChat.name || activeChat.username}</h3><p style={{fontSize: '0.7rem'}}>{activeChat.type === 'channel' ? 'Alliance Hub' : 'Direct Sync'}</p></div>
+               <div><h3>{activeChat.name || activeChat.username || 'Encrypted Chat'}</h3><p style={{fontSize: '0.7rem'}}>Matrix Link Active</p></div>
                <div style={{display: 'flex', gap: '8px'}}>
                  {activeChat.type === 'channel' && <button className="header-meta-btn" onClick={fetchMembers}>👥 Allies</button>}
                </div>
             </div>
             
             <div className="chat-messages">
-               {(messages || []).map((m, i) => (
-                 <div key={i} className={m.is_system_msg ? "system-msg-bubble" : `message ${m.sender_id === meId ? 'sent' : 'received'}`}>
-                    {!m.is_system_msg && activeChat.type === 'channel' && m.sender_id !== meId && <span className="msg-sender-name">{m.username}</span>}
-                    <div className="message-bubble">{m.content}</div>
-                    <span className="message-time">{new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+               {(messages || []).map((m, i) => m && (
+                 <div key={m?.id || i} className={m?.is_system_msg ? "system-msg-bubble" : `message ${m?.sender_id === meId ? 'sent' : 'received'}`}>
+                    {!m?.is_system_msg && activeChat.type === 'channel' && m?.sender_id !== meId && <span className="msg-sender-name">{m?.username || 'Pilot'}</span>}
+                    <div className="message-bubble">{m?.content || 'Incoming data...'}</div>
+                    <span className="message-time">{m?.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</span>
                  </div>
                ))}
                <div ref={messagesEndRef} />
             </div>
 
             <form className="chat-input-area" onSubmit={sendMessage}>
-               <input className="chat-input" placeholder="Broadcasting message..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
+               <input className="chat-input" placeholder="Transmission..." value={newMessage} onChange={e => setNewMessage(e.target.value)} />
                <button className="btn btn-primary btn-sm" type="submit">SEND</button>
             </form>
           </>
-        ) : <div className="no-chat-selected"><h3>Neutral Standby</h3></div>}
+        ) : <div className="no-chat-selected"><h3>Matrix Standby</h3><p>Select a node to initiate synchronization.</p></div>}
       </div>
 
       {showCreateModal && (
         <div className="chan-modal-overlay"><div className="chan-modal">
-          <h2>Forged Alliance Hub</h2>
+          <h2>Forged Channel</h2>
           <div className="modal-grid">
-             <input className="m-input" placeholder="Hub Name..." value={newChan.name} onChange={e => setNewChan({...newChan, name: e.target.value})}/>
-             <textarea className="m-input" placeholder="Primary Objective..." value={newChan.description} onChange={e => setNewChan({...newChan, description: e.target.value})}/>
+             <input className="m-input" placeholder="Identity..." value={newChan.name} onChange={e => setNewChan({...newChan, name: e.target.value})}/>
+             <textarea className="m-input" placeholder="Mission..." style={{height: '100px'}} value={newChan.description} onChange={e => setNewChan({...newChan, description: e.target.value})}/>
              <select className="m-input" value={newChan.privacy} onChange={e => setNewChan({...newChan, privacy: e.target.value})}>
                 <option value="public">Global Feed</option><option value="private">Ghost (Invite Keys)</option>
              </select>
-             <div style={{display:'flex', gap:'10px'}}>
-               <button className="btn btn-primary" onClick={createChannel}>INITIATE</button>
-               <button className="btn btn-ghost" onClick={() => setShowCreateModal(false)}>ABORT</button>
+             <div style={{display:'flex', gap:'10px', marginTop: '10px'}}>
+               <button className="btn btn-primary" style={{flex: 1}} onClick={createChannel}>INITIATE</button>
+               <button className="btn btn-ghost" style={{flex: 1}} onClick={() => setShowCreateModal(false)}>ABORT</button>
              </div>
           </div>
         </div></div>
@@ -219,24 +220,24 @@ export default function Social() {
 
       {showMembers && (
         <div className="chan-modal-overlay"><div className="chan-modal">
-          <h2>Active Allies</h2>
-          <div className="member-list">{(members || []).map(m => (
-            <div key={m.user_id} className="member-item">
+          <h2>Alliance Roster</h2>
+          <div className="member-list">{(members || []).map(m => m && (
+            <div key={m?.user_id || Math.random()} className="member-item">
                <div className="member-name-tag">
-                 {m.username} 
-                 {m.is_creator && <span className="founder-badge">Founder</span>}
-                 {m.is_admin && !m.is_creator && <span className="admin-badge">Admin</span>}
+                 {m?.username || 'Unit'} 
+                 {m?.is_creator && <span className="founder-badge">Founder</span>}
+                 {m?.is_admin && !m?.is_creator && <span className="admin-badge">Admin</span>}
                </div>
-               {(members || []).find(u => u.user_id === meId)?.is_admin && !m.is_creator && (
+               {(members || []).find(u => u?.user_id === meId)?.is_admin && !m?.is_creator && (
                  <div className="member-actions">
                    <button className="btn btn-sm btn-ghost" onClick={() => setAdminStatus(m.user_id, !m.is_admin)}>
-                     {m.is_admin ? 'Demote' : 'Promote'}
+                     {m?.is_admin ? 'Demote' : 'Promote'}
                    </button>
                  </div>
                )}
             </div>
           ))}</div>
-          <button className="btn btn-primary" style={{marginTop: '20px', width: '100%'}} onClick={() => setShowMembers(false)}>EXIT HUB</button>
+          <button className="btn btn-primary" style={{marginTop: '20px', width: '100%'}} onClick={() => setShowMembers(false)}>EXIT ROSTER</button>
         </div></div>
       )}
     </div>
