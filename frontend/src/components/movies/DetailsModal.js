@@ -297,12 +297,12 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                         <h4>Stream Archives Veiled</h4>
                         <p>No verified digital streams found in local archives. External scouting recommended.</p>
                         <a 
-                          href={`https://www.google.com/search?q=watch+${encodeURIComponent(details?.title || details?.name || item?.title || item?.name)}+online`}
+                          href={`https://net22.cc/search?q=${encodeURIComponent(details?.title || details?.name || item?.title || item?.name)}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="platforms-scout-btn"
+                          className="platforms-scout-btn play-now-animation"
                         >
-                          Scout Global Platforms (Google) ↗
+                          ▶ Play on net22.cc
                         </a>
                       </div>
                     )}

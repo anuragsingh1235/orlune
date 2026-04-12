@@ -112,15 +112,17 @@ export default function MovieCard({ item, onAdd, onClick, showStatus }) {
           {item.status === 'completed' && !showStatus && (
             <div className="completed-check animate-fade">✨ Mastered</div>
           )}
-          {/* 🎬 Global Watch Link */}
+          {/* 🎬 Deep Link Play Button */}
           <a 
-            href={`https://www.google.com/search?q=watch+${encodeURIComponent(title)}+online`} 
+            href={`https://net22.cc/search?q=${encodeURIComponent(title)}`} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="watch-link-btn"
-            title="Search watch options"
+            className="play-now-btn"
+            title="Play Movie"
+            onClick={(e) => e.stopPropagation()}
           >
-            Watch Now ↗
+            <span className="play-icon">▶</span>
+            Play Now
           </a>
         </div>
         {rating && (
