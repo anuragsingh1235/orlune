@@ -6,8 +6,8 @@ import './Features.css';
 export default function DriveChat() {
   const [messages, setMessages] = useState([
     {
-      id: 1, sender: 'bot',
-      text: 'Welcome to Orlune Drive. Provide a valid media link (YouTube/Instagram) to initiate the high-quality extraction.',
+      id: 1, sender: 'node',
+      text: 'Good evening. I am AIRA, your Retrieval Assistant. Please provide a link, and I will begin the synchronization process for you.',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'text'
     }
@@ -19,7 +19,7 @@ export default function DriveChat() {
   const endRef = useRef(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
 
-  const pushBot = (msg) => setMessages(prev => [...prev, { id: Date.now(), sender: 'bot', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ...msg }]);
+  const pushBot = (msg) => setMessages(prev => [...prev, { id: Date.now(), sender: 'node', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ...msg }]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -39,7 +39,7 @@ export default function DriveChat() {
       
       setTimeout(() => {
         pushBot({ 
-          text: `Extracted: ${res.data.title}`, 
+          text: `Synchronization complete. I have retrieved "${res.data.title}" for you.`, 
           type: 'media_info', 
           info: res.data 
         });
@@ -47,7 +47,7 @@ export default function DriveChat() {
       }, 1000);
 
     } catch (err) {
-      const errMsg = err.response?.data?.error || 'Extraction failed. This video might be restricted or require a different access protocol.';
+      const errMsg = err.response?.data?.error || "I'm sorry, I encountered an issue while retrieving that content. Please verify the link is public.";
       setTimeout(() => {
         pushBot({ text: errMsg, type: 'text' });
         setIsTyping(false);
@@ -68,10 +68,14 @@ export default function DriveChat() {
       <div className="chat-window">
         <div className="chat-messages">
           {messages.map(msg => (
-            <div key={msg.id} className={`chat-bubble-wrapper ${msg.sender}`}>
-              {msg.sender === 'bot' && (
-                <div className="bot-avatar">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <div key={msg.id} className={`chat-bubble-wrapper ${msg.sender === 'node' ? 'bot' : 'user'}`}>
+              {msg.sender === 'node' && (
+                <div className="bot-avatar" style={{ color: '#d946ef', borderRadius: '50%' }}>
+                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                     <path d="M12 3c.132 0 .263 0 .393 0a.75.75 0 0 0 .534-1.281l-.014-.014a9.752 9.752 0 0 0-13.48 13.48l.014.014a.75.75 0 0 0 1.281-.534c0-.13 0-.26 0-.393a7.5 7.5 0 0 1 11.272-6.5zm8.172 8.172a.75.75 0 0 0-1.281.534c0 .13 0 .26 0 .393a7.5 7.5 0 0 1-11.272 6.5.75.75 0 0 0-.534 1.281l.014.014a9.752 9.752 0 0 0 13.48-13.48l-.014-.014z"/>
+                     <path d="M12 3v18"/>
+                     <path d="M3 12h18"/>
+                   </svg>
                 </div>
               )}
               <div className={`chat-bubble ${msg.sender} ${msg.type || ''}`}>
