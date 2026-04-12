@@ -86,17 +86,21 @@ export default function Features() {
   const handleOptionSelect = (opt) => {
     setIsTyping(true);
     const videoId = extractYTId(activeLink);
+    const isInstagram = activeLink.includes('instagram.com');
     
-    // Generating 3 different famous downloader links for redundancy
-    const url1 = videoId ? `https://www.y2mate.com/youtube-mp4/${videoId}` : `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
-    const url2 = `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
+    // Generating 3 different famous downloader links for redundancy based on platform
+    const url1 = videoId ? `https://www.y2mate.com/youtube-mp4/${videoId}` : 
+                 isInstagram ? `https://gramsnap.com/en/` : 
+                 `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
+                 
+    const url2 = isInstagram ? `https://snapinsta.app/` : `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
     const url3 = videoId ? `https://yt5s.io/en/download?q=${videoId}` : `https://9xbuddy.online/analyze?url=${encodeURIComponent(activeLink)}`;
 
     setTimeout(() => {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'bot',
-        text: `Extraction Complete. Your direct download tunnels are ready:`,
+        text: isInstagram ? 'Instagram link detected! Your GramSnap & SnapInsta tunnels are ready:' : `Extraction Complete. Your direct download tunnels are ready:`,
         type: 'success',
         downloadUrl: url1,
         downloadUrl2: url2,
@@ -113,7 +117,7 @@ export default function Features() {
        <div className="features-header">
            <div className="badge-glow">ORLUNE DRIVE</div>
            <h1 className="cyber-title">Downloader</h1>
-           <p className="cyber-subtitle">Paste a link, confirm with Yes/No, and snatch the file. No sketchy redirects. 🥷✨</p>
+           <p className="cyber-subtitle">Paste a link, confirm with Yes/No, and snatch the file.</p>
        </div>
        
        <div className="chat-container">
@@ -155,15 +159,15 @@ export default function Features() {
                           <div className="success-dl-box">
                              <p>{msg.text}</p>
                              <div className="dl-card-grid">
-                                 <a href={msg.downloadUrl} target="_blank" rel="noopener noreferrer" className="dl-server-btn primary">
-                                     <span className="sv-name">SERVER 1 (Y2MATE)</span>
+                                 <a href={msg.downloadUrl} target="_blank" rel="noopener noreferrer" className="dl-server-btn primary wave-btn">
+                                     <span className="sv-name">SERVER 1 (BEST CHOICE)</span>
                                      <span className="sv-status">RECOMMENDED</span>
                                  </a>
-                                 <a href={msg.downloadUrl2} target="_blank" rel="noopener noreferrer" className="dl-server-btn">
-                                     <span className="sv-name">SERVER 2 (SAVEFROM)</span>
+                                 <a href={msg.downloadUrl2} target="_blank" rel="noopener noreferrer" className="dl-server-btn wave-btn">
+                                     <span className="sv-name">SERVER 2 (BACKUP)</span>
                                  </a>
-                                 <a href={msg.downloadUrl3} target="_blank" rel="noopener noreferrer" className="dl-server-btn">
-                                     <span className="sv-name">SERVER 3 (YT5S)</span>
+                                 <a href={msg.downloadUrl3} target="_blank" rel="noopener noreferrer" className="dl-server-btn wave-btn">
+                                     <span className="sv-name">SERVER 3 (FAILSAFE)</span>
                                  </a>
                              </div>
                           </div>
