@@ -112,7 +112,7 @@
   font-size: 15px;
   line-height: 1.5;
   position: relative;
-  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .chat-bubble.bot { background: rgba(30, 30, 42, 0.9); color: #e2e8f0; border-bottom-left-radius: 4px; }

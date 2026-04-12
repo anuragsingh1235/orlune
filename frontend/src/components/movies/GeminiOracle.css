@@ -151,6 +151,7 @@
   line-height: 1.5;
   color: #fff;
   font-family: 'Inter', sans-serif;
+  overflow-wrap: break-word;
 }
 
 .user .msg-bubble {
