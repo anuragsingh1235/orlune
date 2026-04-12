@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/layout/Navbar';
 import NavbarSpacer from './components/layout/NavbarSpacer';
+import MobileDock from './components/layout/MobileDock';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <GeminiOracle />
+      <MobileDock />
     </>
   );
 }

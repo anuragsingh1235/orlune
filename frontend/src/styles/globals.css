@@ -211,17 +211,26 @@ img { display: block; }
 
 /* 📱 MOBILE RESPONSIVENESS (Global) */
 @media (max-width: 768px) {
+  body {
+    padding-bottom: 80px; /* Space for the dock */
+    overscroll-behavior-y: none; /* Prevent accidental pull-to-refresh */
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent; /* Cleaner touch feedback */
+  }
+
   .container {
     padding: 0 16px;
   }
   
   .movies-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 12px;
   }
 
   .movies-grid-lg {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 16px;
   }
 
@@ -237,10 +246,22 @@ img { display: block; }
   .modal {
     padding: 20px;
     margin: 10px;
+    border-radius: 20px; /* Rounder for mobile */
   }
   
   .btn {
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 12px 20px; /* Larger tap targets */
+    font-size: 14px;
+    border-radius: 12px;
   }
+
+  /* Hide Desktop Navbar Links on Mobile */
+  .nav-links {
+    display: none !important;
+  }
+}
+
+/* ── Custom Scrollbar for Mobile-Native Feel ── */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { width: 0; background: transparent; } /* Native invisible feel */
 }

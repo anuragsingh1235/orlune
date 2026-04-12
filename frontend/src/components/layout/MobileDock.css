@@ -1,0 +1,64 @@
+.mobile-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px 15px; /* Added spacing for home indicator */
+  z-index: 2000;
+  display: none; /* Hidden on desktop */
+}
+
+@media (max-width: 768px) {
+  .mobile-dock {
+    display: flex;
+  }
+}
+
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: #64748b;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+}
+
+.dock-icon {
+  font-size: 1.3rem;
+  transition: transform 0.3s;
+}
+
+.dock-item span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dock-item.active {
+  color: #fff;
+}
+
+.dock-item.active .dock-icon {
+  transform: translateY(-4px) scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+}
+
+.dock-item:active {
+  transform: scale(0.92);
+}
+
+/* ── Hide desktop navbar items on mobile if they duplicate the dock ── */
+@media (max-width: 768px) {
+  /* We'll handle navbar display logic in Navbar.css */
+}
