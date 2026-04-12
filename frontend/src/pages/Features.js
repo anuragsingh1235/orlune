@@ -99,16 +99,12 @@ export default function Features() {
           className={`fhub-btn fhub-btn-ric ${active === 'ric' ? 'fhub-btn-active' : ''}`}
           onClick={() => { setActive(active === 'ric' ? null : 'ric'); setPasscode(''); }}
         >
-          <span className="fhub-btn-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-            </svg>
+          <span className="fhub-btn-icon" style={{ fontSize: '1.2rem', fontWeight: '900', color: '#fff', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            R
           </span>
           <span className="fhub-btn-label">
-            <span className="fhub-btn-name">RIC Reel Hub</span>
-            <span className="fhub-btn-hint">Interactive Instagram Experience</span>
+            <span className="fhub-btn-name">RIC</span>
+            <span className="fhub-btn-hint">Collective Visual Archive</span>
           </span>
           <span className="fhub-btn-chevron">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
