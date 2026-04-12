@@ -12,32 +12,41 @@ if (ffmpegPath) {
 
 // ── ROBUST YOUTUBE AGENT ──────────────────────────────
 const getInfoWithBypass = async (url) => {
-  // Try 1: Modern Chrome Header
+  // Use a temporary directory for any potential internal cache/debug writes
+  // though ytdl should not write files by default.
+  const commonOptions = {
+    requestOptions: {
+      headers: {
+        'Accept-Language': 'en-US,en;q=0.9',
+      }
+    }
+  };
+
   try {
+    // Try Chrome
     return await ytdl.getInfo(url, {
+      ...commonOptions,
       requestOptions: {
         headers: {
+          ...commonOptions.requestOptions.headers,
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9',
         }
       }
     });
   } catch (e1) {
-    // Try 2: Android Client (Often less aggressive bot detection)
-    try {
-      console.warn("Retrying with Android Client Heuristics...");
-      return await ytdl.getInfo(url, {
-        requestOptions: {
-          headers: {
-            'User-Agent': 'com.google.android.youtube/19.05.35 (Linux; U; Android 11; en_US; Pixel 4 XL) Build/RP1A.200720.009',
-            'X-YouTube-Client-Name': '3',
-            'X-YouTube-Client-Version': '19.05.35',
-          }
+    // Try Android
+    console.warn("Retrying with Android Client...");
+    return await ytdl.getInfo(url, {
+      ...commonOptions,
+      requestOptions: {
+        headers: {
+          ...commonOptions.requestOptions.headers,
+          'User-Agent': 'com.google.android.youtube/19.05.35 (Linux; U; Android 11; Pixel 4 XL)',
+          'X-YouTube-Client-Name': '3',
+          'X-YouTube-Client-Version': '19.05.35',
         }
-      });
-    } catch (e2) {
-      throw e2; // Re-throw if both fail
-    }
+      }
+    });
   }
 };
 
@@ -97,8 +106,15 @@ router.get('/info', async (req, res) => {
 
     return res.status(400).json({ error: 'Unsupported platform' });
   } catch (err) {
-    const isBot = err.message.includes('Sign in');
-    return res.status(500).json({ error: isBot ? "YouTube's high-security wall detected our server. Please try a different video or wait 5 mins." : `Extraction error: ${err.message}` });
+    const errorMsg = err.message || 'Unknown error';
+    if (errorMsg.includes('Sign in')) {
+      return res.status(500).json({ error: "YouTube detection wall. Try a different video." });
+    }
+    // Handle the EROFS error specifically - it usually means ytdl tried to dump a debug file because it failed
+    if (errorMsg.includes('EROFS')) {
+       return res.status(500).json({ error: "High security detected. YouTube is preventing this extraction." });
+    }
+    return res.status(500).json({ error: `Extraction error: ${errorMsg}` });
   }
 });
 
@@ -113,7 +129,7 @@ router.get('/stream', async (req, res) => {
       res.header('Content-Disposition', `attachment; filename="${title}.mp4"`);
       
       if (format && format.hasAudio) {
-        ytdl(url, { filter: f => f.itag == itag }).pipe(res);
+        ytdl(url, { itag }).pipe(res);
       } else {
         const videoStream = ytdl(url, { quality: itag });
         const audioStream = ytdl(url, { quality: 'highestaudio' });
