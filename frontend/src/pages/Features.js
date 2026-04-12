@@ -1,8 +1,7 @@
 import React, { useState, lazy, Suspense } from 'react';
 import './Features.css';
 import DriveChat from './DriveChat';
-
-const PdfEditor = lazy(() => import('./PdfEditor'));
+import PdfEditor from './PdfEditor'; // Static import for stability
 
 export default function Features() {
   const [active, setActive] = useState(null); // null | 'drive' | 'pdf'
@@ -14,7 +13,7 @@ export default function Features() {
       <div className="fhub-head">
         <p className="fhub-eyebrow">ORLUNE FEATURES</p>
         <h1 className="fhub-title">
-          {active === 'drive' ? 'Downloader' : active === 'pdf' ? 'PDF Editor' : 'What would you like to do?'}
+          {active === 'drive' ? 'Downloader' : active === 'pdf' ? 'PDF Studio' : 'What would you like to do?'}
         </h1>
       </div>
 
@@ -56,7 +55,7 @@ export default function Features() {
           </span>
           <span className="fhub-btn-label">
             <span className="fhub-btn-name">Orlune PDF Edit</span>
-            <span className="fhub-btn-hint">Edit any PDF — text, images and more</span>
+            <span className="fhub-btn-hint">Advanced Editor & OMR Scanner</span>
           </span>
           <span className="fhub-btn-chevron">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -75,14 +74,7 @@ export default function Features() {
 
       {active === 'pdf' && (
         <div className="ftool-panel fade-in">
-          <Suspense fallback={
-            <div className="ftool-loading">
-              <span className="ftool-spinner" />
-              <span>Loading PDF Editor...</span>
-            </div>
-          }>
-            <PdfEditor />
-          </Suspense>
+          <PdfEditor />
         </div>
       )}
 
