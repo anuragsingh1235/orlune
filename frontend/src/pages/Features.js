@@ -144,13 +144,14 @@ export default function Features() {
     setChatStep('DONE');
 
     setTimeout(() => {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const downloadServiceUrl = `${API_URL}/api/download?url=${encodeURIComponent(activeLink)}`;
+      // Due to Vercel Serverless Function 50MB limits, running a full YouTube Extraction engine crashes the site.
+      // We fall back to a streamlined direct integration.
+      const downloadServiceUrl = `https://loader.to/api/button/?url=${encodeURIComponent(activeLink)}&f=1080&color=10b981`;
 
       const botResponse = {
         id: Date.now() + 1,
         sender: 'bot',
-        text: `Boom! The real file is generated via our backend engine. Click below to grab it. 🍿`,
+        text: `Here is your direct extraction panel. (Due to Vercel limits, we provide this widget instead of a direct file flow! Click below.) 🍿`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'success',
         downloadUrl: downloadServiceUrl,
@@ -158,7 +159,7 @@ export default function Features() {
       };
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
-      // Reset flow so they can paste a new link
+      
       setTimeout(() => {
           setChatStep('IDLE');
           setActiveLink('');

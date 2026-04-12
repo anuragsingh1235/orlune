@@ -13,7 +13,6 @@ const socialRoutes = require("./routes/social");
 const chatRoutes = require("./routes/chat");
 const wikiRoutes = require("./routes/wikipedia");
 const arenaRoutes = require("./routes/arena");
-const downloadRoutes = require("./routes/download");
 
 // 🛠️ AUTO MIGRATION (Ensures Social/Chat tables exist)
 const migrate = require("./config/migrate");
@@ -36,7 +35,6 @@ app.use("/api/social", socialRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/wiki", wikiRoutes);
 app.use("/api/arena", arenaRoutes);
-app.use("/api/download", downloadRoutes);
 
 // Serve React build only when NOT on Vercel (Vercel handles frontend separately)
 if (!process.env.VERCEL) {
