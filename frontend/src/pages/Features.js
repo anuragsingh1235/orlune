@@ -5,6 +5,35 @@ import PdfEditor from './PdfEditor'; // Static import for stability
 
 export default function Features() {
   const [active, setActive] = useState(null); // null | 'drive' | 'pdf'
+  const [unlocked, setUnlocked] = useState(false);
+  const [passcode, setPasscode] = useState('');
+
+  const handleUnlock = (e) => {
+    e.preventDefault();
+    if (passcode === '1764') {
+      setUnlocked(true);
+    } else {
+      alert("Invalid Beta Authorization Code");
+    }
+  };
+
+  const renderMaintenance = () => (
+    <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)', margin: '20px' }}>
+      <h2 style={{ fontSize: '1.8rem', color: 'var(--primary)', marginBottom: '15px' }}>🚧 Under Maintenance</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '30px' }}>This instrument is currently undergoing stability calibration. Authorized testers only.</p>
+      
+      <form onSubmit={handleUnlock} style={{ display: 'flex', gap: '10px', justifyContent: 'center', maxWidth: '300px', margin: '0 auto' }}>
+        <input 
+          type="password" 
+          placeholder="Access Code" 
+          value={passcode}
+          onChange={(e) => setPasscode(e.target.value)}
+          style={{ flex: 1, padding: '10px 15px', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: '#fff', outline: 'none' }}
+        />
+        <button type="submit" className="fhub-btn" style={{ padding: '0 20px', background: 'var(--primary)', color: '#fff' }}>Override</button>
+      </form>
+    </div>
+  );
 
   return (
     <div className="features-page fade-in">
@@ -68,13 +97,13 @@ export default function Features() {
       {/* ── TOOL PANEL ── */}
       {active === 'drive' && (
         <div className="ftool-panel fade-in">
-          <DriveChat />
+          {unlocked ? <DriveChat /> : renderMaintenance()}
         </div>
       )}
 
       {active === 'pdf' && (
         <div className="ftool-panel fade-in">
-          <PdfEditor />
+          {unlocked ? <PdfEditor /> : renderMaintenance()}
         </div>
       )}
 
