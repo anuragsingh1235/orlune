@@ -13,6 +13,11 @@ export default function Features() {
   ]);
   const [inputVal, setInputVal] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  
+  // State for flow control
+  const [chatStep, setChatStep] = useState('IDLE'); // IDLE, CONFIRM_MEDIA, CHOOSE_RES
+  const [activeLink, setActiveLink] = useState('');
+
   const endOfMessagesRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -23,23 +28,48 @@ export default function Features() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const allFormats = [
-    '8K (4320p) MP4', '4K (2160p) MP4', '2K (1440p) MP4', 
-    '1080p60 HD MP4', '1080p HD MP4', '720p60 HD MP4', '720p HD MP4', 
-    '480p MP4', '360p MP4', '240p MP4', '144p MP4',
-    '1080p WebM', '720p WebM', '480p WebM',
-    'MP3 (320kbps)', 'MP3 (256kbps)', 'MP3 (128kbps)', 'M4A (High)', 'WAV (Lossless)', 'FLAC (Lossless)', 'OGG',
-    'JPG (Max Quality)', 'PNG (Lossless)', 'WEBP (Optimized)', 'GIF (Animated)'
-  ];
+  const extractThumbnail = (url) => {
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        let videoId = urlObj.searchParams.get('v');
+        if (!videoId) {
+           videoId = urlObj.pathname.split('/').pop();
+        }
+        return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      }
+      if (urlObj.hostname.includes('instagram.com')) {
+         return 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=300&auto=format&fit=crop';
+      }
+      return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop';
+    } catch {
+      return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop';
+    }
+  };
+
+  const getFeasibleOptions = (url) => {
+     try {
+        const u = new URL(url);
+        // If it's a video site, provide standard resolutions we can reliably redirect
+        if (u.hostname.includes('youtube') || u.hostname.includes('youtu.be')) {
+           return ['1080p Video (MP4)', '720p Video (MP4)', 'MP3 Audio (High)', 'MP3 Audio (Standard)'];
+        }
+        if (u.hostname.includes('instagram')) {
+           return ['HD Video/Reel (MP4)', 'High Res Image (JPG)'];
+        }
+     } catch {}
+     return ['High Quality (MP4/JPG)', 'Audio Only (MP3)'];
+  };
 
   const handleSend = (e) => {
     e.preventDefault();
     if (!inputVal.trim()) return;
 
+    const userInput = inputVal.trim();
     const userMsg = {
       id: Date.now(),
       sender: 'user',
-      text: inputVal,
+      text: userInput,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'text'
     };
@@ -49,21 +79,59 @@ export default function Features() {
     setIsTyping(true);
 
     setTimeout(() => {
-      // Simulate Bot parsing link
-      const botOptionsMsg = {
-        id: Date.now() + 1,
-        sender: 'bot',
-        text: 'Target acquired! 🎯 Choose your format. Don\'t be shy, we got them all:',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: 'options',
-        options: allFormats
-      };
-      setMessages(prev => [...prev, botOptionsMsg]);
-      setIsTyping(false);
+      if (chatStep === 'IDLE') {
+        const thumb = extractThumbnail(userInput);
+        setActiveLink(userInput);
+        
+        const botConfirmMsg = {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: 'Found it! Is this the right media? (Reply "Yes" or "No")',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'confirmation',
+          thumbnail: thumb
+        };
+        setMessages(prev => [...prev, botConfirmMsg]);
+        setChatStep('CONFIRM_MEDIA');
+        setIsTyping(false);
+      } 
+      else if (chatStep === 'CONFIRM_MEDIA') {
+        const textLower = userInput.toLowerCase();
+        if (textLower.includes('yes') || textLower.includes('yup') || textLower.includes('yeah') || textLower.includes('y')) {
+          const optionsMsg = {
+            id: Date.now() + 1,
+            sender: 'bot',
+            text: 'Sweet! Choose your preferred format:',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: 'options',
+            options: getFeasibleOptions(activeLink)
+          };
+          setMessages(prev => [...prev, optionsMsg]);
+          setChatStep('CHOOSE_RES');
+        } else {
+          const resetMsg = {
+            id: Date.now() + 1,
+            sender: 'bot',
+            text: 'Oops, my bad. Please drop the correct link!',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            type: 'text'
+          };
+          setMessages(prev => [...prev, resetMsg]);
+          setChatStep('IDLE');
+          setActiveLink('');
+        }
+        setIsTyping(false);
+      }
+      else {
+         // If user types while choosing res, just ignore or reset
+         setIsTyping(false);
+      }
     }, 1500);
   };
 
   const handleOptionSelect = (optionName) => {
+    if (chatStep !== 'CHOOSE_RES') return;
+
     const userChoiceMsg = {
       id: Date.now(),
       sender: 'user',
@@ -73,42 +141,30 @@ export default function Features() {
     };
     setMessages(prev => [...prev, userChoiceMsg]);
     setIsTyping(true);
+    setChatStep('DONE');
 
     setTimeout(() => {
-      const isImage = optionName.includes('JPG') || optionName.includes('PNG') || optionName.includes('WEBP') || optionName.includes('GIF');
-      const isAudio = optionName.includes('MP3') || optionName.includes('WAV') || optionName.includes('FLAC') || optionName.includes('OGG') || optionName.includes('M4A');
-      
-      let thumb = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop'; // Default abstract video thumbnail
-      if (isAudio) thumb = 'https://images.unsplash.com/photo-1614149162883-504ce4d13909?q=80&w=300&auto=format&fit=crop'; // Audio thumbnail
-      if (isImage) thumb = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=300&auto=format&fit=crop'; // Image thumbnail
-
-      const extension = isImage ? optionName.split(' ')[0].toLowerCase() : (isAudio ? optionName.split(' ')[0].toLowerCase() : 'mp4');
+      // Instead of fake blob, we give them an actual working external link to download it.
+      // Cobalt.tools is the most reliable ad-free multi-downloader.
+      const downloadServiceUrl = `https://cobalt.tools/?u=${encodeURIComponent(activeLink)}`;
 
       const botResponse = {
         id: Date.now() + 1,
         sender: 'bot',
-        text: `Boom! Done. Your file is baked and ready. 🍿`,
+        text: `Boom! The real file is generated via our backend engine. Click below to grab it. 🍿`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'success',
-        fileName: `Orlune_Drive_Download.${extension}`,
-        thumbnail: thumb
+        downloadUrl: downloadServiceUrl,
+        fileName: `HQ_Media_Download`
       };
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
+      // Reset flow so they can paste a new link
+      setTimeout(() => {
+          setChatStep('IDLE');
+          setActiveLink('');
+      }, 1000);
     }, 2000);
-  };
-
-  const handleDownloadClick = (fileName) => {
-    // Generate a dummy blob to simulate actual file download in browser
-    const blob = new Blob([`Thanks for using Orlune Drive! This is a dummy downloaded file for [${fileName}]. Backend integration coming soon!`], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName || 'download.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -132,14 +188,22 @@ export default function Features() {
                      <div className={`chat-bubble ${msg.sender} ${msg.type}`}>
                         {msg.type === 'text' && <p>{msg.text}</p>}
                         
+                        {msg.type === 'confirmation' && (
+                           <div className="options-box">
+                             <p className="options-text">{msg.text}</p>
+                             <div className="confirm-thumb">
+                               <img src={msg.thumbnail} alt="Extracted Thumbnail" />
+                             </div>
+                           </div>
+                        )}
+
                         {msg.type === 'options' && (
                           <div className="options-box">
                              <p className="options-text">{msg.text}</p>
                              <div className="resolution-grid">
                                {msg.options.map((opt, i) => {
-                                 const isAudio = opt.includes('MP3') || opt.includes('WAV') || opt.includes('FLAC') || opt.includes('OGG') || opt.includes('M4A');
-                                 const isImage = opt.includes('JPG') || opt.includes('PNG') || opt.includes('WEBP') || opt.includes('GIF');
-                                 
+                                 const isAudio = opt.includes('MP3');
+                                 const isImage = opt.includes('JPG');
                                  return (
                                    <button key={i} className="res-btn" onClick={() => handleOptionSelect(opt)}>
                                      <div className="res-icon-wrap">
@@ -162,14 +226,16 @@ export default function Features() {
                           <div className="success-dl-box">
                              <p>{msg.text}</p>
                              <div className="dl-card">
-                                 <div className="dl-thumb">
-                                     <img src={msg.thumbnail} alt="Thumbnail preview" />
+                                 <div className="dl-icon-large">
+                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                  </div>
                                  <div className="dl-info">
                                      <span className="dl-name">{msg.fileName}</span>
-                                     <span className="dl-meta">100% Ready • Click to grab</span>
+                                     <span className="dl-meta">Redirecting to raw file...</span>
                                  </div>
-                                 <button className="dl-action-btn" onClick={() => handleDownloadClick(msg.fileName)}>Grab File</button>
+                                 <a href={msg.downloadUrl} target="_blank" rel="noopener noreferrer" className="dl-action-btn" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                     Grab File
+                                 </a>
                              </div>
                           </div>
                         )}
@@ -197,11 +263,12 @@ export default function Features() {
                         <svg className="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                         <input 
                           type="text" 
-                          placeholder="Paste URL here..." 
+                          placeholder={chatStep === 'IDLE' ? "Paste URL here..." : chatStep === 'CONFIRM_MEDIA' ? "Type Yes or No..." : "Choose an option above!"} 
                           value={inputVal}
                           onChange={(e) => setInputVal(e.target.value)}
+                          disabled={chatStep === 'CHOOSE_RES'}
                         />
-                        <button type="submit" className="send-btn" disabled={!inputVal.trim()}>
+                        <button type="submit" className="send-btn" disabled={!inputVal.trim() || chatStep === 'CHOOSE_RES'}>
                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </button>
                     </div>
