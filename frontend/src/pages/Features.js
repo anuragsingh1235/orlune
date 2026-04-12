@@ -6,7 +6,7 @@ export default function Features() {
     {
       id: 1,
       sender: 'bot',
-      text: 'Yo, welcome to Orlune Drive! 🛸 Drop a link and I\'ll process it for you.',
+      text: 'Welcome to Orlune Drive. Please provide a valid media link to safely initiate the extraction process.',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'text'
     }
@@ -87,25 +87,34 @@ export default function Features() {
     setIsTyping(true);
     const videoId = extractYTId(activeLink);
     const isInstagram = activeLink.includes('instagram.com');
+    const encodedUrl = encodeURIComponent(activeLink);
     
-    // Generating 3 different famous downloader links for redundancy based on platform
-    const url1 = videoId ? `https://www.y2mate.com/youtube-mp4/${videoId}` : 
-                 isInstagram ? `https://gramsnap.com/en/` : 
-                 `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
-                 
-    const url2 = isInstagram ? `https://snapinsta.app/` : `https://savefrom.net/?url=${encodeURIComponent(activeLink)}`;
-    const url3 = videoId ? `https://yt5s.io/en/download?q=${videoId}` : `https://9xbuddy.online/analyze?url=${encodeURIComponent(activeLink)}`;
+    // Attempt Auto-Copy to clipboard so the user can easily paste it on the next screen
+    try { navigator.clipboard.writeText(activeLink); } catch (err) {}
+    
+    // Server Endpoints
+    const yt1 = `https://ssyoutube.com/en89/?url=${encodedUrl}`;
+    const yt2 = `https://yt1s.com/en401?q=${encodedUrl}`;
+    const yt3 = videoId ? `https://www.youtubepp.com/watch?v=${videoId}` : yt1;
+    
+    const ig1 = `https://gramsnap.com/en/`;
+    const ig2 = `https://snapinsta.app/`;
+    const ig3 = `https://igram.world/`;
+
+    const url1 = isInstagram ? ig1 : yt1;
+    const url2 = isInstagram ? ig2 : yt2;
+    const url3 = isInstagram ? ig3 : yt3;
 
     setTimeout(() => {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'bot',
-        text: isInstagram ? 'Instagram link detected! Your GramSnap & SnapInsta tunnels are ready:' : `Extraction Complete. Your direct download tunnels are ready:`,
+        text: 'Extraction ready. Please select a server to download. (Your link has been copied to clipboard for easy pasting)',
         type: 'success',
         downloadUrl: url1,
         downloadUrl2: url2,
         downloadUrl3: url3,
-        fileName: `Media_Download`
+        fileName: 'Media_Download'
       }]);
       setIsTyping(false);
       setChatStep('IDLE');
