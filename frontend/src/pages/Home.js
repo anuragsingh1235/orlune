@@ -119,6 +119,11 @@ export default function Home() {
             <button className="btn btn-primary btn-lg" onClick={openRegister}>Master Your Legacy</button>
             <button className="btn btn-outline btn-lg" onClick={openLogin}>Sign In</button>
           </div>
+          <div className="animate-up" style={{ marginTop: '24px', opacity: 0.8 }}>
+            <span style={{ fontSize: '0.85rem', background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+              ✨ Orlune Archive Edition
+            </span>
+          </div>
         </div>
       </section>
 
