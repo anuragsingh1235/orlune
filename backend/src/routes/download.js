@@ -4,8 +4,12 @@ const axios   = require('axios');
 
 // ── COBALT PREMIUM API CONFIG ─────────────────────────────
 // Mirror: Night City (Current Active Stable Instance)
-const COBALT_API = 'https://cobalt.night-city.top/api/json';
-
+const COBALT_INSTANCES = [
+  'https://cobalt.night-city.top/api/json',
+  'https://api.cobalt.tools/api/json',
+  'https://co.wuk.sh/api/json',
+  'https://cobalt.hyra.workers.dev/api/json'
+];
 
 const detectPlatform = (url) => {
   if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
@@ -17,74 +21,51 @@ router.get('/info', async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'URL required' });
 
-  try {
-    const platform = detectPlatform(url);
+  let lastError = null;
+  for (const instance of COBALT_INSTANCES) {
+    try {
+      const platform = detectPlatform(url);
+      const cobaltRes = await axios.post(instance, {
+        url: url,
+        vQuality: '720', // Faster extraction
+        isNoTTWatermark: true,
+      }, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        timeout: 8000
+      });
 
-    // We make a request to Cobalt to see if the link is valid and get metadata
-    const cobaltRes = await axios.post(COBALT_API, {
-      url: url,
-      vQuality: '1080',
-      aFormat: 'mp3',
-      isAudioOnly: false,
-      isNoTTWatermark: true,
-    }, {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
+      const data = cobaltRes.data;
+
+      if (data.status === 'error') throw new Error(data.text);
+
+      if (data.url || data.status === 'redirect' || data.status === 'stream') {
+        return res.json({
+          title: platform === 'youtube' ? 'YouTube Media' : 'Social Media',
+          thumbnail: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=300&q=80',
+          author: 'Orlune Node',
+          platform: platform,
+          url: data.url, // Directly return URL for RIC
+          formats: [{ itag: 'hd', quality: 'HD', directUrl: data.url }]
+        });
       }
-    });
 
-    const data = cobaltRes.data;
-
-    // Cobalt returns 'picker' if there are multiple files (like an Insta carousel)
-    // or 'url'/'stream' if it's a single video.
-    if (data.status === 'error') {
-      throw new Error(data.text || 'Extraction failed');
+      if (data.status === 'picker') {
+        return res.json({
+          title: 'Gallery Stream',
+          url: data.picker[0].url,
+          formats: data.picker.map((item, i) => ({ itag: i, quality: `Item ${i+1}`, directUrl: item.url }))
+        });
+      }
+    } catch (err) {
+      lastError = err.response?.data?.text || err.message;
+      continue;
     }
-
-    if (data.status === 'redirect' || data.url) {
-      // Single video/photo
-      return res.json({
-        title: platform === 'youtube' ? 'YouTube Media' : 'Instagram Media',
-        thumbnail: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=300&q=80', // Cobalt doesn't always return thumbs, so we use a pro placeholder
-        author: 'Orlune Extractor',
-        platform: platform,
-        formats: [
-          {
-            itag: 'cobalt-hd',
-            quality: 'High Quality (MP4)',
-            container: 'mp4',
-            size: 'Auto',
-            directUrl: data.url
-          }
-        ]
-      });
-    }
-
-    if (data.status === 'picker') {
-      // Multiple items (Insta Carousel)
-      return res.json({
-        title: 'Multi-Media Content',
-        thumbnail: data.picker[0].url,
-        author: 'Orlune Extractor',
-        platform: platform,
-        formats: data.picker.map((item, i) => ({
-          itag: `item-${i}`,
-          quality: `Media Item ${i+1}`,
-          container: 'media',
-          size: 'Auto',
-          directUrl: item.url
-        }))
-      });
-    }
-
-    throw new Error("Unknown response status from extraction engine.");
-
-  } catch (err) {
-    console.error('Cobalt Error:', err.response?.data || err.message);
-    const msg = err.response?.data?.text || err.message;
-    return res.status(500).json({ error: `Orlune Engine Error: ${msg}` });
   }
+
+  return res.status(500).json({ error: `Extraction failed: ${lastError}` });
 });
 
 // Since Cobalt gives a direct download URL that handles headers, we can just redirect

@@ -68,7 +68,7 @@ export default function RIC() {
     if (!url.trim()) return;
     setLoading(true);
     try {
-      const { data: extraction } = await api.get(`/download?url=${encodeURIComponent(url)}`);
+      const { data: extraction } = await api.get(`/download/info?url=${encodeURIComponent(url)}`);
       if (extraction.url) {
         const { data: savedReel } = await api.post('/ric', { 
            url: extraction.url, 
