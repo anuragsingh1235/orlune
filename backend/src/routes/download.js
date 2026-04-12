@@ -61,12 +61,16 @@ router.get('/info', async (req, res) => {
         });
       }
     } catch (err) {
+      console.error(`Cobalt Instance [${instance}] failed:`, err.message);
       lastError = err.response?.data?.text || err.message;
+      if (lastError.includes('404')) {
+        lastError = "Media not found or link is private (Error 404)";
+      }
       continue;
     }
   }
 
-  return res.status(500).json({ error: `Extraction failed: ${lastError}` });
+  return res.status(500).json({ error: `Extraction Failed: ${lastError}. Ensure the link is public.` });
 });
 
 // Since Cobalt gives a direct download URL that handles headers, we can just redirect
