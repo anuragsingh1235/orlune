@@ -252,13 +252,31 @@
   color: #fff; font-size: 16px; padding: 12px 0; outline: none;
 }
 
-.send-btn {
-  background: #7c3aed; border: none; color: #fff;
-  width: 40px; height: 40px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: 0.2s;
+.send-btn-cool {
+  background: linear-gradient(135deg, #a855f7, #6366f1);
+  border: none;
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
 }
-.send-btn:hover { transform: scale(1.1); background: #8b5cf6; }
+
+.send-btn-cool:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 25px rgba(168, 85, 247, 0.6);
+}
+
+.send-btn-cool svg {
+  margin-left: -2px; /* optical center correction */
+  width: 18px;
+  height: 18px;
+}
 
 .chat-messages::-webkit-scrollbar { width: 5px; }
 .chat-messages::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }

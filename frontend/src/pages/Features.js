@@ -94,12 +94,12 @@ export default function Features() {
     
     // Server Endpoints
     const yt1 = `https://ssyoutube.com/en89/?url=${encodedUrl}`;
-    const yt2 = `https://yt1s.com/en401?q=${encodedUrl}`;
-    const yt3 = videoId ? `https://www.youtubepp.com/watch?v=${videoId}` : yt1;
+    const yt2 = `https://yt5s.biz/en/youtube-to-mp4?q=${videoId}`;
+    const yt3 = videoId ? `https://www.youtubepp.com/watch?v=${videoId}` : `https://en.savefrom.net/373/`;
     
-    const ig1 = `https://gramsnap.com/en/`;
-    const ig2 = `https://snapinsta.app/`;
-    const ig3 = `https://igram.world/`;
+    const ig1 = `https://snapinsta.app/?url=${encodedUrl}`;
+    const ig2 = `https://fastdl.app/en/?url=${encodedUrl}`;
+    const ig3 = `https://sssinstagram.com/`;
 
     const url1 = isInstagram ? ig1 : yt1;
     const url2 = isInstagram ? ig2 : yt2;
@@ -109,7 +109,7 @@ export default function Features() {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'bot',
-        text: 'Extraction ready. Please select a server to download. (Your link has been copied to clipboard for easy pasting)',
+        text: 'Ready! Click a server below. (Hint: Your link is auto-copied! Just PASTE it if the site asks.)',
         type: 'success',
         downloadUrl: url1,
         downloadUrl2: url2,
@@ -203,8 +203,11 @@ export default function Features() {
                           value={inputVal}
                           onChange={(e) => setInputVal(e.target.value)}
                         />
-                        <button type="submit" className="send-btn">
-                           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                        <button type="submit" className="send-btn-cool">
+                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                             <line x1="22" y1="2" x2="11" y2="13"></line>
+                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                           </svg>
                         </button>
                     </div>
                  </form>
