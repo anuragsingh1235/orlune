@@ -6,7 +6,10 @@ export default function MobileDock() {
   return (
     <nav className="mobile-dock">
       <NavLink to="/" className={({ isActive }) => `dock-item ${isActive ? 'active' : ''}`}>
-        <div className="dock-icon">🏠</div>
+        <div className="dock-icon">
+          🏠
+          <div className="dock-status-dot" title="Orlune Node Live"></div>
+        </div>
         <span>Home</span>
       </NavLink>
       
