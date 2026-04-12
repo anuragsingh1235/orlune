@@ -7,6 +7,30 @@
   background: var(--bg-primary, #0a0a0f);
 }
 
+.features-divider {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 760px;
+  margin: 60px 0 0;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+}
+
+.divider-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #334155;
+  white-space: nowrap;
+}
+
+
 .fade-in { animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 

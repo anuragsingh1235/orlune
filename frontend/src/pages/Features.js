@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Features.css';
+import Workshop from './Workshop';
 
 export default function Features() {
   const [messages, setMessages] = useState([
@@ -214,6 +215,13 @@ export default function Features() {
              </div>
           </div>
        </div>
+      <div className="features-divider">
+        <div className="divider-line" />
+        <span className="divider-label">MORE FEATURES</span>
+        <div className="divider-line" />
+      </div>
+
+      <Workshop />
     </div>
   );
 }
