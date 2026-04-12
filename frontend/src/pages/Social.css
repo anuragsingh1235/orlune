@@ -85,7 +85,8 @@
 }
 
 .channel-card-global {
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px; padding: 18px; margin-bottom: 12px;
   color: #fff; cursor: pointer; transition: 0.3s;
   position: relative; overflow: hidden;

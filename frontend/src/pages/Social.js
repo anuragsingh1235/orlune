@@ -196,7 +196,7 @@ export default function Social() {
              {(publicChannels || []).map(c => (
                <div key={c?.id || Math.random()} className={`channel-card-global ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => joinChannel(c)} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', border: '1px solid var(--border-color)', borderRadius: '12px', cursor: 'pointer', marginBottom: '10px' }}>
                  <div style={{width: '60px', height: '60px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: 'var(--bg-tertiary)'}}>
-                    <img src={c?.name === 'Orlune Global' ? "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80" : "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80"} alt="Global" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                    <img src={c?.name === 'Global' || c?.name === 'Orlune Global' ? "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&q=80" : (c?.profile_pic || `https://ui-avatars.com/api/?name=${c?.name}&background=1e293b&color=fff`)} alt={c?.name} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                  </div>
                  <div>
                    <h4 style={{margin: '0 0 5px 0', fontSize: '1.1rem'}}>{c?.name || 'Untitled'}</h4>
