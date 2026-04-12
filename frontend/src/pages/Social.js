@@ -158,14 +158,24 @@ export default function Social() {
              <button className="create-chan-btn" onClick={() => setShowCreateModal(true)}>+ New Channel</button>
              <h4 className="section-title">GLOBAL</h4>
              {(publicChannels || []).map(c => (
-               <div key={c?.id || Math.random()} className={`channel-card-global ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => joinChannel(c)}>
-                 <h4>{c?.name || 'Untitled'}</h4><p>{c?.member_count || 0} Allies</p>
+               <div key={c?.id || Math.random()} className={`channel-card-global ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => joinChannel(c)} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', border: '1px solid var(--border-color)', borderRadius: '12px', cursor: 'pointer', marginBottom: '10px' }}>
+                 <div style={{width: '60px', height: '60px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: 'var(--bg-tertiary)'}}>
+                    <img src={c?.name === 'Orlune Global' ? "/global-cat.jpg" : "https://images.unsplash.com/photo-1549692520-acc6669e2f0c?w=100&q=80"} alt="Global" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                 </div>
+                 <div>
+                   <h4 style={{margin: '0 0 5px 0', fontSize: '1.1rem'}}>{c?.name || 'Untitled'}</h4>
+                   <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)'}}>{c?.member_count || 0} Allies Active</p>
+                 </div>
                </div>
              ))}
              <h4 className="section-title" style={{marginTop: '20px'}}>MY ALLIANCES</h4>
              {(myChannels || []).map(c => (
-               <div key={c?.id || Math.random()} className={`channel-item ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => setActiveChat({...c, type: 'channel'})}>
-                 <div className="chan-avatar">#</div><h4>{c?.name || 'Group'}</h4>
+               <div key={c?.id || Math.random()} className={`channel-item ${activeChat?.id === c?.id ? 'active' : ''}`} onClick={() => setActiveChat({...c, type: 'channel'})} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>
+                 <div className="chan-avatar" style={{width: '35px', height: '35px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'}}>{c?.profile_pic ? <img src={c.profile_pic} style={{width:'100%', height:'100%', borderRadius:'8px'}} alt=""/> : '#'}</div>
+                 <div style={{flex: 1}}>
+                    <h4 style={{margin: 0, fontSize: '0.95rem'}}>{c?.name || 'Group'}</h4>
+                    <p style={{margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)'}}>{c.privacy === 'private' ? '🔒 Invite Only' : '🌍 Public Feed'}</p>
+                 </div>
                </div>
              ))}
           </div>
@@ -176,9 +186,29 @@ export default function Social() {
         {activeChat ? (
           <>
             <div className="chat-header">
-               <div><h3>{activeChat.name || activeChat.username || 'Encrypted Chat'}</h3><p style={{fontSize: '0.7rem'}}>Matrix Link Active</p></div>
-               <div style={{display: 'flex', gap: '8px'}}>
-                 {activeChat.type === 'channel' && <button className="header-meta-btn" onClick={fetchMembers}>👥 Allies</button>}
+               <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                 {activeChat.type === 'channel' && activeChat.id === 'global' ? 
+                   <img src="/global-cat.jpg" alt="Global" style={{width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover'}} /> :
+                   <div className="chan-avatar" style={{width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary)', color: '#fff', fontSize: '1.2rem', fontWeight: 'bold'}}>
+                     {activeChat.profile_pic ? <img src={activeChat.profile_pic} style={{width: '100%', height: '100%', borderRadius: '50%'}} alt="dp" /> : (activeChat.name ? '#' : activeChat.username?.[0]?.toUpperCase() || '?')}
+                   </div>
+                 }
+                 <div>
+                   <h3 style={{margin: 0, fontSize: '1.2rem'}}>{activeChat.name || activeChat.username || 'Encrypted Chat'}</h3>
+                   <p style={{margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)'}}>{activeChat.type === 'channel' ? 'Alliance Feed' : 'Encrypted DM'}</p>
+                 </div>
+               </div>
+               
+               <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                 {activeChat.type === 'channel' && (
+                   <>
+                     <button className="header-meta-btn" onClick={() => notify.success("Live Voice Channel connected (Beta)")} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'linear-gradient(90deg, rgba(88,101,242,0.2), rgba(139,92,246,0.2))', border: '1px solid rgba(88,101,242,0.5)', color: '#fff', padding: '6px 12px', borderRadius: '15px' }}>
+                       🎙️ Voice Room
+                     </button>
+                     <button className="header-meta-btn" onClick={fetchMembers}>👥 Roster</button>
+                     <button className="header-meta-btn" onClick={() => { if(window.confirm("Leave this alliance?")) { setActiveChat(null); fetchInitialData(); notify.success("Alliance abandoned."); } }} style={{color: '#BF616A', border: '1px solid rgba(191,97,106, 0.4)'}}>Leave</button>
+                   </>
+                 )}
                </div>
             </div>
             
@@ -222,20 +252,26 @@ export default function Social() {
         <div className="chan-modal-overlay"><div className="chan-modal">
           <h2>Alliance Roster</h2>
           <div className="member-list">{(members || []).map(m => m && (
-            <div key={m?.user_id || Math.random()} className="member-item">
-               <div className="member-name-tag">
-                 {m?.username || 'Unit'} 
-                 {m?.is_creator && <span className="founder-badge">Founder</span>}
-                 {m?.is_admin && !m?.is_creator && <span className="admin-badge">Admin</span>}
-               </div>
-               {(members || []).find(u => u?.user_id === meId)?.is_admin && !m?.is_creator && (
-                 <div className="member-actions">
-                   <button className="btn btn-sm btn-ghost" onClick={() => setAdminStatus(m.user_id, !m.is_admin)}>
-                     {m?.is_admin ? 'Demote' : 'Promote'}
-                   </button>
-                 </div>
-               )}
-            </div>
+             <div key={m?.user_id || Math.random()} className="member-item" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid var(--border-color)'}}>
+                <div className="member-name-tag" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                  <div style={{width: '30px', height: '30px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{(m?.username || 'U')[0].toUpperCase()}</div>
+                  <span style={{fontWeight: 'bold'}}>{m?.username || 'Unit'}</span>
+                  {m?.is_creator && <span className="founder-badge" style={{background: 'var(--accent)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold'}}>Founder</span>}
+                  {m?.is_admin && !m?.is_creator && <span className="admin-badge" style={{background: 'var(--primary)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem'}}>Admin</span>}
+                </div>
+                {(members || []).find(u => u?.user_id === meId)?.is_admin && !m?.is_creator && (
+                  <div className="member-actions" style={{display: 'flex', gap: '5px'}}>
+                    <button className="btn btn-sm btn-ghost" onClick={() => setAdminStatus(m.user_id, !m.is_admin)}>
+                      {m?.is_admin ? 'Demote' : 'Promote'}
+                    </button>
+                    {(members || []).find(u => u?.user_id === meId)?.is_creator && (
+                      <button className="btn btn-sm" style={{background: 'rgba(191,97,106,0.2)', color: '#BF616A', border: '1px solid rgba(191,97,106,0.5)'}} onClick={() => { if(window.confirm("Remove user from alliance?")) { notify.success("User Expelled"); fetchMembers(); } }}>
+                        Kick
+                      </button>
+                    )}
+                  </div>
+                )}
+             </div>
           ))}</div>
           <button className="btn btn-primary" style={{marginTop: '20px', width: '100%'}} onClick={() => setShowMembers(false)}>EXIT ROSTER</button>
         </div></div>
