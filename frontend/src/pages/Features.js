@@ -36,33 +36,12 @@ export default function Features() {
     const id = extractYTId(url);
     if (!id) return null;
 
-    // We use public Invidious instances as our extraction engine
-    const instances = [
-      'https://invidious.projectsegfau.lt',
-      'https://iv.ggtyler.dev',
-      'https://invidious.asir.dev'
-    ];
-
-    for (const inst of instances) {
-      try {
-        const res = await fetch(`${inst}/api/v1/videos/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          // Filter out only useful direct streams
-          const streams = data.formatStreams || [];
-          return {
-            title: data.title,
-            thumbnail: data.videoThumbnails?.find(t => t.quality === 'high')?.url || data.videoThumbnails?.[0]?.url,
-            options: streams.map(s => ({
-              label: `${s.qualityLabel} - ${s.container.toUpperCase()}`,
-              url: s.url,
-              quality: s.qualityLabel
-            }))
-          };
-        }
-      } catch (e) {
-        console.warn(`Instance ${inst} failed, trying next...`);
-      }
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || '';
+      const res = await fetch(`${API_URL}/api/download/info?id=${id}`);
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.error("Extraction error", e);
     }
     return null;
   };
