@@ -70,7 +70,10 @@ export default function GeminiOracle() {
             ))}
             {isTyping && (
               <div className="msg-row model typing">
-                <div className="msg-bubble">Oracle is consulting the archives...</div>
+                <div className="typing-indicator-aura">
+                  <div className="dot-flashing"></div>
+                  <span className="typing-text">AIRA is typing...</span>
+                </div>
               </div>
             )}
           </div>

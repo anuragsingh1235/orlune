@@ -44,10 +44,14 @@
   font-family: 'Outfit', sans-serif;
   letter-spacing: 2px;
   white-space: nowrap;
-  animation: mq-fade-up 0.5s ease-out;
+  animation: mq-fade-up-alt 0.5s ease-out;
 }
 
-/* ✨ AURA ICON - OBSIDIAN SHARD */
+@keyframes mq-fade-up-alt {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .aura-icon {
   width: 44px;
   height: 44px;
@@ -63,28 +67,9 @@
   animation: aura-float 4s ease-in-out infinite;
 }
 
-.aura-icon::after {
-  content: '';
-  position: absolute;
-  inset: -10px;
-  background: radial-gradient(circle, rgba(180, 142, 173, 0.1), transparent 70%);
-  border-radius: 50%;
-  animation: aura-pulse 3s ease-in-out infinite;
-}
-
 @keyframes aura-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
-}
-
-@keyframes aura-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.3; }
-  50% { transform: scale(1.3); opacity: 0.6; }
-}
-
-@keyframes mq-fade-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .oracle-window {
@@ -126,7 +111,12 @@
   border-radius: 50%;
   background: #B48EAD;
   box-shadow: 0 0 10px #B48EAD;
-  animation: oracle-pulse 2s infinite;
+  animation: oracle-pulse-alt 2s infinite;
+}
+
+@keyframes oracle-pulse-alt {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
 }
 
 .oracle-close {
@@ -205,88 +195,67 @@
   justify-content: center;
 }
 
-/* 🔮 THE ORACLE ORB (CSS Replacement for Lottie) */
-.oracle-orb {
-  width: 44px;
-  height: 44px;
-  position: relative;
+/* COOL & SIMPLE TYPING INDICATOR */
+.typing-indicator-aura {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(180, 142, 173, 0.05);
+  border-radius: 20px;
+  border: 1px solid rgba(180, 142, 173, 0.1);
 }
 
-.orb-inner {
-  width: 100%;
-  height: 100%;
+.typing-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #B48EAD;
+  letter-spacing: 0.5px;
+}
+
+.dot-flashing {
+  position: relative;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #B48EAD, #4C566A);
-  box-shadow: inset -5px -5px 15px rgba(0,0,0,0.4),
-              0 0 20px rgba(180, 142, 173, 0.5);
-  animation: orb-float 3s ease-in-out infinite;
+  background-color: #B48EAD;
+  animation: dot-flashing-alt 1.2s infinite linear alternate;
+  animation-delay: 0.6s;
 }
 
-.orb-glow {
+.dot-flashing::before, .dot-flashing::after {
+  content: '';
+  display: inline-block;
   position: absolute;
-  width: 150%;
-  height: 150%;
+  top: 0;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(180, 142, 173, 0.2), transparent 70%);
-  animation: orb-glow-pulse 4s ease-in-out infinite;
+  background-color: #B48EAD;
 }
 
-@keyframes orb-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-4px) scale(1.05); }
+.dot-flashing::before {
+  left: -9px;
+  animation: dot-flashing-alt 1.2s infinite linear alternate;
+  animation-delay: 0s;
 }
 
-@keyframes orb-glow-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.1); }
+.dot-flashing::after {
+  left: 9px;
+  animation: dot-flashing-alt 1.2s infinite linear alternate;
+  animation-delay: 1.2s;
 }
 
-@keyframes mq-fade-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes dot-flashing-alt {
+  0% { opacity: 1; transform: scale(1); }
+  50%, 100% { opacity: 0.2; transform: scale(0.8); }
 }
 
-/* 📱 MOBILE RESPONSIVENESS (FANTASTIC WEB) */
 @media (max-width: 600px) {
-  .gemini-oracle-container {
-    bottom: 16px;
-    right: 16px;
-  }
-
   .oracle-window {
-    position: fixed;
-    bottom: 0;
-    right: 0;
     width: 100vw;
     height: 100vh;
     border-radius: 0;
     margin-bottom: 0;
-  }
-
-  .oracle-chat-body {
-     padding: 16px;
-     padding-top: 80px; /* Spacer for header */
-  }
-
-  .oracle-trigger {
-    width: 56px;
-    height: 56px;
-  }
-
-  .oracle-badge {
-    display: none;
-  }
-
-  .oracle-header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(20px);
-    z-index: 10;
   }
 }
