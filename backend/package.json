@@ -8,6 +8,7 @@
     "migrate": "node src/config/migrate.js"
   },
   "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -17,7 +18,8 @@
     "nodemailer": "^8.0.4",
     "pg": "^8.11.3",
     "serverless-http": "^4.0.0",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

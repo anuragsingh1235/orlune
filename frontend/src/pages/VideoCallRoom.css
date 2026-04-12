@@ -199,9 +199,80 @@
   border-color: rgba(239, 68, 68, 0.3);
 }
 
-.vcr-btn-off .vcr-btn-label {
-  color: #f87171;
+.vcr-btn-end .vcr-btn-label { color: #fca5a5; }
+
+/* ── WAITING STATE ── */
+.vcr-waiting {
+  flex-direction: column; gap: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed rgba(255,255,255,0.08);
 }
+.vcr-waiting-text { font-size: 1rem; font-weight: 600; color: #94a3b8; margin: 0; }
+.vcr-waiting-sub  { font-size: 0.78rem; color: #475569; margin: 0; }
+
+/* ───────────────────────────────────────────
+   DISCORD-STYLE VOICE MODE
+─────────────────────────────────────────── */
+.vcr-voice-mode { background: #111318; }
+
+.vcr-voice-participants {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 48px 32px;
+}
+
+.vcr-voice-participant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  transition: 0.2s;
+}
+
+.vcr-voice-avatar {
+  width: 92px; height: 92px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem; font-weight: 800;
+  border: 3px solid transparent;
+  box-shadow: 0 8px 32px rgba(99,102,241,0.3);
+  transition: 0.3s;
+}
+
+.vcr-voice-avatar.connected {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34,197,94,0.2), 0 8px 32px rgba(34,197,94,0.2);
+}
+
+.vcr-voice-participant.muted .vcr-voice-avatar { filter: grayscale(0.5); }
+
+.vcr-voice-name {
+  font-size: 0.88rem; font-weight: 700; color: #e2e8f0;
+}
+
+.vcr-voice-mute-badge {
+  position: absolute; bottom: 26px; right: -4px;
+  background: #1e293b; border-radius: 50%; padding: 3px; font-size: 0.85rem;
+  border: 2px solid #0f172a;
+}
+
+.vcr-voice-waiting {
+  text-align: center; color: #475569; padding: 40px;
+}
+.vcr-voice-waiting p { margin: 6px 0; font-size: 0.95rem; }
+.vcr-voice-waiting .sub { font-size: 0.8rem; color: #334155; }
+
+.vcr-voice-controls {
+  justify-content: center;
+  gap: 24px;
+}
+
 
 .vcr-btn-off:hover {
   background: rgba(239, 68, 68, 0.22);

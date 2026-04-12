@@ -23,7 +23,10 @@ export default function Social() {
   
   const [showMembers, setShowMembers] = useState(false);
   const [members, setMembers] = useState([]);
-  const [callRoom, setCallRoom] = useState(null); // null or channel obj
+  const [callRoom, setCallRoom] = useState(null);
+  const [callMode, setCallMode] = useState('video');
+
+  const startCallRoom = (chat, mode) => { setCallMode(mode); setCallRoom(chat); };
 
   const messagesEndRef = useRef(null);
   const imgInputRef = useRef(null);
@@ -242,10 +245,10 @@ export default function Social() {
 
                {/* Action buttons */}
                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                 <button className="header-meta-btn" title="Voice Call" onClick={() => setCallRoom(activeChat)} style={{background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.4)', color:'#34d399', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
+                 <button className="header-meta-btn" title="Voice Call" onClick={() => startCallRoom(activeChat, 'voice')} style={{background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.4)', color:'#34d399', padding:'8px 14px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px', fontWeight:600}}>
                    📞 Voice
                  </button>
-                 <button className="header-meta-btn" title="Video Call" onClick={() => setCallRoom(activeChat)} style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.4)', color:'#60a5fa', padding:'8px 12px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px'}}>
+                 <button className="header-meta-btn" title="Video Call" onClick={() => startCallRoom(activeChat, 'video')} style={{background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.4)', color:'#60a5fa', padding:'8px 14px', borderRadius:'20px', display:'flex', alignItems:'center', gap:'5px', fontWeight:600}}>
                    🎥 Video
                  </button>
                  {activeChat.type === 'channel' && (
@@ -297,7 +300,7 @@ export default function Social() {
       </div>
 
       {/* PREMIUM CALL ROOM */}
-      {callRoom && <VideoCallRoom channel={callRoom} onLeave={() => setCallRoom(null)} />}
+      {callRoom && <VideoCallRoom channel={callRoom} mode={callMode} onLeave={() => setCallRoom(null)} />}
 
       {showCreateModal && (
         <div className="chan-modal-overlay"><div className="chan-modal">
