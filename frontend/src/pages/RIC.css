@@ -89,12 +89,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .ric-video {
   height: 100%;
   width: 100%;
-  object-fit: contain; /* Like Reels/TikTok */
+  object-fit: contain;
+  transition: opacity 0.5s ease;
 }
 
 /* ── Overlay ── */
@@ -105,66 +107,109 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 30px;
-  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%);
+  padding: 40px 30px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 30%, transparent 60%);
 }
 
 .ric-info {
   pointer-events: auto;
   color: #fff;
   max-width: 80%;
+  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.ric-curated-badge {
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  display: inline-block;
 }
 
 .ric-user {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
 .ric-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .ric-caption {
-  font-size: 0.9rem;
-  opacity: 0.9;
-  line-height: 1.4;
+  font-size: 0.95rem;
+  opacity: 1;
+  line-height: 1.5;
+  font-weight: 400;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .ric-actions {
   position: absolute;
   right: 20px;
-  bottom: 40px;
+  bottom: 60px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
   pointer-events: auto;
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .ric-action {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   color: #fff;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .ric-action span {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
-.ric-action:hover { transform: scale(1.1); }
+.ric-action:hover { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(255,255,255,0.4)); }
+.ric-action.active { color: #fe2c55; }
+
+/* ── Loading Skeleton ── */
+.ric-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite;
+}
+
+@keyframes skeletonLoading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import './RIC.css';
 import api from '../utils/api';
 
-const ReelCard = ({ url, isActive }) => {
+const ReelCard = ({ url, caption, username, isActive }) => {
   const videoRef = useRef(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (isActive) {
@@ -15,21 +16,24 @@ const ReelCard = ({ url, isActive }) => {
 
   return (
     <div className="ric-reel-container">
+      {!loaded && <div className="ric-skeleton" />}
       <video
         ref={videoRef}
         src={url}
         className="ric-video"
         loop
         playsInline
-        muted={false}
+        onLoadedData={() => setLoaded(true)}
+        style={{ opacity: loaded ? 1 : 0 }}
       />
       <div className="ric-overlay">
         <div className="ric-info">
+          <div className="ric-curated-badge">Universal Archive</div>
           <div className="ric-user">
-            <div className="ric-avatar">R</div>
-            <span>Orlune.RIC</span>
+            <div className="ric-avatar">{username?.[0] || 'R'}</div>
+            <span>{username || 'Orlune.RIC'}</span>
           </div>
-          <p className="ric-caption">Deep link extracted from Instagram.</p>
+          <p className="ric-caption">{caption || 'Deep link extracted from Instagram.'}</p>
         </div>
         <div className="ric-actions">
           <div className="ric-action">❤️ <span>Liked</span></div>
@@ -127,6 +131,8 @@ export default function RIC() {
               <ReelCard 
                 key={reel.id} 
                 url={reel.url} 
+                caption={reel.caption}
+                username={reel.username}
                 isActive={index === currentIndex} 
               />
             ))}
