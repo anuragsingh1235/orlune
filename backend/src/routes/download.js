@@ -6,10 +6,11 @@ const axios   = require('axios');
 // Mirror: Night City (Current Active Stable Instance)
 const COBALT_INSTANCES = [
   'https://cobalt.night-city.top/api/json',
-  'https://cobalt-api.v0.pw/api/json', // Mirror 1
-  'https://co.wuk.sh/api/json',        // Legacy
-  'https://api.cobalt.tools/api/json', // Official (Rate limited)
-  'https://cobalt.hyra.workers.dev/api/json'
+  'https://cobalt-api.v0.pw/api/json',
+  'https://co.wuk.sh/api/json',
+  'https://cobalt.api.unv.me/api/json', // High success rate mirror
+  'https://api.cobalt.tools/api/json',
+  'https://cobalt.qwedl.com/api/json'
 ];
 
 const detectPlatform = (url) => {
@@ -22,15 +23,12 @@ router.get('/info', async (req, res) => {
   let { url } = req.query;
   if (!url) return res.status(400).json({ error: 'URL required' });
 
-  // 🧼 URL Sanitization: Remove tracking parameters that confuse some extractors
   try {
     const urlObj = new URL(url);
     if (urlObj.hostname.includes('instagram.com')) {
-      url = `${urlObj.origin}${urlObj.pathname}`; // Strip ?igsh= etc
+      url = `${urlObj.origin}${urlObj.pathname}`;
     }
-  } catch (e) {
-    // Keep original if parsing fails
-  }
+  } catch (e) {}
 
   let lastError = null;
   for (const instance of COBALT_INSTANCES) {
@@ -39,16 +37,15 @@ router.get('/info', async (req, res) => {
       const cobaltRes = await axios.post(instance, {
         url: url,
         vQuality: '720',
+        filenameStyle: 'nerdy', // Latest spec recommendation
         isNoTTWatermark: true,
       }, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Origin': instance.split('/api')[0],
-          'Referer': instance.split('/api')[0] + '/'
         },
-        timeout: 10000
+        timeout: 12000
       });
 
       const data = cobaltRes.data;
