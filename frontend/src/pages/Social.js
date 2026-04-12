@@ -15,6 +15,9 @@ export default function Social() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [downloadUrl, setDownloadUrl] = useState('');
+  const [downloadInfo, setDownloadInfo] = useState(null);
+  const [downloading, setDownloading] = useState(false);
   
   const [publicChannels, setPublicChannels] = useState([]);
   const [myChannels, setMyChannels] = useState([]);
@@ -163,6 +166,25 @@ export default function Social() {
     } catch (e) { notify.error("Forbidden"); }
   };
 
+  const getDownloadInfo = async () => {
+    if (!downloadUrl.trim()) return notify.error("URL required");
+    setDownloading(true);
+    setDownloadInfo(null);
+    try {
+      const res = await api.get(`/download/info?url=${encodeURIComponent(downloadUrl)}`);
+      setDownloadInfo(res.data);
+    } catch (err) {
+      notify.error(err.response?.data?.error || "Fetch failed");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const startDownload = (itag) => {
+    const url = `${api.defaults.baseURL}/download/stream?url=${encodeURIComponent(downloadUrl)}&itag=${itag}`;
+    window.open(url, '_blank');
+  };
+
   const scrollToBottom = () => { if(messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: "smooth" }); };
 
   if (loading) return <div className="spinner" style={{marginTop: '20vh'}} />;
@@ -180,9 +202,10 @@ export default function Social() {
         <div className="social-tabs">
           <button className={`social-tab ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>DIRECT</button>
           <button className={`social-tab ${activeTab === 'channels' ? 'active' : ''}`} onClick={() => setActiveTab('channels')}>HUB</button>
+          <button className={`social-tab ${activeTab === 'features' ? 'active' : ''}`} onClick={() => setActiveTab('features')}>✨ TOOLS</button>
         </div>
 
-        {activeTab === 'messages' ? (
+        {activeTab === 'messages' && (
           <>
             <input className="m-input" style={{margin: '10px'}} placeholder="Search Matrix..." value={searchQuery} onChange={e => handleSearch(e.target.value)} />
             <div className="search-results">{(searchResults || []).map(u => (
@@ -194,7 +217,9 @@ export default function Social() {
               </div>
             ))}</div>
           </>
-        ) : (
+        )}
+
+        {activeTab === 'channels' && (
           <div className="contacts-list">
              <button className="create-chan-btn" onClick={() => setShowCreateModal(true)}>+ New Channel</button>
              <h4 className="section-title">GLOBAL</h4>
@@ -219,6 +244,53 @@ export default function Social() {
                  </div>
                </div>
              ))}
+          </div>
+        )}
+
+        {activeTab === 'features' && (
+          <div className="features-list" style={{padding: '15px'}}>
+            <h4 className="section-title">MEDIA EXTRACTOR</h4>
+            <div className="feature-card" style={{background: 'var(--bg-tertiary)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'}}>
+              <p style={{fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '15px'}}>Premium Video & Audio Downloader</p>
+              <input 
+                className="m-input" 
+                placeholder="YouTube / Instagram URL" 
+                value={downloadUrl} 
+                onChange={e => setDownloadUrl(e.target.value)}
+                style={{marginBottom: '15px', padding: '12px'}}
+              />
+              <button 
+                className="btn btn-primary" 
+                style={{width: '100%', padding: '12px', fontWeight: 'bold'}} 
+                onClick={getDownloadInfo}
+                disabled={downloading}
+              >
+                {downloading ? 'Searching Matrix...' : 'SCAN LINK'}
+              </button>
+
+              {downloadInfo && (
+                <div className="download-results animate-fade-in" style={{marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px'}}>
+                  {downloadInfo.thumbnail && <img src={downloadInfo.thumbnail} style={{width: '100%', borderRadius: '12px', marginBottom: '15px', border: '2px solid var(--border-color)'}} alt="" />}
+                  <h5 style={{fontSize: '1rem', marginBottom: '5px', color: '#fff'}}>{downloadInfo.title}</h5>
+                  <p style={{fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '15px'}}>Source: {downloadInfo.author || 'Unknown'}</p>
+                  
+                  <div className="format-list" style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                    {downloadInfo.formats.map(f => (
+                      <button 
+                        key={f.itag} 
+                        className="btn btn-sm" 
+                        style={{background: 'rgba(255,255,255,0.03)', color: '#fff', textAlign: 'left', display: 'flex', justifyContent: 'space-between', padding: '10px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)'}}
+                        onClick={() => startDownload(f.itag)}
+                      >
+                        <span style={{fontWeight: '500'}}>{f.quality} ({f.container})</span>
+                        <span style={{opacity: 0.6, fontSize: '0.75rem'}}>{f.size}</span>
+                      </button>
+                    ))}
+                    {downloadInfo.formats.length === 0 && <p style={{fontSize: '0.8rem', color: '#f87171'}}>No direct public formats found. Try another link.</p>}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
