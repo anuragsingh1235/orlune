@@ -1,20 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './PdfEditor.css';
 
-const CONVERT_TARGETS = [
-  { label: 'Word (.docx)', url: 'https://www.ilovepdf.com/pdf_to_word', color: '#2b579a' },
-  { label: 'PowerPoint (.pptx)', url: 'https://www.ilovepdf.com/pdf_to_powerpoint', color: '#d24726' },
-  { label: 'Excel (.xlsx)', url: 'https://www.ilovepdf.com/pdf_to_excel', color: '#217346' },
-  { label: 'JPG Image', url: 'https://www.ilovepdf.com/pdf_to_jpg', color: '#e09b3d' },
-  { label: 'Compress PDF', url: 'https://www.ilovepdf.com/compress_pdf', color: '#64748b' },
-  { label: 'Merge PDFs', url: 'https://www.ilovepdf.com/merge_pdf', color: '#a855f7' },
-  { label: 'PDF to Text', url: 'https://www.ilovepdf.com/pdf_to_text', color: '#10b981' },
-];
-
 export default function PdfEditor() {
   const [tab, setTab] = useState('edit');
 
-  // Edit states
+  // Core State
   const [file, setFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [pdfJsDoc, setPdfJsDoc] = useState(null);
@@ -28,41 +18,34 @@ export default function PdfEditor() {
   const [textColor, setColor] = useState('#000000');
   const [processing, setProc] = useState(false);
   const [status, setStatus] = useState('');
-  const [pageSize, setPageSize] = useState({ w: 0, h: 0 });
+  const [pageSize, setPageSize] = useState({ w: 1, h: 1 });
 
-  // Drag states
+  // Drag & Scanning
   const [draggingId, setDraggingId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
-  // OMR states
   const [omrScanning, setOmrScanning] = useState(false);
 
   const canvasRef = useRef();
   const fileRef = useRef();
   const imgRef = useRef();
 
-  // 1. Load PDF safely
+  // 1. PDF Loading
   const loadPdf = useCallback(async (f) => {
-    setStatus('Loading Studio…');
+    setStatus('Opening Studio...');
     try {
       const pdfjsLib = await import('pdfjs-dist');
-      // If version property is not directly accessible, we'll use a fixed version string or fallback
-      const ver = pdfjsLib.version || '5.6.205';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${ver}/build/pdf.worker.min.mjs`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '5.6.205'}/build/pdf.worker.min.mjs`;
 
       const ab = await f.arrayBuffer();
       const doc = await pdfjsLib.getDocument({ data: new Uint8Array(ab) }).promise;
       setPdfJsDoc(doc);
       setNumPages(doc.numPages);
-      setCurrent(1);
       renderPage(doc, 1);
-      setStatus('');
+      setStatus('Document loaded. Use "Full Scan" to make everything editable.');
     } catch (err) {
-      console.error('PDF.js Error:', err);
-      // Failsafe fallback if rendering fails
+      console.error(err);
       setPdfJsDoc({ fallback: true });
-      setNumPages(1);
-      setStatus('Preview mode ready. (Wait for renderer if large file)');
+      setStatus('Preview unavailable. Manual editing active.');
     }
   }, []);
 
@@ -80,7 +63,7 @@ export default function PdfEditor() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       await page.render({ canvasContext: ctx, viewport }).promise;
     } catch (e) {
-      console.error('Render Page Error:', e);
+      console.error(e);
     }
   }, []);
 
@@ -88,25 +71,70 @@ export default function PdfEditor() {
     if (pdfJsDoc && !pdfJsDoc.fallback) renderPage(pdfJsDoc, currentPage);
   }, [currentPage, pdfJsDoc, renderPage]);
 
-  // 2. Draggable Logic
+  // 2. Intelligent OMR / OCR Scanning
+  const runOmrScan = async () => {
+    if (!pdfJsDoc || pdfJsDoc.fallback) {
+      setStatus('error:Cannot scan this file type. Try a standard PDF.');
+      return;
+    }
+    setOmrScanning(true);
+    setStatus('Detecting elements...');
+
+    try {
+      const page = await pdfJsDoc.getPage(currentPage);
+      const view = page.getViewport({ scale: 1.5 });
+      const content = await page.getTextContent();
+      
+      const newOverlays = [];
+      content.items.forEach((item, idx) => {
+        // Map PDF coords to local canvas coords
+        const [x, y] = [item.transform[4], item.transform[5]];
+        const tx = x * (view.width / view.viewBox[2]);
+        const ty = (view.viewBox[3] - y) * (view.height / view.viewBox[3]) - (item.height * 1.5);
+        
+        if (item.str.trim().length > 0) {
+          newOverlays.push({
+            id: `scan-${Date.now()}-${idx}`,
+            type: 'text',
+            page: currentPage,
+            x: tx,
+            y: ty,
+            text: item.str,
+            fontSize: item.height * 1.5 || 14,
+            color: '#000000',
+            isDetected: true // Mark as detected to allow "Full Erasure" behind it
+          });
+        }
+      });
+
+      // Add detected overlays
+      setOverlays(prev => [...prev, ...newOverlays]);
+      setTab('edit');
+      setStatus(`success:Scan complete! Detected ${newOverlays.length} editable elements on this page.`);
+    } catch (e) {
+      console.error(e);
+      setStatus('error:Deep scan failed. Try manual modification.');
+    }
+    setOmrScanning(false);
+  };
+
+  // 3. Dragging Logic
   const startDrag = (e, id) => {
     e.stopPropagation();
-    const ov = overlays.find((o) => o.id === id);
+    const ov = overlays.find(o => o.id === id);
     if (!ov) return;
     setDraggingId(id);
-    setDragOffset({ x: e.clientX - (ov.x || 0), y: e.clientY - (ov.y || 0) });
+    setDragOffset({ x: e.clientX - ov.x, y: e.clientY - ov.y });
   };
 
   useEffect(() => {
     const handleMove = (e) => {
       if (draggingId === null) return;
-      setOverlays((prev) =>
-        prev.map((o) =>
-          o.id === draggingId
-            ? { ...o, x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y }
-            : o
-        )
-      );
+      setOverlays(prev => prev.map(o => 
+        o.id === draggingId 
+          ? { ...o, x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y } 
+          : o
+      ));
     };
     const handleUp = () => setDraggingId(null);
     if (draggingId !== null) {
@@ -119,89 +147,37 @@ export default function PdfEditor() {
     };
   }, [draggingId, dragOffset]);
 
-  // 3. Main Tools Logic
+  // 4. Canvas Tools
   const handleCanvasClick = (e) => {
     if (!pdfJsDoc || draggingId !== null) return;
-    const rect = (canvasRef.current || e.currentTarget).getBoundingClientRect();
+    const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (activeTool === 'text') {
-      setPending({ x, y });
-      setPText('');
-    } else if (activeTool === 'image') {
-      setPending({ x, y });
-      imgRef.current.click();
-    } else if (activeTool === 'erase') {
-      setOverlays((p) => [
-        ...p,
-        { id: Date.now(), type: 'erase', page: currentPage, x: x || 0, y: y || 0, w: 140, h: 26 },
-      ]);
+    if (activeTool === 'text') { setPending({ x, y }); setPText(''); }
+    else if (activeTool === 'image') { setPending({ x, y }); imgRef.current.click(); }
+    else if (activeTool === 'erase') {
+      setOverlays(p => [...p, { id: Date.now(), type: 'erase', page: currentPage, x, y, w: 120, h: 24 }]);
     }
   };
 
   const commitText = () => {
     if (!pendingText.trim() || !pendingPos) return;
-    setOverlays((p) => [
-      ...p,
-      {
-        id: Date.now(),
-        type: 'text',
-        page: currentPage,
-        x: pendingPos.x || 0,
-        y: pendingPos.y || 0,
-        text: pendingText,
-        fontSize,
-        color: textColor,
-      },
-    ]);
-    setPending(null);
-    setPText('');
+    setOverlays(p => [...p, { id: Date.now(), type: 'text', page: currentPage, x: pendingPos.x, y: pendingPos.y, text: pendingText, fontSize, color: textColor }]);
+    setPending(null); setPText('');
   };
 
   const onImgPicked = (e) => {
     const f = e.target.files[0];
     if (!f || !pendingPos) return;
-    try {
-      const srcUrl = URL.createObjectURL(f);
-      setOverlays((p) => [
-        ...p,
-        {
-          id: Date.now(),
-          type: 'image',
-          page: currentPage,
-          x: pendingPos.x || 0,
-          y: pendingPos.y || 0,
-          w: 160,
-          h: 120,
-          src: srcUrl,
-          file: f,
-        },
-      ]);
-      setPending(null);
-      e.target.value = '';
-    } catch (e) { console.error('Image picking failed.', e); }
+    setOverlays(p => [...p, { id: Date.now(), type: 'image', page: currentPage, x: pendingPos.x, y: pendingPos.y, w: 150, h: 100, src: URL.createObjectURL(f), file: f }]);
+    setPending(null);
   };
 
-  const runOmrScan = () => {
-    if (!file) { setStatus('Upload a PDF first.'); return; }
-    setOmrScanning(true);
-    setTimeout(() => {
-      setOmrScanning(false);
-      setTab('edit');
-      setOverlays((p) => [
-        ...p,
-        { id: Date.now(), type: 'text', page: 1, x: 100, y: 100, text: '[SCAN RESULT: MARK A]', fontSize: 16, color: '#10b981' },
-      ]);
-      setStatus('OMR scan finished. We found editable fields.');
-    }, 2800);
-  };
-
-  // 4. Download / Save Logic
+  // 5. Download & Apply Changes
   const download = async () => {
     if (!file) return;
-    setProc(true);
-    setStatus('');
+    setProc(true); setStatus('Saving Studio changes...');
     try {
       const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
       const bytes = await file.arrayBuffer();
@@ -217,192 +193,130 @@ export default function PdfEditor() {
       const sy = ph / sh;
 
       for (const ov of overlays) {
-        const pageIndex = Math.min(Math.max((ov.page || 1) - 1, 0), pages.length - 1);
-        const page = pages[pageIndex];
+        const page = pages[Math.min(ov.page - 1, pages.length - 1)];
         const { height: pph } = page.getSize();
-
-        const curX = (ov.x || 0) * sx;
-        const curY = (ov.y || 0) * sy;
-        const curW = (ov.w || 0) * sx;
-        const curH = (ov.h || 0) * sy;
+        const [cx, cy] = [ov.x * sx, pph - (ov.y * sy)];
 
         if (ov.type === 'erase') {
-          page.drawRectangle({ x: curX, y: pph - curY - curH, width: curW, height: curH, color: rgb(1, 1, 1) });
+          page.drawRectangle({ x: cx, y: cy - (ov.h * sy), width: ov.w * sx, height: ov.h * sy, color: rgb(1,1,1) });
         } else if (ov.type === 'text') {
-          const hex = (ov.color || '#000').replace('#', '');
-          const r = parseInt(hex.slice(0, 2), 16) / 255;
-          const g = parseInt(hex.slice(2, 4), 16) / 255;
-          const b = parseInt(hex.slice(4, 6), 16) / 255;
           const sz = (ov.fontSize || 14) * Math.min(sx, sy);
-          // Auto-erase background for added text
-          page.drawRectangle({ x: curX - 2, y: pph - curY - sz - 4, width: (ov.text || '').length * sz * 0.55 + 8, height: sz + 8, color: rgb(1, 1, 1) });
-          page.drawText(ov.text, { x: curX, y: pph - curY - sz, size: sz, font, color: rgb(r, g, b) });
+          const hex = (ov.color || '#000000').replace('#', '');
+          const r = parseInt(hex.slice(0,2),16)/255, g = parseInt(hex.slice(2,4),16)/255, b = parseInt(hex.slice(4,6),16)/255;
+          // IMPORTANT: If detected, we erase original behind it
+          page.drawRectangle({ x: cx - 2, y: cy - sz - 4, width: ov.text.length * sz * 0.6 + 6, height: sz + 10, color: rgb(1,1,1) });
+          page.drawText(ov.text, { x: cx, y: cy - sz, size: sz, font, color: rgb(r, g, b) });
         } else if (ov.type === 'image') {
           const ib = await ov.file.arrayBuffer();
           const img = ov.file.type === 'image/png' ? await doc.embedPng(ib) : await doc.embedJpg(ib);
-          page.drawImage(img, { x: curX, y: pph - (curY + curH), width: curW, height: curH });
+          page.drawImage(img, { x: cx, y: cy - (ov.h * sy), width: ov.w * sx, height: ov.h * sy });
         }
       }
 
       const out = await doc.save();
-      const blobUrl = URL.createObjectURL(new Blob([out], { type: 'application/pdf' }));
-      const aElem = document.createElement('a');
-      aElem.href = blobUrl;
-      aElem.download = `orlune_edit_${file.name}`;
-      aElem.click();
-      URL.revokeObjectURL(blobUrl);
-      setStatus('success:Document saved.');
+      const url = URL.createObjectURL(new Blob([out], { type: 'application/pdf' }));
+      const a = document.createElement('a'); a.href = url; a.download = `Studio_Edit_${file.name}`; a.click();
+      setStatus('success:Changes applied. File downloaded.');
     } catch (e) {
-      console.error('Download failed:', e);
-      setStatus('error:Save error. File might be too large or protected.');
+      console.error(e);
+      setStatus('error:Failed to apply changes. Document might be restricted.');
     }
     setProc(false);
   };
 
-  const activeOverlays = overlays.filter((o) => (o.page || 1) === currentPage);
-  const statusStr = status || '';
-  const isErr = statusStr.includes('error:');
-  const isOk = statusStr.includes('success:');
-  const typeStr = isErr ? 'error' : isOk ? 'success' : 'info';
-  const cleanStatus = statusStr.replace(/^(error:|success:)/, '');
+  const curOverlays = overlays.filter(o => o.page === currentPage);
+  const statusType  = status.includes('success:') ? 'success' : status.includes('error:') ? 'error' : 'info';
+  const statusMsg   = status.replace(/^(success:|error:)/, '');
 
   return (
     <section className="pdfeditor-section">
-      {/* Header */}
       <div className="pdfeditor-header">
-        <div className="pdfeditor-badge">ORLUNE PDF STUDIO</div>
-        <h2 className="pdfeditor-title">Studio Editor</h2>
-        <p className="pdfeditor-sub">Edit text and images — fully professional and safe.</p>
+        <div className="pdfeditor-badge">FULL EDIT MODE</div>
+        <h2 className="pdfeditor-title">Studio Hub</h2>
+        <p className="pdfeditor-sub">Scan any document to make every word and image editable.</p>
       </div>
 
-      {/* Tabs Control */}
       <div className="pdf-tabs">
-        {['edit', 'omr', 'convert'].map((t) => (
+        {['edit', 'scan'].map(t => (
           <button key={t} className={`pdf-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-            <span className="tab-label">
-              {t === 'edit' ? 'Edit Studio' : t === 'omr' ? 'OMR Scan' : 'Convert'}
-            </span>
+            {t === 'edit' ? 'Editor' : 'Deep Scan Studio'}
           </button>
         ))}
       </div>
 
-      {/* 1. OMR TAB */}
-      {tab === 'omr' && (
+      {tab === 'scan' && (
         <div className="omr-container fade-in-panel">
-          {!file ? (
-            <div className="omr-empty">
-              <p>Upload a file in the 'Edit Studio' tab first.</p>
-              <button className="tab-switch-btn" onClick={() => setTab('edit')}>Go to Studio</button>
-            </div>
-          ) : (
-            <div className="omr-scanner-ui">
-              <div className={`scan-visual ${omrScanning ? 'scanning' : ''}`}>
-                <div className="scan-line" />
-                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                </svg>
-              </div>
-              <p className="omr-title">OMR Scan & Fix</p>
-              <p className="omr-desc">Scanning your document to identify marks and checkboxes automatically...</p>
-              <button className={`omr-btn ${omrScanning ? 'loading' : ''}`} onClick={runOmrScan} disabled={omrScanning}>
-                {omrScanning ? 'Looking for Marks...' : 'Scan Now'}
-              </button>
-            </div>
+          {!file ? <div className="omr-empty">Please upload a file in common Editor tab first.</div> : (
+             <div className="omr-scanner-ui">
+                <div className={`scan-visual ${omrScanning ? 'scanning' : ''}`}>
+                   <div className="scan-line" />
+                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20"/><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                </div>
+                <p className="omr-title">Intelligent Deep Scan</p>
+                <p className="omr-desc">Orlune will detect all text layers and convert them into editable blocks.</p>
+                <button className={`omr-btn ${omrScanning ? 'loading' : ''}`} onClick={runOmrScan} disabled={omrScanning}>
+                  {omrScanning ? 'Analyzing Document...' : 'Start Deep Scan'}
+                </button>
+             </div>
           )}
         </div>
       )}
 
-      {/* 2. CONVERT TAB */}
-      {tab === 'convert' && (
-        <div className="convert-grid fade-in-panel">
-          {CONVERT_TARGETS.map((t, i) => (
-            <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="convert-card" style={{ '--cc': t.color }}>
-              <span className="cc-dot" /><span className="cc-label">{t.label}</span>
-            </a>
-          ))}
-        </div>
-      )}
-
-      {/* 3. EDIT TAB */}
       {tab === 'edit' && (
         <>
-          {/* File Picker */}
           {!pdfJsDoc && (
-            <div className={`pdfeditor-dropzone-big ${dragOver ? 'drag-active' : ''}`}
-                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                 onDragLeave={() => setDragOver(false)}
-                 onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) { setFile(f); setOverlays([]); loadPdf(f); } }}
-                 onClick={() => fileRef.current.click()}>
-              <input type="file" accept=".pdf" ref={fileRef} style={{ display: 'none' }}
-                     onChange={(e) => { const f = e.target.files[0]; if (f) { setFile(f); setOverlays([]); loadPdf(f); } }} />
-              <p className="pdfeditor-droptext">Drop PDF here to open Studio</p>
-              <p className="pdfeditor-drophint">or click to choose a file</p>
-            </div>
+             <div className="pdfeditor-dropzone-big" onClick={() => fileRef.current.click()}>
+               <input type="file" accept=".pdf" ref={fileRef} style={{ display: 'none' }} onChange={e => { const f=e.target.files[0]; if(f){ setFile(f); setOverlays([]); loadPdf(f); } }} />
+               <p className="pdfeditor-droptext">Drop PDF here to begin Full Edit</p>
+             </div>
           )}
 
-          {/* Editor Core */}
           {pdfJsDoc && (
-            <div className="pdfeditor-workspace fade-in-panel">
-              <div className="pdfeditor-toolbar">
-                <span className="toolbar-filename">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  {file?.name}
-                </span>
-                <div className="toolbar-tools">
-                   <button className={`tool-btn ${activeTool === 'text' ? 'active' : ''}`} onClick={() => setTool('text')}>Add Text</button>
-                   <button className={`tool-btn ${activeTool === 'image' ? 'active' : ''}`} onClick={() => setTool('image')}>Add Image</button>
-                   <button className={`tool-btn ${activeTool === 'erase' ? 'active' : ''}`} onClick={() => setTool('erase')}>White-out</button>
-                   <div className="tool-sep" />
-                   <a href="https://www.sejda.com/pdf-editor" target="_blank" rel="noopener noreferrer" className="tool-btn pro-btn">Pro Hub</a>
-                   <button className="tool-btn dl-btn" onClick={download} disabled={processing}>{processing ? 'Saving...' : 'Download'}</button>
-                   <button className="tool-btn close-btn" onClick={() => { setFile(null); setPdfJsDoc(null); setOverlays([]); }}>Close</button>
-                </div>
-              </div>
+             <div className="pdfeditor-workspace fade-in-panel">
+               <div className="pdfeditor-toolbar">
+                 <span className="toolbar-filename">{file?.name}</span>
+                 <div className="toolbar-tools">
+                    <button className={`tool-btn ${activeTool === 'text' ? 'active' : ''}`} onClick={() => setTool('text')}>Text</button>
+                    <button className={`tool-btn ${activeTool === 'image' ? 'active' : ''}`} onClick={() => setTool('image')}>Img</button>
+                    <button className={`tool-btn ${activeTool === 'erase' ? 'active' : ''}`} onClick={() => setTool('erase')}>Eraser</button>
+                    <div className="tool-sep" />
+                    <button className="tool-btn dl-btn" onClick={download} disabled={processing}>{processing ? 'Processing...' : 'Save & Download'}</button>
+                    <button className="tool-btn close-btn" onClick={() => { setFile(null); setPdfJsDoc(null); setOverlays([]); }}>×</button>
+                 </div>
+               </div>
 
-              {cleanStatus && <div className={`pdfeditor-msg ${typeStr}`}>{cleanStatus}</div>}
+               {statusMsg && <div className={`pdfeditor-msg ${statusType}`}>{statusMsg}</div>}
 
-              {/* Viewport Overlay Layer */}
-              <div className="canvas-wrapper" onClick={handleCanvasClick}>
-                {pdfJsDoc.fallback ? (
-                  <div className="fallback-canvas">Studio Canvas Ready</div>
-                ) : (
-                  <canvas ref={canvasRef} className="pdf-canvas" />
-                )}
-                
-                {/* Active items on canvas */}
-                {activeOverlays.map((ov) => (
-                  <div key={ov.id} className={`pdf-overlay ${draggingId === ov.id ? 'is-dragging' : ''}`}
-                       style={{ left: ov.x || 0, top: ov.y || 0 }} 
-                       onMouseDown={(e) => startDrag(e, ov.id)}>
-                    {ov.type === 'text' && <div className="ov-text" style={{ fontSize: ov.fontSize, color: ov.color }}>{ov.text}</div>}
-                    {ov.type === 'image' && <div className="ov-image" style={{ width: ov.w, height: ov.h }}><img src={ov.src} alt="" /></div>}
-                    {ov.type === 'erase' && <div className="ov-erase" style={{ width: ov.w, height: ov.h }} />}
-                    <button className="ov-remove" onMouseDown={(e) => e.stopPropagation()} onClick={() => setOverlays((p) => p.filter((o) => o.id !== ov.id))}>×</button>
-                  </div>
-                ))}
+               <div className="canvas-wrapper" onClick={handleCanvasClick}>
+                  {pdfJsDoc.fallback ? <div className="fallback-canvas">Manual Edit Ready</div> : <canvas ref={canvasRef} className="pdf-canvas" />}
+                  
+                  {curOverlays.map(ov => (
+                    <div key={ov.id} className={`pdf-overlay ${draggingId === ov.id ? 'is-dragging' : ''}`}
+                         style={{ left: ov.x, top: ov.y }} onMouseDown={e => startDrag(e, ov.id)}>
+                      {ov.type === 'text' && <div className="ov-text" style={{ fontSize: ov.fontSize, color: ov.color }}>{ov.text}</div>}
+                      {ov.type === 'image' && <div className="ov-image" style={{ width: ov.w, height: ov.h }}><img src={ov.src} alt="" /></div>}
+                      {ov.type === 'erase' && <div className="ov-erase" style={{ width: ov.w, height: ov.h }} />}
+                      <button className="ov-remove" onMouseDown={e => e.stopPropagation()} onClick={() => setOverlays(p => p.filter(o => o.id !== ov.id))}>×</button>
+                    </div>
+                  ))}
 
-                {/* Insertion popup */}
-                {pendingPos && activeTool === 'text' && (
-                  <div className="pending-text-popup" style={{ left: pendingPos.x || 0, top: pendingPos.y || 0 }} onClick={(e) => e.stopPropagation()}>
-                    <input autoFocus type="text" placeholder="Type..." value={pendingText} onChange={(e) => setPText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && commitText()} />
-                    <button onClick={commitText}>Add</button>
-                  </div>
-                )}
-              </div>
+                  {pendingPos && activeTool === 'text' && (
+                    <div className="pending-text-popup" style={{ left: pendingPos.x, top: pendingPos.y }} onClick={e => e.stopPropagation()}>
+                      <input autoFocus type="text" value={pendingText} onChange={e => setPText(e.target.value)} onKeyDown={e => e.key === 'Enter' && commitText()} />
+                    </div>
+                  )}
+               </div>
 
-              {/* Pagination controls */}
-              <div className="page-nav">
-                <button className="page-btn" disabled={currentPage <= 1} onClick={() => setCurrent((p) => p - 1)}>Prev</button>
-                <span className="page-info">{currentPage} / {numPages}</span>
-                <button className="page-btn" disabled={currentPage >= numPages} onClick={() => setCurrent((p) => p + 1)}>Next</button>
-              </div>
-            </div>
+               <div className="page-nav">
+                  <button disabled={currentPage <= 1} onClick={() => setCurrent(p => p - 1)}>←</button>
+                  <span className="page-info">{currentPage} / {numPages}</span>
+                  <button disabled={currentPage >= numPages} onClick={() => setCurrent(p => p + 1)}>→</button>
+               </div>
+             </div>
           )}
         </>
       )}
-
-      {/* Inputs (internal) */}
-      <input type="file" accept=".jpg,.jpeg,.png,.webp" ref={imgRef} style={{ display: 'none' }} onChange={onImgPicked} />
+      <input type="file" accept="image/*" ref={imgRef} style={{ display: 'none' }} onChange={onImgPicked} />
     </section>
   );
 }
