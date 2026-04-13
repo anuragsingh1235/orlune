@@ -6,6 +6,10 @@ const Footer = () => {
       <div className="container footer-content">
         <div className="footer-brand-section">
           <div className="footer-logo">
+            <svg viewBox="0 0 100 100" fill="none" width="32" height="32" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '10px' }}>
+              <circle cx="50" cy="50" r="48" stroke="#B48EAD" strokeWidth="2" strokeDasharray="4 2"/>
+              <path d="M50 20L55 45L80 50L55 55L50 80L45 55L20 50L45 45L50 20Z" fill="#B48EAD" />
+            </svg>
             <span className="logo-text">ORLUNE</span>
             <span className="logo-dot">.</span>
           </div>

@@ -688,6 +688,21 @@
   box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
 }
 
+.tab-with-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tab-with-icon svg {
+  opacity: 0.8;
+}
+
+.modal-nav button.active .tab-with-icon svg {
+  opacity: 1;
+}
+
 .modal-nav button:hover:not(.active) {
   background: rgba(255, 255, 255, 0.05); color: var(--text-primary);
 }

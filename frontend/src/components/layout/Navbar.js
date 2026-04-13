@@ -52,10 +52,17 @@ export default function Navbar() {
         <Link to="/" className="navbar-brand" onClick={() => setMenuOpen(false)}>
           <div className="brand-icon">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="4"/>
-              <path d="M50 15L85 75H15L50 15Z" fill="currentColor"/>
-              <ellipse cx="50" cy="48" rx="18" ry="10" fill="var(--bg-primary)"/>
-              <circle cx="50" cy="48" r="5" fill="currentColor"/>
+              {/* Premium Shutter Logo */}
+              <defs>
+                <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#fff" />
+                  <stop offset="100%" stopColor="#81A1C1" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="48" stroke="url(#brand-grad)" strokeWidth="1.5" strokeDasharray="4 2"/>
+              <path d="M50 20L55 45L80 50L55 55L50 80L45 55L20 50L45 45L50 20Z" fill="url(#brand-grad)" />
+              <circle cx="50" cy="50" r="8" fill="var(--bg-primary)" stroke="url(#brand-grad)" strokeWidth="2"/>
+              <circle cx="50" cy="50" r="3" fill="url(#brand-grad)"/>
             </svg>
           </div>
           <span className="brand-text">ORLUNE</span>

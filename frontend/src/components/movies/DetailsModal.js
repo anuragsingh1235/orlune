@@ -213,15 +213,28 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
             
             {/* 🎥 NAVIGATION TABS */}
             <div className="modal-nav">
-              {['preview', 'encyclopedia', 'ai'].map(t => (
-                <button 
-                  key={t}
-                  className={activeTab === t ? 'active' : ''} 
-                  onClick={() => setActiveTab(t)}
-                >
-                  {t === 'preview' ? 'Discovery 🎥' : t === 'encyclopedia' ? 'Encyclopedia 📜' : 'Ask AIRA 🔮'}
-                </button>
-              ))}
+                  <button 
+                    key={t}
+                    className={activeTab === t ? 'active' : ''} 
+                    onClick={() => setActiveTab(t)}
+                  >
+                    {t === 'preview' ? (
+                      <div className="tab-with-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        Discovery
+                      </div>
+                    ) : t === 'encyclopedia' ? (
+                      <div className="tab-with-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        Archives
+                      </div>
+                    ) : (
+                      <div className="tab-with-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+                        Oracle
+                      </div>
+                    )}
+                  </button>
             </div>
 
             <div className="modal-body-content">
