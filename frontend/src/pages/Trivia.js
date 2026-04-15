@@ -175,11 +175,11 @@ export default function Trivia() {
     <div className="trivia-page animate-fade">
       <div className="trivia-lobby glass-card">
         <div className="trivia-lobby-glow"></div>
-        <h1>🎬 Orlune Trivia Arena</h1>
-        <p>Test your cinematic knowledge against the community. Built on Java Spring Boot.</p>
+        <h1>🏅 Cinematic Certification</h1>
+        <p>Prove your expertise to the community. Pass the rigorous cinematic assessment powered by our Java Spring Boot grading engine to earn your Verified badge.</p>
 
         <div className="trivia-config">
-          <label>Select Category</label>
+          <label>Select Subject Expertise</label>
           <div className="trivia-cat-grid">
             {categories.map(c => (
               <button 
@@ -194,7 +194,7 @@ export default function Trivia() {
         </div>
 
         <button className="trivia-start-btn" onClick={startQuiz} disabled={loading}>
-          {loading ? 'Entering Arena...' : 'Enter Arena'}
+          {loading ? 'Initializing Engine...' : 'Begin Certification Exam'}
         </button>
       </div>
     </div>

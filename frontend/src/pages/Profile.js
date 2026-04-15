@@ -159,7 +159,15 @@ export default function Profile() {
           </div>
 
           <div className="ig-bio-section">
-            <h2 className="ig-name">{profileData.name || profileData.username}</h2>
+            <h2 className="ig-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {profileData.name || profileData.username}
+              <span 
+                style={{ fontSize: '0.7rem', color: '#B48EAD', background: 'rgba(180, 142, 173, 0.15)', padding: '4px 8px', borderRadius: '12px', border: '1px solid rgba(180,142,173,0.3)', verticalAlign: 'middle', fontWeight: 700, letterSpacing: '0.5px' }} 
+                title="Tested & Verified via Orlune Certification Engine (Java/Spring Boot)"
+              >
+                🏅 CERTIFIED CINEPHILE
+              </span>
+            </h2>
             <span className="ig-handle">@{profileData.username}</span>
             {profileData.bio && <p className="ig-bio">{profileData.bio}</p>}
           </div>
