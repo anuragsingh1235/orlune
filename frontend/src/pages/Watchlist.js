@@ -334,8 +334,8 @@ export default function Watchlist() {
         </div>
       )}
 
-      {/* Detail Modal */}
-      {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} hideTrailer={true} />}
+      {/* DETAILS MODAL */}
+      {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} hideTrailer={false} />}
 
       {/* Mastery Question Modal */}
       {masteringItem && (
