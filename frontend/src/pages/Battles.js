@@ -320,36 +320,61 @@ export default function Battles() {
       </div>
 
       {showWikiResults && (
-        <div className="gal-wiki-results-panel animate-down">
+        <div className="gal-wiki-results-section animate-up">
           <div className="wiki-results-header">
-            <h3>Wikipedia Records for "{galSearchQ}"</h3>
-            <button className="close-wiki" onClick={() => setShowWikiResults(false)}>✕ Close Search</button>
+            <h3>Human-Verified Archives</h3>
+            <button className="close-wiki-btn" onClick={() => { setShowWikiResults(false); setGalSearchQ(''); }}>✕ Clear Search</button>
           </div>
-          {galSearching ? <div className="spinner" /> : (
-            <div className="wiki-mini-grid">
-              {galWikiResults.map(p => (
-                <div key={p.id} className="wiki-mini-card glass-card" onClick={() => window.open(`https://en.wikipedia.org/?curid=${p.id}`, '_blank')}>
-                  {p.thumbnail && <img src={p.thumbnail} alt="" className="wiki-mini-thumb" />}
-                  <div className="wiki-mini-info">
-                    <h4>{p.title}</h4>
-                    <p>{p.overview?.slice(0, 100)}...</p>
-                    <span className="wiki-action-hint">Tap for full Wikipedia release details →</span>
+          {galSearching ? (
+            <div className="arena-skeleton-grid">
+              {[...Array(4)].map((_,i) => <div key={i} className="skeleton-card"><div className="skeleton-poster"/><div className="skeleton-line"/></div>)}
+            </div>
+          ) : (
+            <div className={`upcoming-grid ${galWikiResults.length > 0 ? 'search-active' : ''}`}>
+              {galWikiResults.map(p => {
+                // Determine release date from overview if possible (simple regex for years)
+                const yearMatch = p.overview?.match(/\d{4}/);
+                const dateStr = yearMatch ? yearMatch[0] : 'TBA';
+                
+                return (
+                  <div key={p.id} className="upcoming-card glass-card wiki-search-card" onClick={() => window.open(`https://en.wikipedia.org/?curid=${p.id}`, '_blank')}>
+                    <div className="upcoming-poster-wrap">
+                      <img 
+                        src={p.thumbnail || 'https://via.placeholder.com/300x450?text=No+Preview'} 
+                        alt={p.title} 
+                        className="upcoming-poster" 
+                      />
+                      <div className="upcoming-overlay">
+                         <div className="wiki-source-badge">WIKIPEDIA</div>
+                         <div className="countdown-badge">VERIFIED</div>
+                      </div>
+                    </div>
+                    <div className="upcoming-info">
+                      <h4 className="upcoming-title">{p.title}</h4>
+                      <div className="upcoming-meta">
+                        <span className="release-date">📅 Rel: {dateStr}</span>
+                        <span className="up-rating" style={{color: '#88C0D0'}}>Archive Data</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {galWikiResults.length === 0 && <p className="no-wiki">No Wikipedia cinema records found for this query.</p>}
+                );
+              })}
+              {galWikiResults.length === 0 && <div className="arena-empty">No records found. Try a different title.</div>}
             </div>
           )}
+          <div className="ug-divider" />
         </div>
       )}
 
-      <div className="genre-filters">
-        {GENRES.map(g => (
-          <button key={g} className={`genre-pill ${upGenre === g ? 'active' : ''}`} onClick={() => setUpGenre(g)}>
-            {GENRE_ICONS[g]} {g}
-          </button>
-        ))}
-      </div>
+      {!showWikiResults && (
+        <div className="genre-filters">
+          {GENRES.map(g => (
+            <button key={g} className={`genre-pill ${upGenre === g ? 'active' : ''}`} onClick={() => setUpGenre(g)}>
+              {GENRE_ICONS[g]} {g}
+            </button>
+          ))}
+        </div>
+      )}
       {upcomingLoading ? (
         <div className="arena-skeleton-grid">
           {[...Array(6)].map((_,i) => <div key={i} className="skeleton-card"><div className="skeleton-poster"/><div className="skeleton-line"/><div className="skeleton-line short"/></div>)}
