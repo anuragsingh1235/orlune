@@ -112,6 +112,49 @@ export default function Features() {
             </svg>
           </span>
         </button>
+
+        {/* ACADEMIC PROJECTS HOMES */}
+        <button
+          className="fhub-btn"
+          onClick={() => window.location.href = '/lab'}
+          style={{ background: 'rgba(94, 129, 172, 0.08)', borderColor: 'rgba(94, 129, 172, 0.3)' }}
+        >
+          <span className="fhub-btn-icon" style={{ color: '#88C0D0' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </span>
+          <span className="fhub-btn-label">
+            <span className="fhub-btn-name">Algorithm Lab (DAA)</span>
+            <span className="fhub-btn-hint">Intelligence computing core</span>
+          </span>
+          <span className="fhub-btn-chevron">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </span>
+        </button>
+
+        <button
+          className="fhub-btn"
+          onClick={() => window.location.href = '/trivia'}
+          style={{ background: 'rgba(180, 142, 173, 0.08)', borderColor: 'rgba(180, 142, 173, 0.3)' }}
+        >
+          <span className="fhub-btn-icon" style={{ color: '#B48EAD' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </span>
+          <span className="fhub-btn-label">
+            <span className="fhub-btn-name">Trivia Arena (Java)</span>
+            <span className="fhub-btn-hint">Spring Boot Quiz Engine</span>
+          </span>
+          <span className="fhub-btn-chevron">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </span>
+        </button>
       </div>
 
       {/* ── TOOL PANEL ── */}
