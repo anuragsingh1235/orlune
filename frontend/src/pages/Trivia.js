@@ -14,6 +14,9 @@ export default function Trivia() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [time, setTime] = useState(30);
   const [loading, setLoading] = useState(false);
+  const [isAnswering, setIsAnswering] = useState(false);
+  const [selectedAns, setSelectedAns] = useState(null);
+  const [isCorrect, setIsCorrect] = useState(null);
   const [scoreData, setScoreData] = useState({ score: 0, streak: 0, bestStreak: 0 });
   const [result, setResult] = useState(null);
   const navigate = useNavigate();
@@ -67,7 +70,11 @@ export default function Trivia() {
   };
 
   const handleAnswer = async (answerVal) => {
-    if (result) return;
+    if (result || isAnswering) return;
+    
+    setIsAnswering(true);
+    setSelectedAns(answerVal);
+    
     const q = session.questions[currentIdx];
     try {
       const res = await axios.post(`${API_BASE}/answer`, {
@@ -76,25 +83,28 @@ export default function Trivia() {
         answer: answerVal
       });
 
+      setIsCorrect(res.data.correct);
       setScoreData({
         score: res.data.score,
         streak: res.data.streak,
         bestStreak: res.data.bestStreak
       });
 
-      // Show temporary feedback here if desired (e.g. green flash)
-
       setTimeout(() => {
         if (currentIdx + 1 < session.questions.length) {
           setCurrentIdx(currentIdx + 1);
           setTime(session.timePerQuestion || 30);
+          setIsAnswering(false);
+          setSelectedAns(null);
+          setIsCorrect(null);
         } else {
           finishQuiz();
         }
-      }, 800); // short delay to see result
+      }, 1000); 
       
     } catch (e) {
       console.error(e);
+      setIsAnswering(false);
     }
   };
 
@@ -154,15 +164,42 @@ export default function Trivia() {
           <h2 className="trivia-question-text">{q.text}</h2>
 
           <div className="trivia-options">
-            {q.type === 'mcq' && q.options && q.options.map((opt, i) => (
-              <button key={i} className="trivia-option-btn" onClick={() => handleAnswer(i.toString())}>
-                {opt}
-              </button>
-            ))}
+            {q.type === 'mcq' && q.options && q.options.map((opt, i) => {
+              const val = i.toString();
+              const isSelected = selectedAns === val;
+              let statusClass = '';
+              if (isSelected) {
+                if (isCorrect === true) statusClass = 'correct';
+                else if (isCorrect === false) statusClass = 'incorrect';
+                else statusClass = 'selected';
+              }
+              return (
+                <button 
+                  key={i} 
+                  disabled={isAnswering}
+                  className={`trivia-option-btn ${statusClass}`} 
+                  onClick={() => handleAnswer(val)}
+                >
+                  {opt}
+                </button>
+              );
+            })}
             {q.type === 'truefalse' && (
               <>
-                <button className="trivia-option-btn" onClick={() => handleAnswer('true')}>True</button>
-                <button className="trivia-option-btn" onClick={() => handleAnswer('false')}>False</button>
+                <button 
+                  className={`trivia-option-btn ${selectedAns==='true' ? (isCorrect===null?'selected':isCorrect?'correct':'incorrect') : ''}`} 
+                  disabled={isAnswering}
+                  onClick={() => handleAnswer('true')}
+                >
+                  True
+                </button>
+                <button 
+                  className={`trivia-option-btn ${selectedAns==='false' ? (isCorrect===null?'selected':isCorrect?'correct':'incorrect') : ''}`} 
+                  disabled={isAnswering}
+                  onClick={() => handleAnswer('false')}
+                >
+                  False
+                </button>
               </>
             )}
           </div>
