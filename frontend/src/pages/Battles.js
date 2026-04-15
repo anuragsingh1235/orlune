@@ -64,6 +64,12 @@ export default function Battles() {
   const [winner, setWinner] = useState(null); // battle that just ended (for animation)
   const [activeComparison, setActiveComparison] = useState(null); // challenge_id
 
+  // ── WIKI SEARCH STATE (Gallery)
+  const [galSearchQ, setGalSearchQ] = useState('');
+  const [galWikiResults, setGalWikiResults] = useState([]);
+  const [galSearching, setGalSearching] = useState(false);
+  const [showWikiResults, setShowWikiResults] = useState(false);
+
 
   // ── FETCH UPCOMING
   const fetchUpcoming = useCallback(async (genre) => {
@@ -269,11 +275,17 @@ export default function Battles() {
   };
 
   // ── RESPOND TO CHALLENGE
-  const respondChallenge = async (id, action) => {
+  // ── WIKI SEARCH FOR GALLERY
+  const handleGalWikiSearch = async (e) => {
+    if (e) e.preventDefault();
+    if (!galSearchQ.trim()) { setShowWikiResults(false); return; }
+    setGalSearching(true);
+    setShowWikiResults(true);
     try {
-      await api.put(`/arena/challenge/${id}/respond`, { action });
-      fetchArena();
-    } catch {}
+      const { data } = await api.get('/wiki/search', { params: { query: galSearchQ } });
+      setGalWikiResults(data.results || []);
+    } catch { setGalWikiResults([]); }
+    setGalSearching(false);
   };
 
   // ── VOTE
@@ -290,10 +302,47 @@ export default function Battles() {
   // ── RENDER UPCOMING TAB
   const renderUpcoming = () => (
     <div className="arena-section">
-      <div className="arena-section-header">
-        <h2 className="arena-section-title">🚀 Upcoming Releases</h2>
-        <p className="arena-section-sub">Set reminders before they drop</p>
+      <div className="arena-section-header gallery-search-flex">
+        <div className="title-group">
+          <h2 className="arena-section-title">🚀 Upcoming Releases</h2>
+          <p className="arena-section-sub">Set reminders before they drop</p>
+        </div>
+        
+        <form className="gallery-wiki-search" onSubmit={handleGalWikiSearch}>
+          <input 
+            type="text" 
+            placeholder="Search Wikipedia for release dates..." 
+            value={galSearchQ}
+            onChange={(e) => setGalSearchQ(e.target.value)}
+          />
+          <button type="submit" className="wiki-search-btn">🔍</button>
+        </form>
       </div>
+
+      {showWikiResults && (
+        <div className="gal-wiki-results-panel animate-down">
+          <div className="wiki-results-header">
+            <h3>Wikipedia Records for "{galSearchQ}"</h3>
+            <button className="close-wiki" onClick={() => setShowWikiResults(false)}>✕ Close Search</button>
+          </div>
+          {galSearching ? <div className="spinner" /> : (
+            <div className="wiki-mini-grid">
+              {galWikiResults.map(p => (
+                <div key={p.id} className="wiki-mini-card glass-card" onClick={() => window.open(`https://en.wikipedia.org/?curid=${p.id}`, '_blank')}>
+                  {p.thumbnail && <img src={p.thumbnail} alt="" className="wiki-mini-thumb" />}
+                  <div className="wiki-mini-info">
+                    <h4>{p.title}</h4>
+                    <p>{p.overview?.slice(0, 100)}...</p>
+                    <span className="wiki-action-hint">Tap for full Wikipedia release details →</span>
+                  </div>
+                </div>
+              ))}
+              {galWikiResults.length === 0 && <p className="no-wiki">No Wikipedia cinema records found for this query.</p>}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="genre-filters">
         {GENRES.map(g => (
           <button key={g} className={`genre-pill ${upGenre === g ? 'active' : ''}`} onClick={() => setUpGenre(g)}>
