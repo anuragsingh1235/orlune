@@ -301,16 +301,20 @@ export default function Battles() {
         }));
       }
 
-      // 2. Add Wikipedia Results (avoiding duplicates)
+      // 2. Add Intelligence Results (formerly Wikipedia)
       if (wikiRes.status === 'fulfilled') {
         const wikiItems = (wikiRes.value.data.results || []).map(w => {
+           // Better date extraction: search for Month Day Year strings
+           const monthMatch = w.overview?.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{4}/i);
            const yearMatch = w.overview?.match(/\d{4}/);
+           const displayDate = monthMatch ? monthMatch[0] : (yearMatch ? yearMatch[0] : 'Rel. Window');
+           
            return {
              id: `wiki-${w.id}`,
              title: w.title,
              poster_path: w.thumbnail,
-             release_date: yearMatch ? yearMatch[0] : 'TBA',
-             source: 'WIKIPEDIA'
+             release_date: displayDate,
+             source: 'INTELLIGENCE'
            };
         });
         
@@ -345,22 +349,27 @@ export default function Battles() {
           <p className="arena-section-sub">Set reminders before they drop</p>
         </div>
         
-        <form className="gallery-wiki-search" onSubmit={handleGalWikiSearch}>
-          <input 
-            type="text" 
-            placeholder="Search Wikipedia for release dates..." 
-            value={galSearchQ}
-            onChange={(e) => setGalSearchQ(e.target.value)}
-          />
-          <button type="submit" className="wiki-search-btn">🔍</button>
+        <form className="gallery-premium-search" onSubmit={handleGalWikiSearch}>
+          <div className="search-input-wrapper">
+             <input 
+              type="text" 
+              placeholder="Query the Global Archive for releases..." 
+              value={galSearchQ}
+              onChange={(e) => setGalSearchQ(e.target.value)}
+            />
+            <div className="search-glow" />
+          </div>
+          <button type="submit" className="premium-search-btn">
+            SCAN
+          </button>
         </form>
       </div>
 
       {showWikiResults && (
         <div className="gal-wiki-results-section animate-up">
           <div className="wiki-results-header">
-            <h3>Human-Verified Archives</h3>
-            <button className="close-wiki-btn" onClick={() => { setShowWikiResults(false); setGalSearchQ(''); }}>✕ Clear Search</button>
+            <h3>Verified Cinematic Intelligence</h3>
+            <button className="close-wiki-btn" onClick={() => { setShowWikiResults(false); setGalSearchQ(''); }}>✕ Dismiss Scan</button>
           </div>
           {galSearching ? (
             <div className="arena-skeleton-grid">
@@ -370,7 +379,7 @@ export default function Battles() {
             <div className={`upcoming-grid ${galWikiResults.length > 0 ? 'search-active' : ''}`}>
               {galWikiResults.map((p, idx) => {
                 return (
-                  <div key={p.id} className="upcoming-card glass-card wiki-search-card" style={{animationDelay: `${idx * 0.05}s`}} onClick={() => p.source === 'WIKIPEDIA' ? window.open(`https://en.wikipedia.org/?curid=${p.id.replace('wiki-','')}`, '_blank') : null}>
+                  <div key={p.id} className="upcoming-card glass-card wiki-search-card" style={{animationDelay: `${idx * 0.05}s`}} onClick={() => p.source === 'INTELLIGENCE' ? window.open(`https://en.wikipedia.org/?curid=${p.id.replace('wiki-','')}`, '_blank') : null}>
                     <div className="upcoming-poster-wrap">
                       <img 
                         src={p.poster_path || 'https://via.placeholder.com/300x450?text=No+Poster'} 
@@ -378,7 +387,7 @@ export default function Battles() {
                         className="upcoming-poster" 
                       />
                       <div className="upcoming-overlay">
-                         <div className="wiki-source-badge" style={{background: p.source === 'WIKIPEDIA' ? '#88C0D0' : '#E50914', color: '#fff'}}>
+                         <div className="wiki-source-badge" style={{background: p.source === 'INTELLIGENCE' ? '#88C0D0' : '#7C4DFF', color: p.source === 'INTELLIGENCE' ? '#111' : '#fff'}}>
                            {p.source}
                          </div>
                          <div className="countdown-badge">VERIFIED</div>
@@ -387,8 +396,8 @@ export default function Battles() {
                     <div className="upcoming-info">
                       <h4 className="upcoming-title">{p.title}</h4>
                       <div className="upcoming-meta">
-                        <span className="release-date">📅 Rel: {p.release_date}</span>
-                        <span className="up-rating" style={{color: p.source === 'WIKIPEDIA' ? '#88C0D0' : '#fbbf24'}}>
+                        <span className="release-date">📅 {p.release_date}</span>
+                        <span className="up-rating" style={{color: p.source === 'INTELLIGENCE' ? '#88C0D0' : '#fbbf24'}}>
                           {p.vote_average ? `⭐ ${p.vote_average}` : 'Live Meta'}
                         </span>
                       </div>
@@ -396,7 +405,7 @@ export default function Battles() {
                   </div>
                 );
               })}
-              {galWikiResults.length === 0 && <div className="arena-empty">No records found. Try a different title.</div>}
+              {galWikiResults.length === 0 && <div className="arena-empty">No synchronized records found. Try a broader query.</div>}
             </div>
           )}
           <div className="ug-divider" />

@@ -1385,3 +1385,71 @@
 .wiki-search-card:nth-child(4) { animation-delay: 0.3s; }
 .wiki-search-card:nth-child(5) { animation-delay: 0.4s; }
 
+
+
+/* Premium Overhaul for Gallery Search */
+.gallery-premium-search {
+  display: flex;
+  gap: 12px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  min-width: 400px;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.gallery-premium-search input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  padding: 12px 20px;
+  outline: none;
+  z-index: 2;
+}
+
+.search-glow {
+  position: absolute;
+  left: 10px; right: 10px; bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #88C0D0, transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.gallery-premium-search input:focus + .search-glow { opacity: 1; }
+
+.premium-search-btn {
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 0 24px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(255,255,255,0.1);
+}
+
+.premium-search-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: #88C0D0;
+  box-shadow: 0 0 20px rgba(136, 192, 208, 0.4);
+}
+
+@media (max-width: 600px) {
+  .gallery-premium-search { min-width: 0; flex-direction: column; }
+  .premium-search-btn { padding: 12px; }
+}
