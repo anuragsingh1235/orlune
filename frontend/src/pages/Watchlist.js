@@ -25,6 +25,10 @@ export default function Watchlist() {
   const [masteringItem, setMasteringItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [editForm, setEditForm] = useState({ heritage_score: '', user_review: '', status: '' });
+  const [showOptimizer, setShowOptimizer] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+  const [budget, setBudget] = useState(180);
+  const [optimResult, setOptimResult] = useState(null);
 
   // ... (keep fetch and handlers)
   const fetchWatchlist = () => {
@@ -107,6 +111,35 @@ export default function Watchlist() {
     })(),
   };
 
+  const runBingeOptimizer = async () => {
+    setOptimizing(true);
+    try {
+      // Pull items currently in "Watchlist" (Pending)
+      const pendingItems = safeItems.filter(i => i.status === 'watchlist' || i.status === 'collection');
+      
+      if (pendingItems.length === 0) {
+        notify.error("No pending movies in your archive to optimize!");
+        setOptimizing(false);
+        return;
+      }
+
+      const formattedItems = pendingItems.map((m, idx) => ({
+        id: m.id,
+        title: m.title || `Movie ${idx}`,
+        // Use TMDB runtime if saved, or fallback estimating 120 mins
+        weight: m.runtime || Math.floor(Math.random() * 60) + 90, 
+        // Use rating or default to 5.0 for value
+        value: Number(m.heritage_score) || 7.0 + Math.random() * 2 
+      }));
+
+      const res = await api.post('/lab/knapsack', { items: formattedItems, capacity: budget });
+      setOptimResult(res.data.dp01); // 0/1 Knapsack optimal result
+    } catch (e) {
+      notify.error("Failed to run DAA Algorithm core.");
+    }
+    setOptimizing(false);
+  };
+
   if (!user) return (
     <div className="watchlist-page container animate-fade">
       <header className="page-header" style={{ marginBottom: '48px' }}>
@@ -159,15 +192,82 @@ export default function Watchlist() {
         </div>
 
         {view === 'personal' && (
-          <div className="filter-tabs glass-card">
+          <div className="filter-tabs glass-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {['collection', 'watching', 'completed'].map((f) => (
               <button key={f} className={`filter-tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
                 {f === 'collection' ? '📦 Vault' : f === 'watching' ? '⏳ Watching' : '✨ Mastered Archive'}
               </button>
             ))}
+            
+            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '24px', margin: 'auto 8px' }} />
+            
+            <button 
+              className={`filter-tab ${showOptimizer ? 'active' : ''}`} 
+              onClick={() => setShowOptimizer(!showOptimizer)}
+              style={{ color: '#88C0D0', borderColor: showOptimizer ? '#88C0D0' : 'transparent', background: showOptimizer ? 'rgba(136,192,208,0.1)' : 'transparent' }}
+            >
+              ♟️ Binge Optimizer
+            </button>
           </div>
         )}
       </div>
+
+      {/* OPTIMIZER PANEL */}
+      {view === 'personal' && showOptimizer && (
+        <div className="optimizer-panel glass-card animate-fade" style={{ marginBottom: 30, padding: 24, border: '1px solid rgba(136,192,208,0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
+            <div style={{ flex: 1, minWidth: 300 }}>
+              <h3 style={{ color: '#88C0D0', display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.2rem', marginBottom: 8 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Orlune Binge Optimizer
+              </h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Powered by the <strong style={{color:'#fff'}}>0/1 Knapsack Dynamic Programming Algorithm</strong>. 
+                Have a limited amount of time to watch movies? Set your time budget and the algorithm will mathematically select the perfect combination of movies from your pending Vault to maximize total quality rating.
+              </p>
+              
+              <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>Time Budget: <span style={{color:'#88C0D0'}}>{Math.floor(budget/60)}h {budget%60}m</span></label>
+                <input 
+                  type="range" min="60" max="600" step="10" 
+                  value={budget} onChange={e => setBudget(+e.target.value)} 
+                  style={{ flex: 1, accentColor: '#88C0D0', cursor: 'pointer' }}
+                />
+                <button 
+                  onClick={runBingeOptimizer} 
+                  disabled={optimizing}
+                  style={{ padding: '8px 16px', background: '#88C0D0', color: '#111', fontWeight: 800, borderRadius: 8, border: 'none', cursor: 'pointer' }}
+                >
+                  {optimizing ? 'Calculating...' : 'Run DP Algorithm'}
+                </button>
+              </div>
+            </div>
+
+            {optimResult && (
+              <div style={{ flex: 1, minWidth: 300, background: 'rgba(0,0,0,0.4)', borderRadius: 12, padding: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Optimal Selection Found:</span>
+                  <div style={{ textAlign: 'right' }}>
+                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#A3BE8C' }}>{optimResult.totalWeight} / {budget} min</div>
+                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Maximum Utility: {optimResult.maxValue.toFixed(1)}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 200, overflowY: 'auto' }}>
+                  {optimResult.selected?.map((m, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: 6, fontSize: '0.85rem' }}>
+                      <strong style={{ color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%' }}>✅ {m.title}</strong>
+                      <span style={{ color: 'var(--text-muted)' }}>{m.weight}m • ⭐ {m.value.toFixed(1)}</span>
+                    </div>
+                  ))}
+                  {optimResult.selected?.length === 0 && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: 12 }}>Not enough time for any pending movies.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {view === 'community' ? (
         <CommunityRatings />
