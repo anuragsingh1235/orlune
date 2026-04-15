@@ -439,6 +439,7 @@ function Optimizer() {
               <button className={`lab-pill ${view==='dp'?'active':''}`} onClick={()=>setView('dp')}>0/1 DP Result</button>
               <button className={`lab-pill ${view==='greedy'?'active':''}`} onClick={()=>setView('greedy')}>Greedy Result</button>
               <button className={`lab-pill ${view==='table'?'active':''}`} onClick={()=>setView('table')}>DP Table</button>
+              <button className={`lab-pill ${view==='code'?'active':''}`} onClick={()=>setView('code')} style={{color:'#88C0D0', borderColor: view==='code'?'#88C0D0':'transparent'}}>{'</>'} Source Code</button>
             </div>
 
             {view === 'dp' && (
@@ -460,7 +461,58 @@ function Optimizer() {
                   <span>{result.dp01?.complexity?.time}</span>
                   <span>{result.dp01?.complexity?.space}</span>
                 </div>
-                <code className="recurrence">{result.dp01?.recurrence}</code>
+                <div style={{ marginTop: 16 }}>
+                  <p style={{color:'var(--text-secondary)',fontSize:'0.85rem',marginBottom:8}}>Recurrence Relation:</p>
+                  <code className="recurrence" style={{ display: 'block', padding: 12, background: 'rgba(0,0,0,0.4)', borderRadius: 8 }}>{result.dp01?.recurrence}</code>
+                </div>
+              </div>
+            )}
+
+            {view === 'code' && (
+              <div className="code-panel glass-card" style={{ padding: 16, background: '#1e1e24', border: '1px solid #333' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span style={{ color: '#88C0D0', fontWeight: 600, fontSize: '0.9rem' }}>0/1 Knapsack (C++)</span>
+                  <span style={{ color: '#A3BE8C', fontWeight: 600, fontSize: '0.9rem' }}>Fractional Knapsack (C++)</span>
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <pre style={{ flex: 1, margin: 0, padding: 12, background: '#111', borderRadius: 8, fontSize: '0.75rem', color: '#c5c8c6', overflowX: 'auto' }}>
+{`int knapsack01(int W, int wt[], int val[], int n) {
+  vector<vector<int>> dp(n + 1, vector<int>(W + 1));
+  for (int i = 0; i <= n; i++) {
+    for (int w = 0; w <= W; w++) {
+      if (i == 0 || w == 0)
+        dp[i][w] = 0;
+      else if (wt[i - 1] <= w)
+        dp[i][w] = max(val[i - 1] + dp[i - 1][w - wt[i - 1]],
+                       dp[i - 1][w]);
+      else
+        dp[i][w] = dp[i - 1][w];
+    }
+  }
+  return dp[n][W];
+}`}
+                  </pre>
+                  <pre style={{ flex: 1, margin: 0, padding: 12, background: '#111', borderRadius: 8, fontSize: '0.75rem', color: '#c5c8c6', overflowX: 'auto' }}>
+{`struct Item { int value, weight; };
+bool cmp(Item a, Item b) {
+  return (double)a.value / a.weight > (double)b.value / b.weight;
+}
+double fractionalKnapsack(int W, Item arr[], int n) {
+  sort(arr, arr + n, cmp);
+  double finalVal = 0.0;
+  for (int i = 0; i < n; i++) {
+    if (arr[i].weight <= W) {
+      W -= arr[i].weight;
+      finalVal += arr[i].value;
+    } else {
+      finalVal += arr[i].value * ((double)W / arr[i].weight);
+      break;
+    }
+  }
+  return finalVal;
+}`}
+                  </pre>
+                </div>
               </div>
             )}
 
