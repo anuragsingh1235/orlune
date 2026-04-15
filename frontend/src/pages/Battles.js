@@ -274,15 +274,53 @@ export default function Battles() {
   };
 
   // ── RESPOND TO CHALLENGE
-  // ── WIKI SEARCH FOR GALLERY
+  // ── HYBRID SEARCH FOR GALLERY (TMDB + OMDB + WIKI)
   const handleGalWikiSearch = async (e) => {
     if (e) e.preventDefault();
     if (!galSearchQ.trim()) { setShowWikiResults(false); return; }
     setGalSearching(true);
     setShowWikiResults(true);
     try {
-      const { data } = await api.get('/wiki/search', { params: { query: galSearchQ } });
-      setGalWikiResults(data.results || []);
+      // Fetch from Movie Engine (TMDB/OMDB) and Wikipedia simultaneously
+      const [movieRes, wikiRes] = await Promise.allSettled([
+        api.get('/movies/search', { params: { q: galSearchQ } }),
+        api.get('/wiki/search', { params: { query: galSearchQ } })
+      ]);
+
+      let merged = [];
+      
+      // 1. Add High-Accuracy Movie Engine Results
+      if (movieRes.status === 'fulfilled') {
+        merged = (movieRes.value.data || []).map(m => ({
+          ...m,
+          id: m.id || m.imdbID,
+          title: m.title || m.name,
+          poster_path: m.poster_path ? (m.poster_path.startsWith('http') ? m.poster_path : `https://image.tmdb.org/t/p/w400${m.poster_path}`) : null,
+          release_date: m.release_date || m.Year || 'TBA',
+          source: 'ARCHIVE'
+        }));
+      }
+
+      // 2. Add Wikipedia Results (avoiding duplicates)
+      if (wikiRes.status === 'fulfilled') {
+        const wikiItems = (wikiRes.value.data.results || []).map(w => {
+           const yearMatch = w.overview?.match(/\d{4}/);
+           return {
+             id: `wiki-${w.id}`,
+             title: w.title,
+             poster_path: w.thumbnail,
+             release_date: yearMatch ? yearMatch[0] : 'TBA',
+             source: 'WIKIPEDIA'
+           };
+        });
+        
+        const existingTitles = new Set(merged.map(m => m.title.toLowerCase()));
+        wikiItems.forEach(w => {
+          if (!existingTitles.has(w.title.toLowerCase())) merged.push(w);
+        });
+      }
+
+      setGalWikiResults(merged.slice(0, 15));
     } catch { setGalWikiResults([]); }
     setGalSearching(false);
   };
@@ -330,29 +368,29 @@ export default function Battles() {
             </div>
           ) : (
             <div className={`upcoming-grid ${galWikiResults.length > 0 ? 'search-active' : ''}`}>
-              {galWikiResults.map(p => {
-                // Determine release date from overview if possible (simple regex for years)
-                const yearMatch = p.overview?.match(/\d{4}/);
-                const dateStr = yearMatch ? yearMatch[0] : 'TBA';
-                
+              {galWikiResults.map((p, idx) => {
                 return (
-                  <div key={p.id} className="upcoming-card glass-card wiki-search-card" onClick={() => window.open(`https://en.wikipedia.org/?curid=${p.id}`, '_blank')}>
+                  <div key={p.id} className="upcoming-card glass-card wiki-search-card" style={{animationDelay: `${idx * 0.05}s`}} onClick={() => p.source === 'WIKIPEDIA' ? window.open(`https://en.wikipedia.org/?curid=${p.id.replace('wiki-','')}`, '_blank') : null}>
                     <div className="upcoming-poster-wrap">
                       <img 
-                        src={p.thumbnail || 'https://via.placeholder.com/300x450?text=No+Preview'} 
+                        src={p.poster_path || 'https://via.placeholder.com/300x450?text=No+Poster'} 
                         alt={p.title} 
                         className="upcoming-poster" 
                       />
                       <div className="upcoming-overlay">
-                         <div className="wiki-source-badge">WIKIPEDIA</div>
+                         <div className="wiki-source-badge" style={{background: p.source === 'WIKIPEDIA' ? '#88C0D0' : '#E50914', color: '#fff'}}>
+                           {p.source}
+                         </div>
                          <div className="countdown-badge">VERIFIED</div>
                       </div>
                     </div>
                     <div className="upcoming-info">
                       <h4 className="upcoming-title">{p.title}</h4>
                       <div className="upcoming-meta">
-                        <span className="release-date">📅 Rel: {dateStr}</span>
-                        <span className="up-rating" style={{color: '#88C0D0'}}>Archive Data</span>
+                        <span className="release-date">📅 Rel: {p.release_date}</span>
+                        <span className="up-rating" style={{color: p.source === 'WIKIPEDIA' ? '#88C0D0' : '#fbbf24'}}>
+                          {p.vote_average ? `⭐ ${p.vote_average}` : 'Live Meta'}
+                        </span>
                       </div>
                     </div>
                   </div>
