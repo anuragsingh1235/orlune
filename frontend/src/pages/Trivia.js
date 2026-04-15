@@ -175,8 +175,8 @@ export default function Trivia() {
     <div className="trivia-page animate-fade">
       <div className="trivia-lobby glass-card">
         <div className="trivia-lobby-glow"></div>
-        <h1>🏅 Cinematic Certification</h1>
-        <p>Prove your expertise to the community. Pass the rigorous cinematic assessment powered by our Java Spring Boot grading engine to earn your Verified badge.</p>
+        <h1>🏅 Cinephile Trivia Challenge</h1>
+        <p>Prove your movie knowledge to the community. Pass this rigorous cinematic assessment to earn a verified certification badge for your profile.</p>
 
         <div className="trivia-config">
           <label>Select Subject Expertise</label>
@@ -194,7 +194,7 @@ export default function Trivia() {
         </div>
 
         <button className="trivia-start-btn" onClick={startQuiz} disabled={loading}>
-          {loading ? 'Initializing Engine...' : 'Begin Certification Exam'}
+          {loading ? 'Starting Challenge...' : 'Start Challenge'}
         </button>
       </div>
     </div>

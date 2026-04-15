@@ -206,7 +206,7 @@ export default function Watchlist() {
               onClick={() => setShowOptimizer(!showOptimizer)}
               style={{ color: '#88C0D0', borderColor: showOptimizer ? '#88C0D0' : 'transparent', background: showOptimizer ? 'rgba(136,192,208,0.1)' : 'transparent' }}
             >
-              ♟️ Binge Optimizer
+              🍿 Smart Binge Planner
             </button>
           </div>
         )}
@@ -219,11 +219,10 @@ export default function Watchlist() {
             <div style={{ flex: 1, minWidth: 300 }}>
               <h3 style={{ color: '#88C0D0', display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.2rem', marginBottom: 8 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Orlune Binge Optimizer
+                Smart Binge Planner
               </h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                Powered by the <strong style={{color:'#fff'}}>0/1 Knapsack Dynamic Programming Algorithm</strong>. 
-                Have a limited amount of time to watch movies? Set your time budget and the algorithm will mathematically select the perfect combination of movies from your pending Vault to maximize total quality rating.
+                Short on time? Set your availability, and we'll curate the absolute perfect movie marathon from your pending Watchlist to maximize your entertainment within your schedule limit.
               </p>
               
               <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -238,7 +237,7 @@ export default function Watchlist() {
                   disabled={optimizing}
                   style={{ padding: '8px 16px', background: '#88C0D0', color: '#111', fontWeight: 800, borderRadius: 8, border: 'none', cursor: 'pointer' }}
                 >
-                  {optimizing ? 'Calculating...' : 'Run DP Algorithm'}
+                  {optimizing ? 'Generating...' : 'Plan Marathon'}
                 </button>
               </div>
             </div>
@@ -246,10 +245,10 @@ export default function Watchlist() {
             {optimResult && (
               <div style={{ flex: 1, minWidth: 300, background: 'rgba(0,0,0,0.4)', borderRadius: 12, padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Optimal Selection Found:</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Perfect Marathon Found:</span>
                   <div style={{ textAlign: 'right' }}>
                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#A3BE8C' }}>{optimResult.totalWeight} / {budget} min</div>
-                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Maximum Utility: {optimResult.maxValue.toFixed(1)}</div>
+                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Average Quality: {optimResult.maxValue.toFixed(1)}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 200, overflowY: 'auto' }}>

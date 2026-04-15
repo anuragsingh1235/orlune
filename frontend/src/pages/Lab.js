@@ -3,11 +3,11 @@ import api from '../utils/api';
 import './Lab.css';
 
 const TABS = [
-  { id: 'sort',      icon: '📊', label: 'Sort Studio',    desc: 'Merge · Quick · Heap · Radix' },
-  { id: 'graph',     icon: '🗺️', label: 'Genre Graph',    desc: 'Dijkstra · BFS · DFS · MST' },
-  { id: 'optimizer', icon: '♟️', label: 'Optimizer',      desc: '0/1 Knapsack · Greedy · DP' },
-  { id: 'pattern',   icon: '🔍', label: 'Pattern Detect', desc: 'KMP · Rabin-Karp · Boyer-Moore' },
-  { id: 'backtrack', icon: '🧩', label: 'Backtracking',   desc: 'N-Queens · Topo Sort · Subsets' },
+  { id: 'sort',      icon: '📊', label: 'Data Race',     desc: 'Speed benchmark for datasets' },
+  { id: 'graph',     icon: '🗺️', label: 'Genre Map',     desc: 'Visualizing genre connections' },
+  { id: 'optimizer', icon: '🍿', label: 'Binge Plan',    desc: 'Optimal marathon strategy' },
+  { id: 'pattern',   icon: '🔍', label: 'Script Search', desc: 'Fast text pattern matching' },
+  { id: 'backtrack', icon: '🧩', label: 'Logic Puzzles', desc: 'Complex recursive solvers' },
 ];
 
 const ALGO_COLORS = {
@@ -51,8 +51,8 @@ function SortStudio() {
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">📊 Sorting Algorithm Studio</h2>
-        <p className="lab-section-sub">Runs selected algorithms simultaneously on the same dataset. Compare real metrics.</p>
+        <h2 className="lab-section-title">📊 The Data Speed Race</h2>
+        <p className="lab-section-sub">Compare how different sorting methods handle real-world cinematic datasets. Watch the speed race in real time.</p>
       </div>
 
       {/* Controls */}
@@ -256,8 +256,8 @@ function GenreGraph() {
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">🗺️ Genre Graph Navigator</h2>
-        <p className="lab-section-sub">10 movie genres as nodes, similarity as weighted edges. Run graph algorithms live.</p>
+        <h2 className="lab-section-title">🗺️ Genre Connection Network</h2>
+        <p className="lab-section-sub">Visualization of how movie genres relate to each other. Calculate the shortest conceptual distance between categories.</p>
       </div>
 
       <div className="graph-layout">
@@ -407,8 +407,8 @@ function Optimizer() {
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">♟️ Watchlist Optimizer</h2>
-        <p className="lab-section-sub">Given a time budget, find the best movies to maximize your enjoyment. 0/1 Knapsack vs Greedy.</p>
+        <h2 className="lab-section-title">🍿 Smart Marathon Strategist</h2>
+        <p className="lab-section-sub">Input your available time and let our logic engine plan the perfect movie marathon to maximize your rating score.</p>
       </div>
 
       <div className="optim-layout">
@@ -445,9 +445,9 @@ function Optimizer() {
             {view === 'dp' && (
               <div className="optim-result-card glass-card">
                 <div className="optim-header">
-                  <span className="graph-badge">0/1 Knapsack — DP</span>
-                  <span className="optim-value">Value: {result.dp01?.maxValue?.toFixed(1)}&nbsp;pts</span>
-                  <span className="optim-weight">{result.dp01?.totalWeight}&nbsp;min used</span>
+                  <span className="graph-badge">Calculated Marathon</span>
+                  <span className="optim-value">{result.dp01?.maxValue?.toFixed(1)} Quality Index</span>
+                  <span className="optim-weight">{result.dp01?.totalWeight} mins total</span>
                 </div>
                 <div className="optim-selected">
                   {result.dp01?.selected?.map((it,i)=>(
@@ -457,9 +457,8 @@ function Optimizer() {
                     </div>
                   ))}
                 </div>
-                <div className="complexity-box" style={{marginTop:12}}>
-                  <span>{result.dp01?.complexity?.time}</span>
-                  <span>{result.dp01?.complexity?.space}</span>
+                <div className="complexity-box" style={{marginTop:12, opacity: 0.4}}>
+                   <span>Optimized for performance</span>
                 </div>
                 <div style={{ marginTop: 16 }}>
                   <p style={{color:'var(--text-secondary)',fontSize:'0.85rem',marginBottom:8}}>Recurrence Relation:</p>
@@ -602,8 +601,8 @@ function PatternDetector() {
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">🔍 Pattern Detection Engine</h2>
-        <p className="lab-section-sub">KMP, Rabin-Karp, Boyer-Moore, and Naive — same search, different strategies.</p>
+        <h2 className="lab-section-title">🔍 Script Pattern Search</h2>
+        <p className="lab-section-sub">Experience high-speed text search logic. Find specific phrases in massive scripts using advanced matching techniques.</p>
       </div>
 
       <div className="pattern-layout">
@@ -717,8 +716,8 @@ function BacktrackLab() {
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">🧩 Backtracking Laboratory</h2>
-        <p className="lab-section-sub">N-Queens, Topological Sort, and Sum-of-Subsets — visualizing recursive exhaustive search.</p>
+        <h2 className="lab-section-title">🧩 Strategic Logic Puzzles</h2>
+        <p className="lab-section-sub">Visualizing how computers solve complex logic problems through recursive decision making.</p>
       </div>
 
       <div className="lab-pills" style={{marginBottom:20}}>
