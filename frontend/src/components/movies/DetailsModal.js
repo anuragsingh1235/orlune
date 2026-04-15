@@ -1,6 +1,30 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, Component } from 'react';
 import api from '../../utils/api';
 import './DetailsModal.css';
+
+class ModalErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, errorStr: '' };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, errorStr: error.toString() };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Modal Crash:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, color: '#BF616A', textAlign: 'center', background: '#111' }}>
+          <h2>Archive Corrupted (React Crash)</h2>
+          <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', marginTop: 20 }}>{this.state.errorStr}</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /**
  * ─── DETAILS MODAL (Premium Encyclopedia View) ─────────────────────
@@ -201,359 +225,366 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
 
   return (
     <div className="modal-overlay animate-fade" onClick={onClose}>
-      <div className="modal-content glass-card animate-scale" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>&times;</button>
+      <ModalErrorBoundary>
+        <div className="modal-content glass-card animate-scale" onClick={(e) => e.stopPropagation()}>
+          <button className="modal-close" onClick={onClose}>&times;</button>
 
-        {loading ? (
-          <div className="modal-loader"><div className="spinner" /></div>
-        ) : error ? (
-          <div className="modal-error">{error}</div>
-        ) : details ? (
-          <div className="details-container custom-scrollbar">
-            
-            {/* 🎥 NAVIGATION TABS */}
-            <div className="modal-nav">
-                  <button 
-                    key={t}
-                    className={activeTab === t ? 'active' : ''} 
-                    onClick={() => setActiveTab(t)}
-                  >
-                    {t === 'preview' ? (
-                      <div className="tab-with-icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                        Discovery
-                      </div>
-                    ) : t === 'encyclopedia' ? (
-                      <div className="tab-with-icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                        Archives
-                      </div>
-                    ) : (
-                      <div className="tab-with-icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
-                        Oracle
-                      </div>
-                    )}
-                  </button>
-            </div>
-
-            <div className="modal-body-content">
-              {activeTab === 'preview' && (
-                <div className="preview-tab animate-fade">
-                  {/* YouTube Player */}
-                  <div className="player-wrapper glass-card">
-                    {currentVideoId && !details.hideTrailer ? (
-                      <iframe
-                        className="main-iframe"
-                        src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
-                        title="Discovery"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <div className="no-video-placeholder" style={{ backgroundImage: `url(https://image.tmdb.org/t/p/w780${item.poster_path})` }}>
-                        <div className="no-video-overlay"><span>Record Encrypted</span></div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 📺 WATCH PLATFORMS (Premium UI) Directly Below Trailer */}
-                  <div className="watch-platforms-container animate-up">
-                    <div className="platforms-header">
-                       <h3 className="platforms-title">Streaming On <span>(Available Platforms)</span></h3>
-                       <div className="platforms-header-right">
-                         {globalProviders.length > 0 && (
-                           <div className="platforms-filter">
-                             <button className={providerFilter === 'all' ? 'active' : ''} onClick={() => setProviderFilter('all')}>All</button>
-                             <button className={providerFilter === 'free' ? 'active' : ''} onClick={() => setProviderFilter('free')}>Free</button>
-                             <button className={providerFilter === 'paid' ? 'active' : ''} onClick={() => setProviderFilter('paid')}>Paid</button>
-                           </div>
-                         )}
-                         {watchLink && (
-                           <a href={watchLink} target="_blank" rel="noreferrer" className="justwatch-btn">
-                             🎬 All Options
-                           </a>
-                         )}
-                       </div>
-                    </div>
-                    
-                    {globalProviders.length > 0 ? (
-                      <div className="platforms-grid custom-scrollbar">
-                         {filteredProviders.map((p, idx) => (
-                            <a 
-                              key={`${p.provider_id}-${p.costCat}`} 
-                              href={getDirectLink(p.provider_name)} 
-                              target="_blank" 
-                              rel="noreferrer" 
-                              className="platform-card glass-card" 
-                              style={{ animationDelay: `${idx * 0.05}s` }}
-                              title={`Watch on ${p.provider_name}`}
-                            >
-                              <div className="platform-logo-wrapper">
-                                 <img src={`https://image.tmdb.org/t/p/original${p.logo_path}`} alt={p.provider_name} />
-                              </div>
-                              <div className="platform-info">
-                                 <span className="platform-name">{p.provider_name}</span>
-                                 <span className={`platform-type-badge ${p.offerType.toLowerCase()}`}>{p.offerType}</span>
-                              </div>
-                              <div className="watch-now-btn">Watch Now ↗</div>
-                            </a>
-                         ))}
-                         {filteredProviders.length === 0 && (
-                            <div className="no-platforms-filtered">No platforms found for this filter.</div>
-                         )}
-                      </div>
-                    ) : (
-                      <div className="empty-streaming-state glass-card">
-                        <div className="empty-icon pulse">📡</div>
-                        <h4>Stream Archives Veiled</h4>
-                        <p>No verified digital streams found in local archives. External scouting recommended.</p>
-                        <a 
-                          href={`https://www.google.com/search?q=watch+${encodeURIComponent(details?.title || details?.name || item?.title || item?.name)}+online`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="platforms-scout-btn"
-                        >
-                          Scout Global Platforms (Google) ↗
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Scene Selector */}
-                  <div className="discovery-grid animate-up">
-                    {[
-                      ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []),
-                      ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic' })),
-                      ...(details.fanVideos || []).map(s => ({ ...s, type: 'Edit' })),
-                      ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
-                    ].map((v, i) => (
-                      <div 
-                        key={i} 
-                        className={`discovery-card ${currentVideoId === v.id ? 'active' : ''}`}
-                        onClick={() => setDetails({ ...details, activeVideoId: v.id })}
-                      >
-                        <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} alt="thumb" />
-                        <div className="card-info"><span className="tag">{v.type}</span></div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="info-panel glass-card">
-                    <h2 className="title-display">{details.title || details.name}</h2>
-                    <div className="meta-info meta-gap">
-                       <span className="rating gold">⭐ {details.vote_average?.toFixed(1)}</span>
-                       <span className="meta-divider">|</span>
-                       <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
-                    </div>
-                    <p className="description-text">{details.overview}</p>
-                  </div>
-
-                  {/* 🎭 PERSONNEL ARCHIVES (CAST) */}
-                  {details.credits?.cast?.length > 0 && (
-                    <div className="cast-archive-section animate-up">
-                      <div className="platforms-header">
-                        <h3 className="platforms-title">Personnel Archives <span>(Cast & Crew)</span></h3>
-                        <div className="platforms-filter">
-                           <button className={details._castFilter === 'acting' || !details._castFilter ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'acting'})}>Actors</button>
-                           <button className={details._castFilter === 'voice' ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'voice'})}>Voices</button>
-                           <button className={details._castFilter === 'crew' ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'crew'})}>Crew</button>
+          {loading ? (
+            <div className="modal-loader"><div className="spinner" /></div>
+          ) : error ? (
+            <div className="modal-error">{error}</div>
+          ) : details ? (
+            <div className="details-container custom-scrollbar">
+              
+              {/* 🎥 NAVIGATION TABS */}
+              <div className="modal-nav">
+                    <button 
+                      className={activeTab === 'preview' ? 'active' : ''} 
+                      onClick={() => setActiveTab('preview')}
+                    >
+                        <div className="tab-with-icon">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                          Discovery
                         </div>
-                      </div>
+                    </button>
+                    <button 
+                      className={activeTab === 'encyclopedia' ? 'active' : ''} 
+                      onClick={() => setActiveTab('encyclopedia')}
+                    >
+                        <div className="tab-with-icon">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                          Archives
+                        </div>
+                    </button>
+                    <button 
+                      className={activeTab === 'ai' ? 'active' : ''} 
+                      onClick={() => setActiveTab('ai')}
+                    >
+                        <div className="tab-with-icon">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+                          Oracle
+                        </div>
+                    </button>
+              </div>
 
-                      <div className="visual-cast-grid custom-scrollbar">
-                        {(details._castFilter === 'crew' ? (details.credits.crew || []) : (details.credits.cast || []))
-                          .filter(m => {
-                            if (details._castFilter === 'voice') return m.known_for_department === 'Acting' && m.character?.toLowerCase().includes('(voice)');
-                            if (details._castFilter === 'acting') return !m.character?.toLowerCase().includes('(voice)');
-                            return true;
-                          })
-                          .slice(0, 15)
-                          .map((m, i) => (
-                            <div key={m.id || i} className="cast-profile-card">
-                              <div className="actor-photo-wrap">
-                                {m.profile_path ? <img src={`https://image.tmdb.org/t/p/w185${m.profile_path}`} alt={m.name} /> : <div className="photo-placeholder">👤</div>}
-                              </div>
-                              <div className="cast-info">
-                                <span className="actor-name">{m.name}</span>
-                                <span className="char-tag">{m.character || m.job}</span>
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </div>
+              <div className="modal-body-content">
+                {activeTab === 'preview' && (
+                  <div className="preview-tab animate-fade">
+                    {/* YouTube Player */}
+                    <div className="player-wrapper glass-card">
+                      {currentVideoId && !details.hideTrailer ? (
+                        <iframe
+                          className="main-iframe"
+                          src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
+                          title="Discovery"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <div className="no-video-placeholder" style={{ backgroundImage: `url(https://image.tmdb.org/t/p/w780${item.poster_path})` }}>
+                          <div className="no-video-overlay"><span>Record Encrypted</span></div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
 
-              {activeTab === 'encyclopedia' && (
-                <div className="encyclopedia-tab animate-fade">
-                  <div className="ency-header">
-                    <form className="wiki-search-bar" onSubmit={searchGlobalWiki}>
-                       <input type="text" placeholder="Search Global Archives (any film in history)..." value={wikiSearch} onChange={(e) => setWikiSearch(e.target.value)} />
-                       <button type="submit">🔍</button>
-                    </form>
-                    <div className="ency-lang-bar">
-                      {[
-                        { id: 'en', label: 'English' },
-                        { id: 'hi', label: 'हिंदी' },
-                        { id: 'ja', label: '日本語' },
-                        { id: 'fr', label: 'Français' },
-                        { id: 'es', label: 'Español' },
-                        { id: 'ko', label: '한국어' },
-                        { id: 'de', label: 'Deutsch' }
-                      ].map((lang, idx) => (
-                        <button 
-                          key={lang.id} 
-                          className={`lang-pill ${wikiLang === lang.id ? 'active-emerald' : ''} animate-stagger`} 
-                          style={{ animationDelay: `${idx * 0.05}s` }}
-                          onClick={() => { 
-                            setWikiLang(lang.id); 
-                            setWikiData(null); 
-                            fetchWiki(null, lang.id); 
-                          }}
-                        >
-                          {lang.label}
-                        </button>
-                      ))}
-                      {isSearchingWiki && <button className="btn-back-wiki animate-fade" onClick={() => fetchWiki()}>Back to {item.title || item.name}</button>}
-                    </div>
-                  </div>
-
-                  {wikiLoading ? (
-                    <div className="ency-loading"><div className="spinner" /></div>
-                  ) : isSearchingWiki ? (
-                    <div className="wiki-search-results animate-up custom-scrollbar">
-                       {wikiSearchResults.map(res => (
-                         <div key={res.id} className="wiki-res-card glass-card" onClick={() => fetchWiki(res.title)}>
-                            {res.thumbnail && <img src={res.thumbnail} alt="thumb" />}
-                            <div className="res-info">
-                               <h4>{res.title}</h4>
-                               <p>{res.overview?.slice(0, 120)}...</p>
-                            </div>
-                         </div>
-                       ))}
-                    </div>
-                  ) : wikiData?.error ? (
-                    <div className="ency-error">{wikiData.error}</div>
-                  ) : wikiData ? (
-                    <div className="ency-workspace">
-                      {/* Left: Section Menu */}
-                      <div className="ency-section-menu custom-scrollbar">
-                        <button className={activeWikiSection === -1 ? 'active' : ''} onClick={() => setActiveWikiSection(-1)}>📜 Overview</button>
-                        {wikiData?.sections?.map((s, i) => (
-                          <button key={i} className={activeWikiSection === i ? 'active' : ''} onClick={() => setActiveWikiSection(i)}>
-                            {s.title}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Right: Section Content */}
-                      <div className="ency-section-content custom-scrollbar">
-                        {activeWikiSection === -1 || !wikiData?.sections?.[activeWikiSection] ? (
-                          <div className="section-article animate-slide-right">
-                              <h3 className="section-h">{wikiData?.title} {wikiLang === 'hi' ? 'संग्रह' : 'Archive'}</h3>
-                             {wikiData?.originalImage && <img src={wikiData.originalImage} className="section-poster glass-card" alt="poster" />}
-                             <p className="section-p">{wikiData?.summary}</p>
-                             
-                             {/* Gallery artifacts */}
-                             <div className="wiki-gallery">
-                                {wikiData?.images?.map((img, i) => ( <img key={i} src={img} alt="artifact" className="gallery-img glass-card" /> ))}
+                    {/* 📺 WATCH PLATFORMS (Premium UI) Directly Below Trailer */}
+                    <div className="watch-platforms-container animate-up">
+                      <div className="platforms-header">
+                         <h3 className="platforms-title">Streaming On <span>(Available Platforms)</span></h3>
+                         <div className="platforms-header-right">
+                           {globalProviders.length > 0 && (
+                             <div className="platforms-filter">
+                               <button className={providerFilter === 'all' ? 'active' : ''} onClick={() => setProviderFilter('all')}>All</button>
+                               <button className={providerFilter === 'free' ? 'active' : ''} onClick={() => setProviderFilter('free')}>Free</button>
+                               <button className={providerFilter === 'paid' ? 'active' : ''} onClick={() => setProviderFilter('paid')}>Paid</button>
                              </div>
-                          </div>
-                        ) : (
-                          <div className="section-article animate-slide-right" key={activeWikiSection}>
-                             <h3 className="section-h">{wikiData?.sections?.[activeWikiSection]?.title}</h3>
-                             
-                             {/* 🎞️ SECTION-SPECIFIC VISUAL ARCHIVE STRIP */}
-                             {wikiData?.sections?.[activeWikiSection]?.sectionImages?.length > 0 && (
-                               <div className="section-images-strip custom-scrollbar">
-                                  {wikiData.sections[activeWikiSection].sectionImages.map((src, idx) => (
-                                    <img key={idx} src={src} alt="archive-still" className="strip-img glass-card" />
-                                  ))}
-                               </div>
-                             )}
-
-                             {wikiData?.sections?.[activeWikiSection]?.members?.length > 0 ? (
-                               <div className="visual-cast-grid">
-                                  {wikiData.sections[activeWikiSection].members.map((m, i) => (
-                                    <div key={i} className="cast-profile-card glass-card animate-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                                       <div className="actor-photo-wrap">
-                                          {m.photo ? <img src={m.photo} alt={m.name} /> : <div className="photo-placeholder">👤</div>}
-                                       </div>
-                                       <div className="cast-info">
-                                          <h4 className="actor-name">{m.name}</h4>
-                                          <span className="char-tag">as {m.character}</span>
-                                       </div>
-                                    </div>
-                                  ))}
-                               </div>
-                             ) : (
-                               <div 
-                                 className={`wiki-parsed-html ${wikiLoading ? 'animate-pulse opacity-50' : 'animate-fade'}`} 
-                                 dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content }} 
-                               />
-                             )}
-                          </div>
-                        )}
-                        
-                        {wikiData?.wikiUrl && (
-                          <a href={wikiData.wikiUrl} target="_blank" rel="noreferrer" className="wiki-btn-link">
-                            Explore Full Wikipedia Original Archive 🏛️
-                          </a>
-                        )}
+                           )}
+                           {watchLink && (
+                             <a href={watchLink} target="_blank" rel="noreferrer" className="justwatch-btn">
+                               🎬 All Options
+                             </a>
+                           )}
+                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="ency-loading"><div className="spinner" /></div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'ai' && (
-                <div className="ai-modal-tab animate-fade">
-                   <div className="ai-oracle-header">
-                      <div className="oracle-aura animate-pulse" />
-                      <div className="oracle-info">
-                         <h3>Ask AIRA Vault</h3>
-                         <p>Direct Oracle Link: {details?.title || details?.name}</p>
-                      </div>
-                   </div>
-
-                   <div className="ai-modal-chat custom-scrollbar">
-                      {airaChat.length === 0 ? (
-                        <div className="ai-empty-state">
-                           <div className="ai-icon">🔮</div>
-                           <p>Seek your wisdom from AIRA. Ask me anything about this cinematic archive.</p>
+                      
+                      {globalProviders.length > 0 ? (
+                        <div className="platforms-grid custom-scrollbar">
+                           {filteredProviders.map((p, idx) => (
+                              <a 
+                                key={`${p.provider_id}-${p.costCat}`} 
+                                href={getDirectLink(p.provider_name)} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="platform-card glass-card" 
+                                style={{ animationDelay: `${idx * 0.05}s` }}
+                                title={`Watch on ${p.provider_name}`}
+                              >
+                                <div className="platform-logo-wrapper">
+                                   <img src={`https://image.tmdb.org/t/p/original${p.logo_path}`} alt={p.provider_name} />
+                                </div>
+                                <div className="platform-info">
+                                   <span className="platform-name">{p.provider_name}</span>
+                                   <span className={`platform-type-badge ${p.offerType.toLowerCase()}`}>{p.offerType}</span>
+                                </div>
+                                <div className="watch-now-btn">Watch Now ↗</div>
+                              </a>
+                           ))}
+                           {filteredProviders.length === 0 && (
+                              <div className="no-platforms-filtered">No platforms found for this filter.</div>
+                           )}
                         </div>
                       ) : (
-                        airaChat.map((msg, i) => (
-                          <div key={i} className={`ai-msg ${msg.role}`}>
-                             <div className="msg-content glass-card">{msg.content}</div>
-                          </div>
-                        ))
+                        <div className="empty-streaming-state glass-card">
+                          <div className="empty-icon pulse">📡</div>
+                          <h4>Stream Archives Veiled</h4>
+                          <p>No verified digital streams found in local archives. External scouting recommended.</p>
+                          <a 
+                            href={`https://www.google.com/search?q=watch+${encodeURIComponent(details?.title || details?.name || item?.title || item?.name || 'movie')}+online`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="platforms-scout-btn"
+                          >
+                            Scout Global Platforms (Google) ↗
+                          </a>
+                        </div>
                       )}
-                      {airaLoading && <div className="aira-writing">AIRA is decrypting...</div>}
-                   </div>
+                    </div>
 
-                   <form className="ai-modal-input" onSubmit={askAIRA}>
-                      <input 
-                        type="text" 
-                        placeholder="Seek cinematic wisdom..." 
-                        value={airaInput}
-                        onChange={(e) => setAiraInput(e.target.value)}
-                        disabled={airaLoading}
-                      />
-                      <button type="submit" disabled={airaLoading}>➤</button>
-                   </form>
-                </div>
-              )}
+                    {/* Scene Selector */}
+                    <div className="discovery-grid animate-up">
+                      {[
+                        ...(details.trailerId ? [{ id: details.trailerId, title: 'Official Trailer', type: 'Official' }] : []),
+                        ...(details.relatedScenes || []).map(s => ({ ...s, type: 'Epic' })),
+                        ...(details.fanVideos || []).map(s => ({ ...s, type: 'Edit' })),
+                        ...(details.generalVideos || []).map(s => ({ ...s, type: 'Related' }))
+                      ].map((v, i) => (
+                        <div 
+                          key={i} 
+                          className={`discovery-card ${currentVideoId === v.id ? 'active' : ''}`}
+                          onClick={() => setDetails({ ...details, activeVideoId: v.id })}
+                        >
+                          <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} alt="thumb" />
+                          <div className="card-info"><span className="tag">{v.type}</span></div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="info-panel glass-card">
+                      <h2 className="title-display">{details.title || details.name}</h2>
+                      <div className="meta-info meta-gap">
+                         <span className="rating gold">⭐ {details.vote_average ? Number(details.vote_average).toFixed(1) : 'N/A'}</span>
+                         <span className="meta-divider">|</span>
+                         <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
+                      </div>
+                      <p className="description-text">{details.overview}</p>
+                    </div>
+
+                    {/* 🎭 PERSONNEL ARCHIVES (CAST) */}
+                    {details.credits && details.credits.cast && details.credits.cast.length > 0 && (
+                      <div className="cast-archive-section animate-up">
+                        <div className="platforms-header">
+                          <h3 className="platforms-title">Personnel Archives <span>(Cast & Crew)</span></h3>
+                          <div className="platforms-filter">
+                             <button className={details._castFilter === 'acting' || !details._castFilter ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'acting'})}>Actors</button>
+                             <button className={details._castFilter === 'voice' ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'voice'})}>Voices</button>
+                             <button className={details._castFilter === 'crew' ? 'active' : ''} onClick={() => setDetails({...details, _castFilter: 'crew'})}>Crew</button>
+                          </div>
+                        </div>
+
+                        <div className="visual-cast-grid custom-scrollbar">
+                          {(details._castFilter === 'crew' ? (details.credits.crew || []) : (details.credits.cast || []))
+                            .filter(m => {
+                              if (details._castFilter === 'voice') return m.known_for_department === 'Acting' && m.character && m.character.toLowerCase().includes('(voice)');
+                              if (details._castFilter === 'acting') return m.character && !m.character.toLowerCase().includes('(voice)');
+                              return true;
+                            })
+                            .slice(0, 15)
+                            .map((m, i) => (
+                              <div key={m.id || i} className="cast-profile-card">
+                                <div className="actor-photo-wrap">
+                                  {m.profile_path ? <img src={`https://image.tmdb.org/t/p/w185${m.profile_path}`} alt={m.name} /> : <div className="photo-placeholder">👤</div>}
+                                </div>
+                                <div className="cast-info">
+                                  <span className="actor-name">{m.name}</span>
+                                  <span className="char-tag">{m.character || m.job}</span>
+                                </div>
+                              </div>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'encyclopedia' && (
+                  <div className="encyclopedia-tab animate-fade">
+                    <div className="ency-header">
+                      <form className="wiki-search-bar" onSubmit={searchGlobalWiki}>
+                         <input type="text" placeholder="Search Global Archives (any film in history)..." value={wikiSearch} onChange={(e) => setWikiSearch(e.target.value)} />
+                         <button type="submit">🔍</button>
+                      </form>
+                      <div className="ency-lang-bar">
+                        {[
+                          { id: 'en', label: 'English' },
+                          { id: 'hi', label: 'हिंदी' },
+                          { id: 'ja', label: '日本語' },
+                          { id: 'fr', label: 'Français' },
+                          { id: 'es', label: 'Español' },
+                          { id: 'ko', label: '한국어' },
+                          { id: 'de', label: 'Deutsch' }
+                        ].map((lang, idx) => (
+                          <button 
+                            key={lang.id} 
+                            className={`lang-pill ${wikiLang === lang.id ? 'active-emerald' : ''} animate-stagger`} 
+                            style={{ animationDelay: `${idx * 0.05}s` }}
+                            onClick={() => { 
+                              setWikiLang(lang.id); 
+                              setWikiData(null); 
+                              fetchWiki(null, lang.id); 
+                            }}
+                          >
+                            {lang.label}
+                          </button>
+                        ))}
+                        {isSearchingWiki && <button className="btn-back-wiki animate-fade" onClick={() => fetchWiki()}>Back to {item.title || item.name}</button>}
+                      </div>
+                    </div>
+
+                    {wikiLoading ? (
+                      <div className="ency-loading"><div className="spinner" /></div>
+                    ) : isSearchingWiki ? (
+                      <div className="wiki-search-results animate-up custom-scrollbar">
+                         {wikiSearchResults.map(res => (
+                           <div key={res.id} className="wiki-res-card glass-card" onClick={() => fetchWiki(res.title)}>
+                              {res.thumbnail && <img src={res.thumbnail} alt="thumb" />}
+                              <div className="res-info">
+                                 <h4>{res.title}</h4>
+                                 <p>{res.overview?.slice(0, 120)}...</p>
+                              </div>
+                           </div>
+                         ))}
+                      </div>
+                    ) : wikiData?.error ? (
+                      <div className="ency-error">{wikiData.error}</div>
+                    ) : wikiData ? (
+                      <div className="ency-workspace">
+                        {/* Left: Section Menu */}
+                        <div className="ency-section-menu custom-scrollbar">
+                          <button className={activeWikiSection === -1 ? 'active' : ''} onClick={() => setActiveWikiSection(-1)}>📜 Overview</button>
+                          {wikiData?.sections?.map((s, i) => (
+                            <button key={i} className={activeWikiSection === i ? 'active' : ''} onClick={() => setActiveWikiSection(i)}>
+                              {s.title}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Right: Section Content */}
+                        <div className="ency-section-content custom-scrollbar">
+                          {activeWikiSection === -1 || !wikiData?.sections?.[activeWikiSection] ? (
+                            <div className="section-article animate-slide-right">
+                                <h3 className="section-h">{wikiData?.title} {wikiLang === 'hi' ? 'संग्रह' : 'Archive'}</h3>
+                               {wikiData?.originalImage && <img src={wikiData.originalImage} className="section-poster glass-card" alt="poster" />}
+                               <p className="section-p">{wikiData?.summary}</p>
+                               
+                               {/* Gallery artifacts */}
+                               <div className="wiki-gallery">
+                                  {wikiData?.images?.map((img, i) => ( <img key={i} src={img} alt="artifact" className="gallery-img glass-card" /> ))}
+                               </div>
+                            </div>
+                          ) : (
+                            <div className="section-article animate-slide-right" key={activeWikiSection}>
+                               <h3 className="section-h">{wikiData?.sections?.[activeWikiSection]?.title}</h3>
+                               
+                               {/* 🎞️ SECTION-SPECIFIC VISUAL ARCHIVE STRIP */}
+                               {wikiData?.sections?.[activeWikiSection]?.sectionImages?.length > 0 && (
+                                 <div className="section-images-strip custom-scrollbar">
+                                    {wikiData.sections[activeWikiSection].sectionImages.map((src, idx) => (
+                                      <img key={idx} src={src} alt="archive-still" className="strip-img glass-card" />
+                                    ))}
+                                 </div>
+                               )}
+
+                               {wikiData?.sections?.[activeWikiSection]?.members?.length > 0 ? (
+                                 <div className="visual-cast-grid">
+                                    {wikiData.sections[activeWikiSection].members.map((m, i) => (
+                                      <div key={i} className="cast-profile-card glass-card animate-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                                         <div className="actor-photo-wrap">
+                                            {m.photo ? <img src={m.photo} alt={m.name} /> : <div className="photo-placeholder">👤</div>}
+                                         </div>
+                                         <div className="cast-info">
+                                            <h4 className="actor-name">{m.name}</h4>
+                                            <span className="char-tag">as {m.character}</span>
+                                         </div>
+                                      </div>
+                                    ))}
+                                 </div>
+                               ) : (
+                                 <div 
+                                   className={`wiki-parsed-html ${wikiLoading ? 'animate-pulse opacity-50' : 'animate-fade'}`} 
+                                   dangerouslySetInnerHTML={{ __html: wikiData?.sections?.[activeWikiSection]?.content || '' }} 
+                                 />
+                               )}
+                            </div>
+                          )}
+                          
+                          {wikiData?.wikiUrl && (
+                            <a href={wikiData.wikiUrl} target="_blank" rel="noreferrer" className="wiki-btn-link">
+                              Explore Full Wikipedia Original Archive 🏛️
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="ency-loading"><div className="spinner" /></div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'ai' && (
+                  <div className="ai-modal-tab animate-fade">
+                     <div className="ai-oracle-header">
+                        <div className="oracle-aura animate-pulse" />
+                        <div className="oracle-info">
+                           <h3>Ask AIRA Vault</h3>
+                           <p>Direct Oracle Link: {details?.title || details?.name}</p>
+                        </div>
+                     </div>
+
+                     <div className="ai-modal-chat custom-scrollbar">
+                        {airaChat.length === 0 ? (
+                          <div className="ai-empty-state">
+                             <div className="ai-icon">🔮</div>
+                             <p>Seek your wisdom from AIRA. Ask me anything about this cinematic archive.</p>
+                          </div>
+                        ) : (
+                          airaChat.map((msg, i) => (
+                            <div key={i} className={`ai-msg ${msg.role}`}>
+                               <div className="msg-content glass-card">{msg.content}</div>
+                            </div>
+                          ))
+                        )}
+                        {airaLoading && <div className="aira-writing">AIRA is decrypting...</div>}
+                     </div>
+
+                     <form className="ai-modal-input" onSubmit={askAIRA}>
+                        <input 
+                          type="text" 
+                          placeholder="Seek cinematic wisdom..." 
+                          value={airaInput}
+                          onChange={(e) => setAiraInput(e.target.value)}
+                          disabled={airaLoading}
+                        />
+                        <button type="submit" disabled={airaLoading}>➤</button>
+                     </form>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      </ModalErrorBoundary>
     </div>
   );
 }
