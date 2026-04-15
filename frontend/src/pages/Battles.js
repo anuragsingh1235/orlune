@@ -61,7 +61,6 @@ export default function Battles() {
   const [opponentSearch, setOpponentSearch] = useState('');
   const [opponentResults, setOpponentResults] = useState([]);
   const [myVotes, setMyVotes] = useState({}); // challenge_id -> voted_for
-  const [winner, setWinner] = useState(null); // battle that just ended (for animation)
   const [activeComparison, setActiveComparison] = useState(null); // challenge_id
 
   // ── WIKI SEARCH STATE (Gallery)

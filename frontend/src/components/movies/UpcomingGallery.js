@@ -12,17 +12,16 @@ export default function UpcomingGallery({ onSelect }) {
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' or 'wiki'
 
   useEffect(() => {
+    const fetchUpcoming = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/movies/upcoming');
+        setMovies(Array.isArray(res.data) ? res.data.slice(0, 10) : []);
+      } catch (e) {}
+      setLoading(false);
+    };
     fetchUpcoming();
   }, []);
-
-  const fetchUpcoming = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('/movies/upcoming');
-      setMovies(Array.isArray(res.data) ? res.data.slice(0, 10) : []);
-    } catch (e) {}
-    setLoading(false);
-  };
 
   const handleWikiSearch = async (e) => {
     e.preventDefault();
