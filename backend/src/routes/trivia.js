@@ -2,7 +2,7 @@ const express  = require('express');
 const router   = express.Router();
 const path     = require('path');
 const fs       = require('fs');
-const { v4: uuidv4 } = require('uuid');
+const crypto   = require('crypto');
 const pool     = require('../config/database');
 const auth     = require('../middleware/auth');
 
@@ -78,7 +78,7 @@ ensureTable();
 // ════════════════════════════════════════════════════════════
 router.post('/start', (req, res) => {
   const { category = 'all', difficulty = 'all', count = 10 } = req.body;
-  const sessionId = uuidv4();
+  const sessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
   const questions = getQuestions(category, difficulty, count);
   const fullQuestions = questions.map(q => questionBank.find(f => f.id === q.id));
 
