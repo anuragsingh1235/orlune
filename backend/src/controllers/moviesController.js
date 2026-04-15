@@ -123,6 +123,19 @@ exports.getTrending = async (req, res) => {
   res.status(500).json({ error: "Fetch failed." });
 };
 
+exports.getUpcoming = async (req, res) => {
+  const tmdbKey = process.env.TMDB_API_KEY;
+  try {
+    const response = await axios.get(
+      `https://api.themoviedb.org/3/movie/upcoming?api_key=${tmdbKey}`,
+      { timeout: 4000 }
+    );
+    return res.json((response.data.results || []).map((m) => ({ ...m, _api_source: "tmdb" })));
+  } catch (err) {
+    res.status(500).json({ error: "Fetch failed." });
+  }
+};
+
 exports.search = async (req, res) => {
   const tmdbKey = process.env.TMDB_API_KEY;
   const omdbKey = process.env.OMDB_API_KEY;

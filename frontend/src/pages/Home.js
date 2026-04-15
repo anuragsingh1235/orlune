@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthModal from '../components/AuthModal';
 import MovieCard from '../components/movies/MovieCard';
 import DetailsModal from '../components/movies/DetailsModal';
+import UpcomingGallery from '../components/movies/UpcomingGallery';
 import FactCard from '../components/dashboard/FactCard';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/layout/Footer';
@@ -97,6 +98,12 @@ export default function Home() {
               {anime?.map((item) => <MovieCard key={item.id} item={item} onClick={setActiveMovie} />)}
             </div>
           )}
+
+          <div className="section-header" style={{ marginTop: '60px' }}>
+            <h2 className="section-title">Premiere Gallery</h2>
+            <span style={{ fontSize: '0.8rem', color: '#88C0D0', fontWeight: 'bold' }}>Live from Wikipedia</span>
+          </div>
+          <UpcomingGallery onSelect={setActiveMovie} />
         </section>
         {activeMovie && <DetailsModal item={activeMovie} onClose={() => setActiveMovie(null)} hideTrailer={false} />}
         <Footer />
