@@ -179,57 +179,67 @@ export default function VideoCallRoom({ channel, mode = 'video', onLeave }) {
 
   const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 
+  const [minimized, setMinimized] = useState(false);
+
   /* ── Dynamic Layout ── */
   const activePresenter = sharingId === me.id ? 'me' : peers.find(p => p.screenOn);
   const isPresenting = !!activePresenter;
 
   if (mode === 'voice') {
     return (
-      <div className="vcr-root vcr-voice-mode">
+      <div className={`vcr-root vcr-voice-mode ${minimized ? 'vcr-minimized' : ''}`}>
         <div className="vcr-topbar">
-          <div className="vcr-title"><span className="vcr-dot" />🎙️ {channel?.name} — Voice</div>
-          <div className="vcr-timer">{fmt(duration)}</div>
-          <div className="vcr-members">{peers.length + 1} connected</div>
+          <div className="vcr-title"><span className="vcr-dot" />🎙️ {channel?.name}</div>
+          {!minimized && <div className="vcr-timer">{fmt(duration)}</div>}
+          {!minimized && <div className="vcr-members">{peers.length + 1} connected</div>}
+          <button className="vcr-btn-minimize" onClick={() => setMinimized(!minimized)}>
+            {minimized ? '↗️ Maximize' : '↙️ Chat'}
+          </button>
         </div>
-        <div className="vcr-voice-participants">
-          <div className={`vcr-voice-participant ${micOn ? 'speaking' : 'muted'}`}>
-            <div className={`vcr-voice-avatar ${micOn ? 'connected' : ''}`}>{(me.username || 'U')[0]}</div>
-            <span className="vcr-voice-name">You</span>
-            {!micOn && <span className="vcr-voice-mute-badge">🔇</span>}
-          </div>
-          {peers.map(p => (
-            <div key={p.socketId} className={`vcr-voice-participant ${p.micOn ? 'speaking' : 'muted'}`}>
-              <div className={`vcr-voice-avatar ${p.micOn ? 'connected' : ''}`}>{(p.username || 'U')[0]}</div>
-              <span className="vcr-voice-name">{p.username}</span>
-              {!p.micOn && <span className="vcr-voice-mute-badge">🔇</span>}
-              <audio autoPlay ref={el => { if (el && p.stream) el.srcObject = p.stream; }} />
+        {!minimized && (
+          <div className="vcr-voice-participants">
+            <div className={`vcr-voice-participant ${micOn ? 'speaking' : 'muted'}`}>
+              <div className={`vcr-voice-avatar ${micOn ? 'connected' : ''}`}>{(me.username || 'U')[0]}</div>
+              <span className="vcr-voice-name">You</span>
+              {!micOn && <span className="vcr-voice-mute-badge">🔇</span>}
             </div>
-          ))}
-        </div>
+            {peers.map(p => (
+              <div key={p.socketId} className={`vcr-voice-participant ${p.micOn ? 'speaking' : 'muted'}`}>
+                <div className={`vcr-voice-avatar ${p.micOn ? 'connected' : ''}`}>{(p.username || 'U')[0]}</div>
+                <span className="vcr-voice-name">{p.username}</span>
+                {!p.micOn && <span className="vcr-voice-mute-badge">🔇</span>}
+                <audio autoPlay ref={el => { if (el && p.stream) el.srcObject = p.stream; }} />
+              </div>
+            ))}
+          </div>
+        )}
         <div className="vcr-controls">
           <button className={`vcr-btn ${micOn ? '' : 'vcr-btn-off'}`} onClick={toggleMic}>
             <span className="vcr-btn-icon">{micOn ? '🎙️' : '🔇'}</span>
-            <span className="vcr-btn-label">{micOn ? 'Mute' : 'Unmute'}</span>
+            {!minimized && <span className="vcr-btn-label">{micOn ? 'Mute' : 'Unmute'}</span>}
           </button>
-          <button className="vcr-btn vcr-btn-end" onClick={endCall}>📴 Leave</button>
+          <button className="vcr-btn vcr-btn-end" onClick={endCall}>📴 {!minimized && 'Leave'}</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`vcr-root ${isPresenting ? 'vcr-presentation' : ''}`}>
+    <div className={`vcr-root ${isPresenting ? 'vcr-presentation' : ''} ${minimized ? 'vcr-minimized' : ''}`}>
       <div className="vcr-topbar">
         <div className="vcr-title"><span className="vcr-dot" />📹 {channel?.name}</div>
-        <div className="vcr-timer">{fmt(duration)}</div>
-        <div className="vcr-members">{peers.length + 1} Active</div>
+        {!minimized && <div className="vcr-timer">{fmt(duration)}</div>}
+        {!minimized && <div className="vcr-members">{peers.length + 1} Active</div>}
+        <button className="vcr-btn-minimize" onClick={() => setMinimized(!minimized)}>
+           {minimized ? '↗️ Maximize' : '↙️ Chat'}
+        </button>
       </div>
 
       <div className="vcr-main-content">
         {isPresenting && (
           <div className="vcr-featured">
             {activePresenter === 'me' ? (
-              <video ref={screenVideoRef} autoPlay playsInline muted className="vcr-video" />
+              <video ref={el => { if (el && screenStreamRef.current) el.srcObject = screenStreamRef.current; }} autoPlay playsInline muted className="vcr-video" />
             ) : (
               <video autoPlay playsInline className="vcr-video" ref={el => { if (el && activePresenter.stream) el.srcObject = activePresenter.stream; }} />
             )}
@@ -261,17 +271,17 @@ export default function VideoCallRoom({ channel, mode = 'video', onLeave }) {
       <div className="vcr-controls">
         <button className={`vcr-btn ${micOn ? '' : 'vcr-btn-off'}`} onClick={toggleMic}>
           <span className="vcr-btn-icon">{micOn ? '🎙️' : '🔇'}</span>
-          <span className="vcr-btn-label">Mic</span>
+          {!minimized && <span className="vcr-btn-label">Mic</span>}
         </button>
         <button className={`vcr-btn ${camOn ? '' : 'vcr-btn-off'}`} onClick={toggleCam}>
           <span className="vcr-btn-icon">{camOn ? '📹' : '🚫'}</span>
-          <span className="vcr-btn-label">Cam</span>
+          {!minimized && <span className="vcr-btn-label">Cam</span>}
         </button>
         <button className={`vcr-btn ${screenOn ? 'vcr-btn-active' : ''}`} onClick={toggleScreen}>
           <span className="vcr-btn-icon">🖥️</span>
-          <span className="vcr-btn-label">Share</span>
+          {!minimized && <span className="vcr-btn-label">Share</span>}
         </button>
-        <button className="vcr-btn vcr-btn-end" onClick={endCall}>📵 End</button>
+        <button className="vcr-btn vcr-btn-end" onClick={endCall}>📵 {!minimized && 'End'}</button>
       </div>
     </div>
   );

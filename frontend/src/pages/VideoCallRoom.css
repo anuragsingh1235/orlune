@@ -333,3 +333,23 @@
 }
 .vcr-waiting-text { font-size: 1.2rem; font-weight: 700; color: #94a3b8; }
 .vcr-waiting-sub { font-size: 0.9rem; color: #475569; max-width: 250px; }
+
+
+/* -- MINIMIZED PIP MODE -- */
+.vcr-minimized {
+  inset: auto !important;
+  bottom: 20px;
+  right: 20px;
+  width: 320px;
+  height: 220px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.vcr-minimized .vcr-main-content { padding: 5px; gap: 5px; }
+.vcr-minimized .vcr-topbar { padding: 8px 12px; }
+.vcr-minimized .vcr-controls { padding: 8px; gap: 10px; }
+.vcr-minimized .vcr-btn { min-width: 40px; padding: 6px; border-radius: 8px; }
+.vcr-btn-minimize { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.5); padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+.vcr-btn-minimize:hover { background: rgba(59, 130, 246, 0.4); }
+
