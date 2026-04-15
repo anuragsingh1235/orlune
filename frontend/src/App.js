@@ -16,6 +16,8 @@ import Social from './pages/Social';
 import GeminiOracle from './components/movies/GeminiOracle';
 import Profile from './pages/Profile';
 import Features from './pages/Features';
+import Lab from './pages/Lab';
+import Trivia from './pages/Trivia';
 import './styles/globals.css';
 
 function ProtectedRoute({ children }) {
@@ -42,6 +44,8 @@ function AppRoutes() {
         <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/features" element={<Features />} />
+        <Route path="/lab" element={<Lab />} />
+        <Route path="/trivia" element={<Trivia />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <GeminiOracle />

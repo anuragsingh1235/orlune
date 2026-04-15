@@ -34,6 +34,8 @@ export default function Navbar() {
     { to: '/features', label: 'Features' },
     { to: '/social', label: 'Social' },
     { to: '/leaderboard', label: 'Rankings' },
+    { to: '/lab', label: 'Lab' },
+    { to: '/trivia', label: 'Trivia' },
   ];
 
   const handleLogout = () => {
