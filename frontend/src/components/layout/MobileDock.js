@@ -27,20 +27,6 @@ export default function MobileDock() {
         <span>Gallery</span>
       </NavLink>
 
-      <NavLink to="/lab" className={({ isActive }) => `dock-item ${isActive ? 'active' : ''}`}>
-        <div className="dock-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
-        </div>
-        <span>Lab</span>
-      </NavLink>
-
-      <NavLink to="/trivia" className={({ isActive }) => `dock-item ${isActive ? 'active' : ''}`}>
-        <div className="dock-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-        <span>Trivia</span>
-      </NavLink>
-
       <NavLink to="/social" className={({ isActive }) => `dock-item ${isActive ? 'active' : ''}`}>
         <div className="dock-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
