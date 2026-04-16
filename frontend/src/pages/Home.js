@@ -116,9 +116,6 @@ export default function Home() {
     <div className="home-page landing-splash-view animate-fade">
       <section className="hero-landing">
         <div className="hero-content container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-          <div className="hero-logo-wrap animate-scale" style={{ marginBottom: '32px' }}>
-             <img src="/logo.png" alt="Orlune Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(180, 142, 173, 0.3))' }} />
-          </div>
           <div className="animate-up" style={{ marginBottom: '24px' }}>
             <span style={{ fontSize: '0.75rem', letterSpacing: '4px', textTransform: 'uppercase', color: '#B48EAD', fontWeight: '900', background: 'rgba(180, 142, 173, 0.1)', padding: '8px 20px', borderRadius: '40px' }}>
               Strategic Protocol: Active
