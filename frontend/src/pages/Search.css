@@ -144,96 +144,12 @@
     font-size: 16px;
   }
 }
-
-/* 🤖 AIRA INSIGHT CARD STYLES */
-.aira-insight-wrapper {
-  margin-bottom: 40px;
-  max-width: 900px;
-}
-
-.aira-insight-card {
-  position: relative;
-  padding: 24px 32px;
-  border: 1px solid rgba(136, 192, 208, 0.2);
-  background: linear-gradient(135deg, rgba(46, 52, 64, 0.4) 0%, rgba(59, 66, 82, 0.2) 100%);
-  overflow: hidden;
-}
-
-.aira-insight-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(to bottom, #88c0d0, #5e81ac);
-}
-
-.aira-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-  color: #88c0d0;
-  margin-bottom: 16px;
-}
-
-.aira-pulse {
-  width: 8px;
-  height: 8px;
-  background: #88c0d0;
-  border-radius: 50%;
-  box-shadow: 0 0 10px #88c0d0;
-  animation: airaPulse 2s infinite ease-in-out;
-}
-
-@keyframes airaPulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.5); opacity: 0.4; }
-  100% { transform: scale(1); opacity: 0.8; }
-}
-
-.aira-loading {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  font-style: italic;
-}
-
-.aira-dots span {
-  width: 4px;
-  height: 4px;
-  background: #88c0d0;
-  border-radius: 50%;
-  display: inline-block;
-  margin: 0 2px;
-  animation: airaDots 1.4s infinite ease-in-out both;
-}
-
-.aira-dots span:nth-child(1) { animation-delay: -0.32s; }
-.aira-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes airaDots {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1.0); }
-}
-
-.aira-content p {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 17px;
-  line-height: 1.6;
-  margin-bottom: 12px;
-  font-weight: 400;
-}
-
-.aira-footer {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+@media (max-width: 600px) {
+  .search-page {
+    padding-top: 100px;
+  }
+  .search-input {
+    height: 56px;
+    font-size: 16px;
+  }
 }

@@ -68,6 +68,8 @@ export default function Battles() {
   const [galWikiResults, setGalWikiResults] = useState([]);
   const [galSearching, setGalSearching] = useState(false);
   const [showWikiResults, setShowWikiResults] = useState(false);
+  const [galInsight, setGalInsight] = useState(null);
+  const [galInsightLoading, setGalInsightLoading] = useState(false);
 
 
   // ── FETCH UPCOMING
@@ -280,6 +282,8 @@ export default function Battles() {
     if (!galSearchQ.trim()) { setShowWikiResults(false); return; }
     setGalSearching(true);
     setShowWikiResults(true);
+    setGalInsight(null);
+    getGalAIInsight(galSearchQ);
     try {
       // Fetch from Movie Engine (TMDB/OMDB) and Wikipedia simultaneously
       const [movieRes, wikiRes] = await Promise.allSettled([
@@ -329,6 +333,22 @@ export default function Battles() {
     setGalSearching(false);
   };
 
+  const getGalAIInsight = async (q) => {
+    if (q.length < 3) return;
+    setGalInsightLoading(true);
+    try {
+      const { data } = await api.post('/ai/oracle', { 
+        prompt: `Provide a very concise, 2-sentence professional cinematic insight about "${q}". If it has a release date or upcoming season (like Season 4), mention it specifically. Keep it elite and high-authority.`,
+        history: [] 
+      });
+      setGalInsight(data.reply);
+    } catch (err) {
+      console.error('AI Insight Error:', err);
+    } finally {
+      setGalInsightLoading(false);
+    }
+  };
+
   // ── VOTE
   const voteChallenge = async (challengeId, side) => {
     if (!user) return alert('Log in to vote');
@@ -369,8 +389,31 @@ export default function Battles() {
         <div className="gal-wiki-results-section animate-up">
           <div className="wiki-results-header">
             <h3>Verified Cinematic Intelligence</h3>
-            <button className="close-wiki-btn" onClick={() => { setShowWikiResults(false); setGalSearchQ(''); }}>✕ Dismiss Scan</button>
+            <button className="close-wiki-btn" onClick={() => { setShowWikiResults(false); setGalSearchQ(''); setGalInsight(null); }}>✕ Dismiss Scan</button>
           </div>
+
+          {/* 🤖 AIRA INSIGHT CARD */}
+          {(galInsight || galInsightLoading) && (
+            <div className="aira-insight-wrapper" style={{ margin: '0 0 30px 0' }}>
+              <div className="aira-insight-card glass-card">
+                <div className="aira-label">
+                  <div className="aira-pulse"></div>
+                  AIRA Intelligence
+                </div>
+                {galInsightLoading ? (
+                  <div className="aira-loading">
+                    <div className="aira-dots"><span></span><span></span><span></span></div>
+                    Consulting the Cinematic Archives...
+                  </div>
+                ) : (
+                  <div className="aira-content">
+                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '16px', lineHeight: '1.6' }}>{galInsight}</p>
+                    <div className="aira-footer" style={{ fontSize: '10px', opacity: 0.4 }}>Verification complete via Gemini 2.0 Oracle</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {galSearching ? (
             <div className="arena-skeleton-grid">
               {[...Array(4)].map((_,i) => <div key={i} className="skeleton-card"><div className="skeleton-poster"/><div className="skeleton-line"/></div>)}
