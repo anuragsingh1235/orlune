@@ -9,7 +9,7 @@ import com.orlune.models.Question;
 import com.orlune.models.TrueFalseQuestion;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+i;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -37,7 +37,8 @@ public class QuestionBank {
     }
 
     public void loadFromFile() throws IOException {
-        // Path needs to navigate out of the java-service directory to the backend directory
+        // Path needs to navigate out of the java-service directory to the backend
+        // directory
         Path currentRelativePath = Paths.get("");
         String s = currentRelativePath.toAbsolutePath().toString();
         String filePath = s + "/../backend/src/data/questions.json";
@@ -92,5 +93,7 @@ public class QuestionBank {
                 }));
     }
 
-    public int getTotalQuestions() { return allQuestions.size(); }
+    public int getTotalQuestions() {
+        return allQuestions.size();
+    }
 }
