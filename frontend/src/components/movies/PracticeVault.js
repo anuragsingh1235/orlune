@@ -17,6 +17,12 @@ export default function PracticeVault({ isOpen, onClose }) {
   const [deadline, setDeadline] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
+  // Recovery State
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryStep, setRecoveryStep] = useState(1); // 1: email/request, 2: verify/reset
+  const [otp, setOtp] = useState('');
+  const [newPin, setNewPin] = useState('');
+
   useEffect(() => {
     if (isOpen && isUnlocked) {
       fetchTasks();
@@ -35,14 +41,45 @@ export default function PracticeVault({ isOpen, onClose }) {
     } catch (err) { console.error("Vault fetch error"); }
   };
 
-  const handleUnlock = (e) => {
+  const handleUnlock = async (e) => {
     e.preventDefault();
-    if (password === '1999') {
+    try {
+      await api.post('/auth/vault/verify', { pin: password });
       setIsUnlocked(true);
       notify.success("Identity Verified. Accessing Vault...");
-    } else {
-      notify.error("Access Denied. Incorrect Passkey.");
+    } catch (err) {
+      notify.error(err.response?.data?.error || "Access Denied. Incorrect Passkey.");
       setPassword('');
+    }
+  };
+
+  const handleRequestOTP = async () => {
+    setLoading(true);
+    try {
+      await api.post('/auth/vault/forgot');
+      setRecoveryStep(2);
+      notify.success("Security OTP sent to your email.");
+    } catch (err) {
+      notify.error("Failed to initiate recovery.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPin = async () => {
+    if (newPin.length !== 4) return notify.error("PIN must be 4 digits");
+    setLoading(true);
+    try {
+      await api.post('/auth/vault/reset', { otp, newPin });
+      notify.success("Passkey Reset Successful. Login with your new PIN.");
+      setShowRecovery(false);
+      setRecoveryStep(1);
+      setOtp('');
+      setNewPin('');
+    } catch (err) {
+      notify.error(err.response?.data?.error || "Reset failed.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -121,29 +158,70 @@ export default function PracticeVault({ isOpen, onClose }) {
 
         {!isUnlocked ? (
           <div className="unlock-screen">
-            <div className="vault-icon-svg pulse">
-               <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <h2 className="text-gradient">Classified Archive</h2>
-            <p className="vault-sub">Enter clearance level (Passkey) to decrypt private records.</p>
-            <form onSubmit={handleUnlock}>
-               <input 
-                type="password" 
-                placeholder="____" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)}
-                autoFocus
-                className="vault-pass-input"
-               />
-               <button type="submit" className="vault-btn btn-primary">DECRYPT BASE</button>
-            </form>
+             {!showRecovery ? (
+               <>
+                <div className="vault-icon-svg pulse">
+                   <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h2 className="text-gradient">Classified Archive</h2>
+                <p className="vault-sub">Enter clearance level (Passkey) to decrypt private records.</p>
+                <form onSubmit={handleUnlock}>
+                   <input 
+                    type="password" 
+                    placeholder="____" 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)}
+                    autoFocus
+                    className="vault-pass-input"
+                   />
+                   <button type="submit" className="vault-btn btn-primary">DECRYPT BASE</button>
+                </form>
+                <button className="vault-forgot-link" onClick={() => setShowRecovery(true)}>Forgot Passkey?</button>
+               </>
+             ) : (
+               <div className="recovery-flow animate-fade">
+                  <h3 className="text-gradient">Access Recovery</h3>
+                  {recoveryStep === 1 ? (
+                    <>
+                      <p className="vault-sub">A security code will be sent to your registered email.</p>
+                      <button className="vault-btn btn-primary" onClick={handleRequestOTP} disabled={loading}>
+                        {loading ? 'SENDING...' : 'SEND OTP'}
+                      </button>
+                      <button className="btn-back" onClick={() => setShowRecovery(false)}>CANCEL</button>
+                    </>
+                  ) : (
+                    <div className="otp-reset-form">
+                       <input 
+                        type="text" 
+                        placeholder="ENTER OTP" 
+                        value={otp} 
+                        onChange={e => setOtp(e.target.value)}
+                        className="vault-pass-input"
+                        style={{ fontSize: '1.2rem', letterSpacing: '8px' }}
+                       />
+                       <input 
+                        type="password" 
+                        placeholder="NEW 4-DIGIT PIN" 
+                        maxLength="4"
+                        value={newPin} 
+                        onChange={e => setNewPin(e.target.value)}
+                        className="vault-pass-input"
+                        style={{ fontSize: '1.2rem', letterSpacing: '8px' }}
+                       />
+                       <button className="vault-btn btn-primary" onClick={handleResetPin} disabled={loading}>
+                         {loading ? 'RESETTING...' : 'UPDATE PIN'}
+                       </button>
+                    </div>
+                  )}
+               </div>
+             )}
           </div>
         ) : (
           <div className="vault-dashboard">
             <div className="vault-header">
                <div className="vh-left">
                   <h2 className="text-gradient">Training Objectives</h2>
-                  <p>Ephemeral monitoring active ({tasks.length} live records)</p>
+                  <p>Monitoring active ({tasks.length} live records)</p>
                </div>
                <div className="vault-status-chip">STATUS: SECURE</div>
             </div>
@@ -152,7 +230,6 @@ export default function PracticeVault({ isOpen, onClose }) {
                <div className="vault-view custom-scrollbar">
                   {tasks.length === 0 ? (
                     <div className="vault-empty">
-                      <div className="empty-aura">🛸</div>
                       <h3>Archive Empty</h3>
                       <p>No active training protocols detected. Use the panel to initiate.</p>
                     </div>

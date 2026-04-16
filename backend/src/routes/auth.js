@@ -12,4 +12,9 @@ router.get('/me', auth, authController.me);
 router.get('/user/:userId', auth, authController.getUserProfile);
 router.put('/profile', auth, authController.updateProfile);
 
+// Vault Security
+router.post('/vault/verify', auth, authController.verifyVaultAccess);
+router.post('/vault/forgot', auth, authController.requestVaultPinOTP);
+router.post('/vault/reset', auth, authController.resetVaultPin);
+
 module.exports = router;

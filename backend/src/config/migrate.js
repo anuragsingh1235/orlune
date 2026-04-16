@@ -98,6 +98,9 @@ async function migrate() {
     // 🔥 Patch Updates
     try {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS vault_pin VARCHAR(4) DEFAULT \'1999\'');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS vault_otp VARCHAR(6)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS vault_otp_expiry TIMESTAMP');
       await pool.query('ALTER TABLE users ALTER COLUMN avatar_url TYPE TEXT');
       await pool.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_url TEXT');
       await pool.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(50)');

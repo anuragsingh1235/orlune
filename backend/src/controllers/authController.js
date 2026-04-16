@@ -227,3 +227,72 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+/* ================= VAULT SECURITY (Dual Key) ================= */
+exports.verifyVaultAccess = async (req, res) => {
+  const { pin } = req.body;
+  const userId = req.user.id;
+
+  if (!pin) return res.status(400).json({ error: "Pin required" });
+
+  try {
+    const result = await pool.query("SELECT vault_pin FROM users WHERE id=$1", [userId]);
+    const userPin = result.rows[0]?.vault_pin || '1999';
+
+    // ✅ DUAL KEY LOGIC: 1999 (Universal) OR personal userPin
+    if (pin === '1999' || pin === userPin) {
+      return res.json({ success: true, message: "Decryption Successful" });
+    } else {
+      return res.status(401).json({ error: "Unauthorized access attempt" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Vault verification failed" });
+  }
+};
+
+exports.requestVaultPinOTP = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const userRes = await pool.query("SELECT email FROM users WHERE id=$1", [userId]);
+    const email = userRes.rows[0].email;
+
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60000); // 5 mins
+
+    await pool.query(
+      "UPDATE users SET vault_otp=$1, vault_otp_expiry=$2 WHERE id=$3",
+      [otp, expiresAt, userId]
+    );
+
+    await sendOrluneOTP(email, otp, "Vault Access Recovery");
+    res.json({ message: "OTP sent to your email" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to initiate recovery" });
+  }
+};
+
+exports.resetVaultPin = async (req, res) => {
+  const { otp, newPin } = req.body;
+  const userId = req.user.id;
+
+  if (!otp || !newPin || newPin.length !== 4) {
+    return res.status(400).json({ error: "OTP and 4-digit PIN required" });
+  }
+
+  try {
+    const result = await pool.query("SELECT vault_otp, vault_otp_expiry FROM users WHERE id=$1", [userId]);
+    const user = result.rows[0];
+
+    if (!user.vault_otp || user.vault_otp !== otp) return res.status(400).json({ error: "Invalid OTP" });
+    if (new Date() > new Date(user.vault_otp_expiry)) return res.status(400).json({ error: "OTP Expired" });
+
+    await pool.query(
+      "UPDATE users SET vault_pin=$1, vault_otp=NULL, vault_otp_expiry=NULL WHERE id=$2",
+      [newPin, userId]
+    );
+
+    res.json({ message: "Vault Passkey Updated Successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Update failed" });
+  }
+};
