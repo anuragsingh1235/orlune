@@ -63,12 +63,13 @@ export default function Home() {
           <div className="dashboard-header animate-up" style={{ marginBottom: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: '2.4rem', fontWeight: '900', marginBottom: '12px', letterSpacing: '-1.5px' }}>
-                Welcome back, <span className="text-gradient" style={{ display: 'inline' }}>{user.username}</span>
+                Welcome back, <span className="text-gradient" style={{ display: 'inline' }}>{user?.username || 'Member'}</span>
               </h1>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Your personal archive is awaiting further curation.</p>
             </div>
-            <div className="dashboard-lottie hide-mobile" style={{ width: '150px' }}>
-              <lottie-player 
+            <div className="dashboard-lottie hide-mobile" style={{ width: '150px', minHeight: '150px' }}>
+              {/* Optional lottie wrapped in safety */}
+               <lottie-player 
                 src="https://assets2.lottiefiles.com/packages/lf20_T6v6t6.json" 
                 background="transparent" 
                 speed="1" 

@@ -14,6 +14,8 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
+      console.warn("🔒 Orlune Auth: Session expired or invalid. Forced logout initiated.");
+      console.log("Error details:", err.response.data);
       localStorage.removeItem('ww_token');
       localStorage.removeItem('ww_user');
       window.location.href = '/login';
