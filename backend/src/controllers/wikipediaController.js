@@ -13,9 +13,26 @@ const getActorHeadshot = async (name) => {
 exports.searchWiki = async (req, res) => {
     const { query, lang = 'en' } = req.query;
     try {
-        const r = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, { params: { action: 'query', generator: 'search', gsrsearch: `${query} film`, gsrlimit: 10, prop: 'pageimages|extracts', piprop: 'thumbnail', pithumbsize: 400, exintro: 1, explaintext: 1, format: 'json', origin: '*' }, headers });
+        // Search for the keyword broadly, not just films
+        const r = await axios.get(`https://${lang}.wikipedia.org/w/api.php`, { params: { 
+            action: 'query', 
+            generator: 'search', 
+            gsrsearch: query, 
+            gsrlimit: 12, 
+            prop: 'pageimages', 
+            piprop: 'thumbnail', 
+            pithumbsize: 500, 
+            format: 'json', 
+            origin: '*' 
+        }, headers });
+        
         const pages = r.data.query?.pages;
-        res.json({ results: pages ? Object.values(pages).map(p => ({ id: p.pageid, title: p.title, thumbnail: p.thumbnail?.source, overview: p.extract })) : [] });
+        let results = pages ? Object.values(pages).map(p => ({ id: p.pageid, title: p.title, thumbnail: p.thumbnail?.source })) : [];
+        
+        // Filter out results without images to give the user better options
+        results = results.filter(res => res.thumbnail);
+        
+        res.json({ results });
     } catch { res.status(500).send(); }
 };
 
