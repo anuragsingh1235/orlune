@@ -154,8 +154,8 @@ export default function Battles() {
     setReminderLoading(prev => new Set([...prev, id]));
     try {
       const { data } = await api.post('/arena/reminder', {
-        tmdb_id: id, media_type: 'movie',
-        title: movie.title, release_date: movie.release_date,
+        tmdb_id: id, media_type: movie.media_type || 'movie',
+        title: movie.title || movie.name, release_date: movie.release_date || movie.first_air_date,
         poster_path: movie.poster_path
       });
       setReminders(prev => {
@@ -183,7 +183,7 @@ export default function Battles() {
     setRatingSubmitting(prev => new Set([...prev, id]));
     try {
       const res = await api.post('/arena/rating', {
-        tmdb_id: id, media_type: 'movie', title: movie.title, rating: val
+        tmdb_id: id, media_type: movie.media_type || 'movie', title: movie.title || movie.name, rating: val
       });
       // Refresh rating
       const updated = await api.get(`/arena/rating/${id}`);
@@ -206,7 +206,7 @@ export default function Battles() {
       setMovieSearching(true);
       try {
         const [tmdbRes, wikiRes] = await Promise.allSettled([
-          api.get('/movies/search', { params: { q: movieSearchQ, type: 'movie' } }),
+          api.get('/movies/search', { params: { q: movieSearchQ } }),
           api.get('/wiki/search',   { params: { query: movieSearchQ } })
         ]);
         

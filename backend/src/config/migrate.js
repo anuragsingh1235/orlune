@@ -240,8 +240,20 @@ async function migrate() {
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS practice_tasks (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          title VARCHAR(255) NOT NULL,
+          thumbnail_url TEXT,
+          duration_minutes INTEGER,
+          expires_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
     } catch (e) {
-      console.log('RIC Migration warning:', e.message);
+      console.log('Practice Migration warning:', e.message);
     }
 
     console.log('✅ Migration check complete!');

@@ -85,7 +85,7 @@ export default function Home() {
           </div>
           {loading ? <div className="spinner" /> : (
             <div className="movies-grid animate-up">
-              {trending?.map((item) => <MovieCard key={item.id} item={{ ...item, media_type: 'movie' }} onClick={setActiveMovie} />)}
+              {trending?.map((item) => <MovieCard key={item.id} item={item} onClick={setActiveMovie} />)}
             </div>
           )}
 

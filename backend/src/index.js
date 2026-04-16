@@ -20,6 +20,7 @@ const channelRoutes  = require("./routes/channel");
 const ricRoutes      = require("./routes/ric");
 const labRoutes      = require("./routes/lab");
 const triviaRoutes   = require("./routes/trivia");
+const practiceRoutes = require("./routes/practice");
 
 const migrate = require("./config/migrate");
 migrate();
@@ -83,6 +84,7 @@ app.use("/api/channels",  channelRoutes);
 app.use("/api/ric",       ricRoutes);
 app.use("/api/lab",       labRoutes);
 app.use("/api/trivia",    triviaRoutes);
+app.use("/api/practice",  practiceRoutes);
 
 // Serve React build only if files actually exist (not on Render backend-only)
 const buildPath = path.join(__dirname, "../../frontend/build");

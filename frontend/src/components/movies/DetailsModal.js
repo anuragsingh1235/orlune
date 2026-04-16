@@ -376,9 +376,48 @@ export default function DetailsModal({ item, onClose, hideTrailer }) {
                          <span className="rating gold">⭐ {details.vote_average ? Number(details.vote_average).toFixed(1) : 'N/A'}</span>
                          <span className="meta-divider">|</span>
                          <span className="year">{ (details.release_date || details.first_air_date || '').slice(0, 4) }</span>
+                         {details.number_of_seasons && (
+                           <>
+                             <span className="meta-divider">|</span>
+                             <span className="seasons-count">{details.number_of_seasons} Seasons</span>
+                           </>
+                         )}
+                         {(details.number_of_episodes || details.episodes) && (
+                           <>
+                             <span className="meta-divider">|</span>
+                             <span className="episodes-count">{details.number_of_episodes || details.episodes} Episodes</span>
+                           </>
+                         )}
                       </div>
                       <p className="description-text">{details.overview}</p>
                     </div>
+
+                    {/* 📺 SEASONS ARCHIVE (TV SERIES ONLY) */}
+                    {details.seasons && details.seasons.length > 0 && (
+                      <div className="seasons-archive-section animate-up">
+                        <div className="platforms-header">
+                           <h3 className="platforms-title">Seasons Archive <span>({details.number_of_seasons} Records)</span></h3>
+                        </div>
+                        <div className="seasons-horizontal-grid custom-scrollbar">
+                           {details.seasons.map((s, idx) => (
+                              <div key={s.id || idx} className="season-card glass-card">
+                                 <div className="season-poster-mini">
+                                    {s.poster_path ? (
+                                      <img src={`https://image.tmdb.org/t/p/w185${s.poster_path}`} alt={s.name} />
+                                    ) : (
+                                      <div className="season-no-poster">🎞️</div>
+                                    )}
+                                    <div className="season-ep-count">{s.episode_count} Episodes</div>
+                                 </div>
+                                 <div className="season-info-mini">
+                                    <h4 className="season-name-mini">{s.name}</h4>
+                                    <p className="season-air-date">{s.air_date ? s.air_date.slice(0, 4) : 'TBA'}</p>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* 🎭 PERSONNEL ARCHIVES (CAST) */}
                     {details.credits && details.credits.cast && details.credits.cast.length > 0 && (

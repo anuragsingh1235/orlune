@@ -172,7 +172,7 @@ export default function Search() {
                     style={{ animationDelay: `${(index % 10) * 0.05}s`, animation: 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both' }}
                   >
                     <MovieCard
-                      item={{ ...item, media_type: 'movie' }}
+                      item={item}
                       onClick={setActiveMovie}
                     />
                   </div>

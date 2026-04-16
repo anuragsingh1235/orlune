@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import MovieCard from '../components/movies/MovieCard';
 import DetailsModal from '../components/movies/DetailsModal';
 import MasteryQuestionModal from '../components/movies/MasteryQuestionModal';
+import PracticeVault from '../components/movies/PracticeVault';
 import CommunityRatings from '../components/movies/CommunityRatings';
 import Footer from '../components/layout/Footer';
 import api from '../utils/api';
@@ -29,6 +30,7 @@ export default function Watchlist() {
   const [optimizing, setOptimizing] = useState(false);
   const [budget, setBudget] = useState(180);
   const [optimResult, setOptimResult] = useState(null);
+  const [vaultOpen, setVaultOpen] = useState(false);
 
   // ... (keep fetch and handlers)
   const fetchWatchlist = () => {
@@ -171,8 +173,18 @@ export default function Watchlist() {
     <div className="watchlist-page container animate-fade">
       <header className="page-header" style={{ marginBottom: '48px', position: 'relative' }}>
         <h1 className="page-title text-gradient">📋 The <span>Cinematic Vault</span></h1>
-        <div className="header-lottie hide-mobile">
-           <img src="/logo.png" alt="Orlune Logo" style={{ width: '60px', height: '60px', filter: 'drop-shadow(0 0 10px rgba(180, 142, 173, 0.4))' }} />
+        <div className="header-actions" style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: '12px' }}>
+           <button 
+            className="btn-vault-access" 
+            onClick={() => setVaultOpen(true)}
+            title="Access Private Training Archive"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', width: '44px', height: '44px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.3s' }}
+           >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+           </button>
+           <div className="header-lottie hide-mobile">
+              <img src="/logo.png" alt="Orlune Logo" style={{ width: '60px', height: '60px', filter: 'drop-shadow(0 0 10px rgba(180, 142, 173, 0.4))' }} />
+           </div>
         </div>
       </header>
 
@@ -392,6 +404,9 @@ export default function Watchlist() {
           </div>
         </div>
       )}
+
+      {/* PRACTICE VAULT MODAL (Private Todo) */}
+      <PracticeVault isOpen={vaultOpen} onClose={() => setVaultOpen(false)} />
 
       <Footer />
     </div>
