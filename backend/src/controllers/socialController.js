@@ -279,3 +279,68 @@ exports.getFollowers = async (req, res) => {
   }
 };
 
+// ─── LEGACY STORIES (MEMORIES) ──────────────────────────────────────────
+
+exports.createStory = async (req, res) => {
+  const userId = req.user.id;
+  const { media_url, caption } = req.body;
+  
+  if (!media_url) return res.status(400).json({ error: "Media is required for a memory." });
+
+  try {
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const result = await pool.query(
+      "INSERT INTO user_stories (user_id, media_url, caption, expires_at) VALUES ($1, $2, $3, $4) RETURNING *",
+      [userId, media_url, caption, expiresAt]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create memory." });
+  }
+};
+
+exports.getStoriesFeed = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      `SELECT s.*, u.username, u.avatar_url 
+       FROM user_stories s
+       JOIN users u ON s.user_id = u.id
+       WHERE (s.user_id = $1 OR s.user_id IN (SELECT following_id FROM follows WHERE follower_id = $1))
+         AND s.expires_at > NOW()
+       ORDER BY s.created_at DESC`,
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch stories." });
+  }
+};
+
+exports.getUserStories = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM user_stories WHERE user_id = $1 AND expires_at > NOW() ORDER BY created_at ASC",
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch user memories." });
+  }
+};
+
+exports.deleteStory = async (req, res) => {
+  const userId = req.user.id;
+  const { storyId } = req.params;
+  try {
+    const result = await pool.query(
+      "DELETE FROM user_stories WHERE id = $1 AND user_id = $2 RETURNING *",
+      [storyId, userId]
+    );
+    if (result.rows.length === 0) return res.status(403).json({ error: "Unauthorized or story not found." });
+    res.json({ message: "Memory purged from the legacy." });
+  } catch (err) {
+    res.status(500).json({ error: "Purge failed." });
+  }
+};

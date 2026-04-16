@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import notify from '../utils/notify';
 import VideoCallRoom from './VideoCallRoom';
+import StoryBar from '../components/social/StoryBar';
+import StoryViewer from '../components/social/StoryViewer';
 import './Social.css';
 
 export default function Social() {
   const [activeTab, setActiveTab] = useState('messages');
+  const [stories, setStories] = useState([]);
+  const [viewingStories, setViewingStories] = useState(null);
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,19 +83,46 @@ export default function Social() {
 
   const fetchInitialData = async () => {
     try {
-      const [fRes, rRes, cRes, myCRes] = await Promise.all([
+      const [fRes, rRes, cRes, myCRes, sRes] = await Promise.all([
         api.get('/social/friends').catch(() => ({ data: [] })),
         api.get('/social/requests').catch(() => ({ data: [] })),
         api.get('/channels/list').catch(() => ({ data: [] })),
-        api.get('/channels/my').catch(() => ({ data: [] }))
+        api.get('/channels/my').catch(() => ({ data: [] })),
+        api.get('/social/stories/feed').catch(() => ({ data: [] }))
       ]);
       setFriends(Array.isArray(fRes.data) ? fRes.data : []);
       setRequests(Array.isArray(rRes.data) ? rRes.data : []);
       setPublicChannels(Array.isArray(cRes.data) ? cRes.data : []);
       setMyChannels(Array.isArray(myCRes.data) ? myCRes.data : []);
+      setStories(Array.isArray(sRes.data) ? sRes.data : []);
     } catch (err) { 
       console.warn("Handled Background Sync Error");
     } finally { setLoading(false); }
+  };
+
+  const handleStoryUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    notify.success("Uploading Memory...");
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        await api.post('/social/stories', { media_url: reader.result, caption: "A new story" });
+        notify.success("Legacy Memory Shared");
+        fetchInitialData();
+      } catch (err) { notify.error("Sync Failed"); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteStory = async (storyId) => {
+    if (!window.confirm("Purge this memory?")) return;
+    try {
+      await api.delete(`/social/stories/${storyId}`);
+      notify.success("Cleaned from Legacy");
+      setViewingStories(null);
+      fetchInitialData();
+    } catch (err) { notify.error("Purge Failed"); }
   };
 
   const syncChat = async () => {
@@ -180,6 +211,13 @@ export default function Social() {
           <button className={`social-tab ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>DIRECT</button>
           <button className={`social-tab ${activeTab === 'channels' ? 'active' : ''}`} onClick={() => setActiveTab('channels')}>HUB</button>
         </div>
+
+        <StoryBar 
+          stories={stories} 
+          onAdd={() => document.getElementById('story-input').click()} 
+          onView={(group) => setViewingStories(group)}
+        />
+        <input type="file" id="story-input" hidden accept="image/*" onChange={handleStoryUpload} />
 
         {activeTab === 'messages' && (
           <>
@@ -353,6 +391,15 @@ export default function Social() {
           ))}</div>
           <button className="btn" style={{marginTop: '15px', width: '100%', background:'var(--bg-tertiary)'}} onClick={() => setShowMembers(false)}>Close</button>
         </div></div>
+      )}
+
+      {viewingStories && (
+        <StoryViewer 
+          stories={viewingStories} 
+          onClose={() => setViewingStories(null)} 
+          onDelete={handleDeleteStory}
+          meId={meId}
+        />
       )}
     </div>
   );
