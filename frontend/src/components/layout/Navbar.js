@@ -51,19 +51,7 @@ export default function Navbar() {
         {/* 🔥 PURE SVG BRAND LOGO */}
         <Link to="/" className="navbar-brand" onClick={() => setMenuOpen(false)}>
           <div className="brand-icon">
-            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Premium Shutter Logo */}
-              <defs>
-                <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#fff" />
-                  <stop offset="100%" stopColor="#81A1C1" />
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="48" stroke="url(#brand-grad)" strokeWidth="1.5" strokeDasharray="4 2"/>
-              <path d="M50 20L55 45L80 50L55 55L50 80L45 55L20 50L45 45L50 20Z" fill="url(#brand-grad)" />
-              <circle cx="50" cy="50" r="8" fill="var(--bg-primary)" stroke="url(#brand-grad)" strokeWidth="2"/>
-              <circle cx="50" cy="50" r="3" fill="url(#brand-grad)"/>
-            </svg>
+             <img src="/logo.png" alt="Orlune Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <span className="brand-text">ORLUNE</span>
         </Link>
