@@ -12,11 +12,18 @@ export default function Search() {
   const [activeMovie, setActiveMovie] = useState(null);
   const [error, setError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
+  const [insight, setInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
 
   const doSearch = useCallback(async (q, p) => {
     if (!q.trim()) return;
 
     setLoading(true);
+    if (p === 1) {
+      setInsight(null);
+      getAIInsight(q);
+    }
+
     try {
       const res = await api.get(`/movies/search?q=${encodeURIComponent(q)}`);
       const searchResults = Array.isArray(res.data) ? res.data : [];
@@ -34,6 +41,22 @@ export default function Search() {
       setLoading(false);
     }
   }, []);
+
+  const getAIInsight = async (q) => {
+    if (q.length < 3) return;
+    setInsightLoading(true);
+    try {
+      const { data } = await api.post('/ai/oracle', { 
+        prompt: `Provide a very concise, 2-sentence professional cinematic insight about "${q}". If it has a release date or upcoming season (like Season 4), mention it specifically. Keep it elite and high-authority.`,
+        history: [] 
+      });
+      setInsight(data.reply);
+    } catch (err) {
+      console.error('AI Insight Error:', err);
+    } finally {
+      setInsightLoading(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -104,49 +127,77 @@ export default function Search() {
         )}
       </section>
 
-      {/* 🎥 RESULTS SECTION */}
+      {/* 🔮 RESULTS & AI INSIGHTS AREA */}
       {loading && page === 1 ? (
-        <div className="spinner" />
-      ) : results?.length > 0 ? (
+        <div className="spinner" style={{ marginTop: 40 }} />
+      ) : query ? (
         <div className="animate-up">
-          <div className="results-header">
-            <p className="results-count">
-              Showing {results.length} discoveries for "<strong>{query}</strong>"
-            </p>
-          </div>
-
-          <div className="movies-grid">
-            {results.map((item, index) => (
-              <div 
-                key={`${item.id}-${index}`} 
-                className="movie-stagger" 
-                style={{ animationDelay: `${(index % 10) * 0.05}s`, animation: 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both' }}
-              >
-                <MovieCard
-                  item={{ ...item, media_type: 'movie' }}
-                  onClick={setActiveMovie}
-                />
+          
+          {/* 🤖 AIRA INSIGHT CARD */}
+          {(insight || insightLoading) && (
+            <div className="aira-insight-wrapper">
+              <div className="aira-insight-card glass-card">
+                <div className="aira-label">
+                  <div className="aira-pulse"></div>
+                  AIRA Intelligence
+                </div>
+                {insightLoading ? (
+                  <div className="aira-loading">
+                    <div className="aira-dots"><span></span><span></span><span></span></div>
+                    Consulting the Cinematic Archives...
+                  </div>
+                ) : (
+                  <div className="aira-content">
+                    <p>{insight}</p>
+                    <div className="aira-footer">Verification complete via Gemini 2.0 Oracle</div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-
-          {page < totalPages && (
-            <div style={{ textAlign: 'center', marginTop: 48 }}>
-              <button
-                className="btn btn-primary btn-lg"
-                onClick={loadMore}
-                disabled={loading}
-              >
-                {loading ? 'Discovering...' : 'See More Records'}
-              </button>
             </div>
           )}
-        </div>
-      ) : query ? (
-        <div className="empty-state animate-fade">
-          <div className="icon">🌓</div>
-          <h3>No records found in the archive</h3>
-          <p>Try searching for a broad title or different year.</p>
+
+          {results?.length > 0 ? (
+            <>
+              <div className="results-header">
+                <p className="results-count">
+                  Showing {results.length} discoveries for "<strong>{query}</strong>"
+                </p>
+              </div>
+
+              <div className="movies-grid">
+                {results.map((item, index) => (
+                  <div 
+                    key={`${item.id}-${index}`} 
+                    className="movie-stagger" 
+                    style={{ animationDelay: `${(index % 10) * 0.05}s`, animation: 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both' }}
+                  >
+                    <MovieCard
+                      item={{ ...item, media_type: 'movie' }}
+                      onClick={setActiveMovie}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {page < totalPages && (
+                <div style={{ textAlign: 'center', marginTop: 48 }}>
+                  <button
+                    className="btn btn-primary btn-lg"
+                    onClick={loadMore}
+                    disabled={loading}
+                  >
+                    {loading ? 'Discovering...' : 'See More Records'}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : !loading && query && !insightLoading && !insight ? (
+            <div className="empty-state">
+              <div className="icon">🌓</div>
+              <h3>No records found in the archive</h3>
+              <p>Try searching for a broad title or different year.</p>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
