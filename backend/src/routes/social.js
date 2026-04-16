@@ -20,10 +20,4 @@ router.post('/unfollow', sc.unfollowUser);
 router.post('/block',    sc.blockUser);
 router.post('/remove',   sc.removeFriend);
 
-// 🎞️ Legacy Memories (Stories)
-router.post('/stories', sc.createStory);
-router.get('/stories/feed', sc.getStoriesFeed);
-router.get('/stories/user/:userId', sc.getUserStories);
-router.delete('/stories/:storyId', sc.deleteStory);
-
 module.exports = router;
