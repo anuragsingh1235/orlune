@@ -5,16 +5,31 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('ww_user')); } catch { return null; }
+    try { 
+      const stored = localStorage.getItem('ww_user');
+      if (!stored || stored === 'undefined') return null;
+      return JSON.parse(stored); 
+    } catch { return null; }
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('ww_token');
-    if (token) {
+    if (token && token !== 'undefined') {
       api.get('/auth/me')
-        .then((r) => { setUser(r.data); localStorage.setItem('ww_user', JSON.stringify(r.data)); })
-        .catch(() => { localStorage.removeItem('ww_token'); localStorage.removeItem('ww_user'); setUser(null); })
+        .then((r) => { 
+          if (r.data && r.data.id) {
+            setUser(r.data); 
+            localStorage.setItem('ww_user', JSON.stringify(r.data)); 
+          } else {
+            throw new Error("Invalid user data");
+          }
+        })
+        .catch(() => { 
+          localStorage.removeItem('ww_token'); 
+          localStorage.removeItem('ww_user'); 
+          setUser(null); 
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);

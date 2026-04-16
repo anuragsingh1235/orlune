@@ -2,15 +2,13 @@
   "version": 2,
   "builds": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    },
-    {
       "src": "backend/src/index.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "build" }
     }
   ],
   "rewrites": [
@@ -23,8 +21,12 @@
       "destination": "/frontend/static/$1"
     },
     {
-      "source": "/(.*\\..*)",
-      "destination": "/frontend/$1"
+      "source": "/logo1.png",
+      "destination": "/frontend/logo1.png"
+    },
+    {
+      "source": "/manifest.json",
+      "destination": "/frontend/manifest.json"
     },
     {
       "source": "/(.*)",
