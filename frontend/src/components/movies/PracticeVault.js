@@ -39,7 +39,6 @@ export default function PracticeVault({ isOpen, onClose }) {
       // Filter out those that are already expired in local view
       const active = data.filter(t => new Date(t.expires_at) > new Date());
       setTasks(active);
-      await api.post('/practice/cleanup');
     } catch (err) { console.error("Vault fetch error"); }
   };
 
@@ -107,11 +106,12 @@ export default function PracticeVault({ isOpen, onClose }) {
     if (!deadline) return notify.error("Set a target deadline.");
     setLoading(true);
     try {
+      // Ensure we send ISO strings for exact timezone matching
       const { data } = await api.post('/practice', {
         title: newTitle,
         thumbnail_url: selectedImg,
-        expires_at: deadline,
-        reminders: wantsReminder ? reminders : []
+        expires_at: new Date(deadline).toISOString(),
+        reminders: (wantsReminder ? reminders : []).map(r => r ? new Date(r).toISOString() : null).filter(x => x)
       });
       setTasks([data, ...tasks]);
       resetForm();
@@ -322,9 +322,9 @@ export default function PracticeVault({ isOpen, onClose }) {
                           {wikiImages.length === 0 && <p className="wiki-none">No visual identity found. Go back and try a broader term.</p>}
                        </div>
                        <button className="vault-btn btn-primary" onClick={() => setStep(3)} disabled={!selectedImg}>
-                          SET TARGET DATE →
+                          CONFIRM IDENTITY &rarr;
                        </button>
-                       <button className="btn-back" onClick={() => setStep(1)}>← BACK</button>
+                       <button className="btn-back" onClick={() => setStep(1)}>&larr; CHANGE OBJECTIVE</button>
                     </div>
                   )}
 
@@ -384,9 +384,9 @@ export default function PracticeVault({ isOpen, onClose }) {
                        </div>
 
                        <button className="vault-btn btn-primary" onClick={addTask} disabled={loading || !deadline}>
-                          {loading ? 'ARCHIVING...' : 'INITIALIZE PROTOCOL'}
+                          {loading ? 'ARCHIVING...' : 'CONFIRM & INITIALIZE ✨'}
                        </button>
-                       <button className="btn-back" onClick={() => setStep(2)}>← BACK</button>
+                       <button className="btn-back" onClick={() => setStep(2)}>&larr; BACK</button>
                     </div>
                   )}
                </div>

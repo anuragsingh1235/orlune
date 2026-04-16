@@ -4,8 +4,9 @@ const { sendReminderEmail } = require("../utils/mailer");
 exports.getTasks = async (req, res) => {
   const userId = req.user.id;
   try {
-    // 🔔 Lazy Trigger: Process any pending reminders whenever tasks are fetched
-    await triggerReminders();
+    // 🔔 Butter-Smooth Optimization: Run reminders asynchronously (fire-and-forget)
+    // This prevents the search/fetch from lagging while emails are being sent.
+    triggerReminders().catch(err => console.error("Async Reminder Error:", err));
 
     const { rows } = await pool.query(
       "SELECT * FROM practice_tasks WHERE user_id = $1 ORDER BY created_at DESC",
@@ -74,6 +75,9 @@ exports.cleanupExpired = async (req, res) => {
 
 async function triggerReminders() {
   try {
+    // 🧹 Auto-Cleanup: Move task cleanup to the background to avoid frontend lag
+    await pool.query("DELETE FROM practice_tasks WHERE expires_at < NOW()");
+
     const { rows: pending } = await pool.query(`
       SELECT r.*, t.title, t.expires_at, u.email 
       FROM practice_reminders r
