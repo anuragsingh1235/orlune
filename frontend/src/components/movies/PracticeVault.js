@@ -384,9 +384,9 @@ export default function PracticeVault({ isOpen, onClose }) {
                        </div>
 
                        <button className="vault-btn btn-primary" onClick={addTask} disabled={loading || !deadline}>
-                          {loading ? 'ARCHIVING...' : 'CONFIRM & INITIALIZE ✨'}
+                          {loading ? 'SYNCHRONIZING...' : 'AUTHORIZE INITIATION'}
                        </button>
-                       <button className="btn-back" onClick={() => setStep(2)}>&larr; BACK</button>
+                       <button className="btn-back" onClick={() => setStep(2)}>&larr; ADJUST VISUALS</button>
                     </div>
                   )}
                </div>
