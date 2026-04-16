@@ -240,6 +240,10 @@ async function migrate() {
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
+    } catch (e) {
+      console.log('RIC Migration warning:', e.message);
+    }
+
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS practice_tasks (

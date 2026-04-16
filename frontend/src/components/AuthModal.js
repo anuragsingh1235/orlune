@@ -70,7 +70,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
       login(res.data.token, res.data.user);
       handleClose();
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid credentials');
+      const errorData = err.response?.data?.error || err.message || 'Invalid credentials';
+      setError(typeof errorData === 'object' ? JSON.stringify(errorData) : String(errorData));
     } finally {
       setLoading(false);
     }
