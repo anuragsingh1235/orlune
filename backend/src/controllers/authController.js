@@ -267,7 +267,8 @@ exports.requestVaultPinOTP = async (req, res) => {
     await sendOrluneOTP(email, otp, "Vault Access Recovery");
     res.json({ message: "OTP sent to your email" });
   } catch (err) {
-    res.status(500).json({ error: "Failed to initiate recovery" });
+    console.error("VAULT RECOVERY ERROR:", err);
+    res.status(500).json({ error: "Failed to initiate recovery. Check email configuration." });
   }
 };
 

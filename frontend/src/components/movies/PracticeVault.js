@@ -60,7 +60,7 @@ export default function PracticeVault({ isOpen, onClose }) {
       setRecoveryStep(2);
       notify.success("Security OTP sent to your email.");
     } catch (err) {
-      notify.error("Failed to initiate recovery.");
+      notify.error(err.response?.data?.error || "Failed to initiate recovery.");
     } finally {
       setLoading(false);
     }
