@@ -359,7 +359,36 @@
 .pulse { animation: pulse 3s infinite ease-in-out; }
 
 @media (max-width: 900px) {
-  .vault-layout { grid-template-columns: 1fr; }
-  .vault-creation-panel { position: sticky; bottom: 0; }
-  .vault-views { max-height: 300px; }
+  .vault-content {
+     border-radius: 0;
+     min-height: 100vh;
+     padding-bottom: 80px;
+  }
+
+  .vault-layout { 
+    grid-template-columns: 1fr; 
+    gap: 32px;
+  }
+
+  .vault-views {
+    padding-right: 0;
+  }
+
+  .vault-movie-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .vault-creation-panel {
+    position: relative;
+    padding: 24px;
+    border-radius: 20px;
+  }
+
+  .vh-left h2 { font-size: 1.5rem; }
+  
+  .vault-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }

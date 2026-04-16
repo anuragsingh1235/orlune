@@ -243,7 +243,7 @@ exports.verifyVaultAccess = async (req, res) => {
     if (pin === '1999' || pin === userPin) {
       return res.json({ success: true, message: "Decryption Successful" });
     } else {
-      return res.status(401).json({ error: "Unauthorized access attempt" });
+      return res.status(403).json({ error: "Access Denied: Incorrect clearance code." });
     }
   } catch (err) {
     res.status(500).json({ error: "Vault verification failed" });
