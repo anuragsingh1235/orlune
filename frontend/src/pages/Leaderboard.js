@@ -61,8 +61,13 @@ export default function Leaderboard() {
     <div className="leaderboard-page container animate-fade">
       <div className="lb-hero">
         <div className="lb-hero-glow" />
-        <h1 className="lb-hero-title">🏆 Top <span className="text-gradient">Ranked</span></h1>
-        <p className="lb-hero-sub">Community members ranked by their cinematic impact.</p>
+        <div className="animate-down" style={{ marginBottom: '16px' }}>
+          <span style={{ fontSize: '0.7rem', letterSpacing: '4px', textTransform: 'uppercase', color: '#B48EAD', fontWeight: '900', background: 'rgba(180, 142, 173, 0.1)', padding: '6px 16px', borderRadius: '40px' }}>
+             Strategic Status: Global
+          </span>
+        </div>
+        <h1 className="lb-hero-title">Elite <span className="text-gradient">Rankings</span></h1>
+        <p className="lb-hero-sub">The definitive archive of cinematic impact. Only the worthy ascend.</p>
       </div>
 
       {loading ? (
