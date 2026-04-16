@@ -291,11 +291,12 @@ export default function PracticeVault({ isOpen, onClose }) {
                           {wikiImages.map((src, i) => (
                             <div 
                               key={i} 
-                              className={`wiki-thumb-card ${selectedImg === src ? 'active' : ''}`}
+                              className={`wiki-thumb-card animate-fade ${selectedImg === src ? 'active' : ''}`}
+                              style={{ animationDelay: `${i * 0.08}s` }}
                               onClick={() => setSelectedImg(src)}
                             >
                                <img src={src} alt="wiki" />
-                               {selectedImg === src && <div className="sel-check">✓</div>}
+                               {selectedImg === src && <div className="sel-check"></div>}
                             </div>
                           ))}
                           {wikiImages.length === 0 && <p className="wiki-none">No visual identity found. Go back and try a broader term.</p>}
