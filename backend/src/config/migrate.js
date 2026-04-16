@@ -102,6 +102,18 @@ async function migrate() {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS vault_otp VARCHAR(6)');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS vault_otp_expiry TIMESTAMP');
       await pool.query('ALTER TABLE users ALTER COLUMN avatar_url TYPE TEXT');
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS practice_reminders (
+          id SERIAL PRIMARY KEY,
+          task_id INTEGER REFERENCES practice_tasks(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          remind_at TIMESTAMP NOT NULL,
+          is_sent BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
       await pool.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_url TEXT');
       await pool.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(50)');
 

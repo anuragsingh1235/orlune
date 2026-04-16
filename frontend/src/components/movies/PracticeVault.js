@@ -15,6 +15,8 @@ export default function PracticeVault({ isOpen, onClose }) {
   const [wikiImages, setWikiImages] = useState([]);
   const [selectedImg, setSelectedImg] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [reminders, setReminders] = useState([]); // Array of date strings
+  const [wantsReminder, setWantsReminder] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
   // Recovery State
@@ -108,7 +110,8 @@ export default function PracticeVault({ isOpen, onClose }) {
       const { data } = await api.post('/practice', {
         title: newTitle,
         thumbnail_url: selectedImg,
-        expires_at: deadline
+        expires_at: deadline,
+        reminders: wantsReminder ? reminders : []
       });
       setTasks([data, ...tasks]);
       resetForm();
@@ -120,12 +123,29 @@ export default function PracticeVault({ isOpen, onClose }) {
     }
   };
 
+  const addReminderSlot = () => {
+    if (reminders.length >= 2) return notify.info("Max 2 reminders per protocol.");
+    setReminders([...reminders, '']);
+  };
+
+  const updateReminder = (index, val) => {
+    const next = [...reminders];
+    next[index] = val;
+    setReminders(next);
+  };
+
+  const removeReminder = (index) => {
+    setReminders(reminders.filter((_, i) => i !== index));
+  };
+
   const resetForm = () => {
     setStep(1);
     setNewTitle('');
     setWikiImages([]);
     setSelectedImg('');
     setDeadline('');
+    setReminders([]);
+    setWantsReminder(false);
   };
 
   const deleteRecord = async (id) => {
@@ -308,7 +328,7 @@ export default function PracticeVault({ isOpen, onClose }) {
                     </div>
                   )}
 
-                  {step === 3 && (
+                   {step === 3 && (
                     <div className="creation-step animate-fade">
                        <label>Protocol Deadline (Calendar)</label>
                        <div className="date-input-wrap">
@@ -323,8 +343,48 @@ export default function PracticeVault({ isOpen, onClose }) {
                        <div className="deadline-preview">
                           {deadline ? `Target: ${new Date(deadline).toLocaleString()}` : "Pick a date & time"}
                        </div>
+
+                       {/* 🚀 REMINDER SECTION */}
+                       <div className="reminder-zone">
+                          <div className="rz-header">
+                             <label>Satellite Reminder?</label>
+                             <div className="rz-toggle">
+                                <button 
+                                  className={wantsReminder ? 'active' : ''} 
+                                  onClick={(e) => { e.preventDefault(); setWantsReminder(true); }}
+                                >YES</button>
+                                <button 
+                                  className={!wantsReminder ? 'active' : ''} 
+                                  onClick={(e) => { e.preventDefault(); setWantsReminder(false); }}
+                                >NO</button>
+                             </div>
+                          </div>
+
+                          {wantsReminder && (
+                            <div className="rz-body animate-up">
+                               {reminders.map((r, i) => (
+                                 <div key={i} className="reminder-slot animate-scale">
+                                    <input 
+                                      type="datetime-local" 
+                                      className="vault-date-picker"
+                                      value={r}
+                                      onChange={e => updateReminder(i, e.target.value)}
+                                    />
+                                    <button className="rz-remove" onClick={(e) => { e.preventDefault(); removeReminder(i); }}>&times;</button>
+                                 </div>
+                               ))}
+                               {reminders.length < 2 && (
+                                 <button className="rz-add" onClick={(e) => { e.preventDefault(); addReminderSlot(); }}>
+                                    + ADD RECALL SIGNAL
+                                 </button>
+                               )}
+                               {reminders.length >= 2 && <p className="rz-limit">RECALL BANDWIDTH REACHED</p>}
+                            </div>
+                          )}
+                       </div>
+
                        <button className="vault-btn btn-primary" onClick={addTask} disabled={loading || !deadline}>
-                          {loading ? 'STORING...' : 'INITIATE COUTDOWN ✨'}
+                          {loading ? 'ARCHIVING...' : 'INITIALIZE PROTOCOL'}
                        </button>
                        <button className="btn-back" onClick={() => setStep(2)}>← BACK</button>
                     </div>

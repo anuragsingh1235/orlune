@@ -372,7 +372,97 @@
 .vault-btn.btn-primary { background: var(--accent); }
 .vault-btn:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
-.btn-back { background: none; border: none; color: var(--text-muted); cursor: pointer; align-self: center; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; }
+.btn-back { background: none; border: none; color: var(--text-muted); cursor: pointer; align-self: center; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; margin-top: 10px; }
+
+/* 🚨 REMINDER ZONE */
+.reminder-zone {
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.rz-toggle {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rz-toggle button {
+  background: none;
+  border: none;
+  color: #555;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.rz-toggle button.active {
+  background: #B48EAD;
+  color: white;
+  box-shadow: 0 4px 10px rgba(180, 142, 173, 0.3);
+}
+
+.rz-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.reminder-slot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.rz-remove {
+  background: rgba(191, 97, 106, 0.1);
+  border: 1px solid rgba(191, 97, 106, 0.2);
+  color: #BF616A;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.rz-add {
+  background: rgba(163, 190, 140, 0.05);
+  border: 1px dashed rgba(163, 190, 140, 0.3);
+  color: #A3BE8C;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.rz-add:hover { background: rgba(163, 190, 140, 0.1); border-color: #A3BE8C; }
+
+.rz-limit {
+  font-size: 0.65rem;
+  color: #5E81AC;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
 
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 0.7; }
