@@ -15,15 +15,18 @@ exports.getTasks = async (req, res) => {
 
 exports.addTask = async (req, res) => {
   const userId = req.user.id;
-  const { title, thumbnail_url, duration_minutes } = req.body;
-
+  const { title, thumbnail_url, duration_minutes, expires_at } = req.body;
   try {
-    // Calculate expires_at
-    const expiresAt = new Date(Date.now() + duration_minutes * 60000);
+    let finalExpiresAt;
+    if (expires_at) {
+      finalExpiresAt = new Date(expires_at);
+    } else {
+      finalExpiresAt = new Date(Date.now() + (duration_minutes || 60) * 60000);
+    }
 
     const { rows } = await pool.query(
       "INSERT INTO practice_tasks (user_id, title, thumbnail_url, duration_minutes, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [userId, title, thumbnail_url, duration_minutes, expiresAt]
+      [userId, title, thumbnail_url, duration_minutes || 0, finalExpiresAt]
     );
     res.json(rows[0]);
   } catch (err) {

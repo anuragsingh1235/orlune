@@ -14,13 +14,13 @@ export default function PracticeVault({ isOpen, onClose }) {
   const [newTitle, setNewTitle] = useState('');
   const [wikiImages, setWikiImages] = useState([]);
   const [selectedImg, setSelectedImg] = useState('');
-  const [duration, setDuration] = useState(60); // minutes
+  const [deadline, setDeadline] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     if (isOpen && isUnlocked) {
       fetchTasks();
-      const interval = setInterval(fetchTasks, 60000); // refresh every minute to check expiry
+      const interval = setInterval(fetchTasks, 30000); // refresh check
       return () => clearInterval(interval);
     }
   }, [isOpen, isUnlocked]);
@@ -28,10 +28,9 @@ export default function PracticeVault({ isOpen, onClose }) {
   const fetchTasks = async () => {
     try {
       const { data } = await api.get('/practice');
-      setTasks(data);
-      // Backend automatically handles cleanup via expires_at check? 
-      // No, we'll manually check and delete from UI if expired or wait for backend cleanup route.
-      // Let's call cleanup too
+      // Filter out those that are already expired in local view
+      const active = data.filter(t => new Date(t.expires_at) > new Date());
+      setTasks(active);
       await api.post('/practice/cleanup');
     } catch (err) { console.error("Vault fetch error"); }
   };
@@ -50,31 +49,33 @@ export default function PracticeVault({ isOpen, onClose }) {
   const searchImages = async () => {
     if (!newTitle.trim()) return;
     setIsSearching(true);
-    setStep(2);
+    setWikiImages([]);
     try {
       const { data } = await api.get(`/wiki/search?query=${encodeURIComponent(newTitle)}`);
-      // Extract thumbnails
+      // Extract thumbnails and titles
       const images = (data.results || []).map(r => r.thumbnail).filter(t => t);
-      setWikiImages(images.slice(0, 6));
+      setWikiImages(images.slice(0, 8));
       if (images.length > 0) setSelectedImg(images[0]);
+      setStep(2);
     } catch (err) {
-      console.error("Wiki search failed");
+      notify.error("Intelligence failure. Wiki base unreachable.");
     } finally {
       setIsSearching(false);
     }
   };
 
   const addTask = async () => {
+    if (!deadline) return notify.error("Set a target deadline.");
     setLoading(true);
     try {
       const { data } = await api.post('/practice', {
         title: newTitle,
         thumbnail_url: selectedImg,
-        duration_minutes: duration
+        expires_at: deadline
       });
       setTasks([data, ...tasks]);
       resetForm();
-      notify.success("Archive Entry Stored. Countdown Initiated.");
+      notify.success("Objective Saved. Monitoring Active.");
     } catch (err) {
       notify.error("Storage Error.");
     } finally {
@@ -87,15 +88,25 @@ export default function PracticeVault({ isOpen, onClose }) {
     setNewTitle('');
     setWikiImages([]);
     setSelectedImg('');
-    setDuration(60);
+    setDeadline('');
   };
 
   const deleteRecord = async (id) => {
+    if (!window.confirm("Purge this objective from the archive?")) return;
     try {
       await api.delete(`/practice/${id}`);
       setTasks(tasks.filter(t => t.id !== id));
-      notify.info("Archive Purged.");
+      notify.info("Objective Purged.");
     } catch (err) { notify.error("Purge Failed."); }
+  };
+
+  const getCountdown = (date) => {
+    const diff = new Date(date) - new Date();
+    if (diff <= 0) return "EXPIRED";
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return days > 0 ? `${days}d ${hours}h` : `${hours}h ${mins}m`;
   };
 
   if (!isOpen) return null;
@@ -103,117 +114,141 @@ export default function PracticeVault({ isOpen, onClose }) {
   return (
     <div className="vault-overlay animate-fade" onClick={onClose}>
       <div className="vault-content glass-card animate-scale" onClick={e => e.stopPropagation()}>
-        <button className="vault-close" onClick={onClose}>&times;</button>
+        <div className="vault-top-bar">
+           <div className="vault-brand">ORLUNE<span>VAULT</span></div>
+           <button className="vault-close" onClick={onClose}>&times;</button>
+        </div>
 
         {!isUnlocked ? (
           <div className="unlock-screen">
-            <div className="vault-icon pulse">🔒</div>
+            <div className="vault-icon-svg pulse">
+               <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
             <h2 className="text-gradient">Classified Archive</h2>
-            <p className="vault-sub">Permission protocol required for decryption.</p>
+            <p className="vault-sub">Enter clearance level (Passkey) to decrypt private records.</p>
             <form onSubmit={handleUnlock}>
                <input 
                 type="password" 
-                placeholder="ENTER PASSKEY" 
+                placeholder="____" 
                 value={password} 
                 onChange={e => setPassword(e.target.value)}
                 autoFocus
                 className="vault-pass-input"
                />
-               <button type="submit" className="vault-btn btn-primary">VERIFY</button>
+               <button type="submit" className="vault-btn btn-primary">DECRYPT BASE</button>
             </form>
           </div>
         ) : (
           <div className="vault-dashboard">
             <div className="vault-header">
-               <h2 className="text-gradient">Personal Training Vault</h2>
-               <div className="vault-status">DECRYPTED</div>
+               <div className="vh-left">
+                  <h2 className="text-gradient">Training Objectives</h2>
+                  <p>Ephemeral monitoring active ({tasks.length} live records)</p>
+               </div>
+               <div className="vault-status-chip">STATUS: SECURE</div>
             </div>
 
             <div className="vault-layout">
-               {/* Left: Task List */}
-               <div className="vault-list-container custom-scrollbar">
+               <div className="vault-view custom-scrollbar">
                   {tasks.length === 0 ? (
                     <div className="vault-empty">
-                      <p>Archive Empty. No training records found.</p>
+                      <div className="empty-aura">🛸</div>
+                      <h3>Archive Empty</h3>
+                      <p>No active training protocols detected. Use the panel to initiate.</p>
                     </div>
                   ) : (
-                    <div className="vault-grid">
-                      {tasks.map(task => {
-                        const timeLeft = Math.max(0, Math.ceil((new Date(task.expires_at) - new Date()) / 60000));
-                        return (
-                          <div key={task.id} className="vault-task-card glass-card animate-up">
-                            <div className="task-thumb-wrap">
-                               <img src={task.thumbnail_url || 'https://via.placeholder.com/200?text=RECORD'} alt={task.title} />
-                               <div className="task-timer-badge">{timeLeft}m</div>
-                            </div>
-                            <div className="task-info">
-                               <h4>{task.title}</h4>
-                               <button className="purge-mini" onClick={() => deleteRecord(task.id)}>Purge</button>
-                            </div>
+                    <div className="vault-movie-grid">
+                      {tasks.map(task => (
+                        <div key={task.id} className="vault-movie-card animate-up">
+                          <div className="vmc-poster">
+                             <img src={task.thumbnail_url || 'https://via.placeholder.com/200?text=RECORD'} alt={task.title} />
+                             <div className="vmc-timer">
+                                <span>{getCountdown(task.expires_at)} left</span>
+                             </div>
+                             <button className="vmc-purge" onClick={() => deleteRecord(task.id)} title="Purge Record">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                             </button>
                           </div>
-                        );
-                      })}
+                          <div className="vmc-info">
+                             <h4>{task.title}</h4>
+                             <div className="vmc-meta">Target: {new Date(task.expires_at).toLocaleDateString()}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                </div>
 
-               {/* Right: Add New */}
                <div className="vault-creation-panel glass-card">
-                  <h3 className="panel-title">Initiate Protocol</h3>
+                  <div className="cp-header">
+                     <h3>New Protocol</h3>
+                     <div className="step-dots">
+                        <span className={step >= 1 ? 'active' : ''} />
+                        <span className={step >= 2 ? 'active' : ''} />
+                        <span className={step >= 3 ? 'active' : ''} />
+                     </div>
+                  </div>
                   
                   {step === 1 && (
                     <div className="creation-step animate-fade">
                        <label>Mission Objective</label>
-                       <input 
-                        type="text" 
-                        placeholder="e.g. Traveling Code, Deep Focus..." 
-                        value={newTitle}
-                        onChange={e => setNewTitle(e.target.value)}
-                       />
-                       <button className="vault-btn" onClick={searchImages} disabled={!newTitle.trim()}>
-                          SEARCH WIKI BASE →
+                       <div className="input-group">
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Swimming Master, DAA Prep..." 
+                            value={newTitle}
+                            onChange={e => setNewTitle(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && searchImages()}
+                          />
+                       </div>
+                       <button className="vault-btn btn-primary" onClick={searchImages} disabled={!newTitle.trim() || isSearching}>
+                          {isSearching ? 'SEARCHING WIKI...' : 'FIND VISUALS →'}
                        </button>
                     </div>
                   )}
 
                   {step === 2 && (
                     <div className="creation-step animate-fade">
-                       <label>Visual Identity Selection</label>
-                       {isSearching ? (
-                        <div className="vault-spinner" />
-                       ) : (
-                        <div className="wiki-img-grid">
-                           {wikiImages.map((src, i) => (
-                             <img 
+                       <label>Visual Identity (from Wikipedia)</label>
+                       <div className="wiki-img-grid custom-scrollbar">
+                          {wikiImages.map((src, i) => (
+                            <div 
                               key={i} 
-                              src={src} 
-                              className={selectedImg === src ? 'active' : ''} 
+                              className={`wiki-thumb-card ${selectedImg === src ? 'active' : ''}`}
                               onClick={() => setSelectedImg(src)}
-                              alt="wiki-thumb"
-                             />
-                           ))}
-                        </div>
-                       )}
-                       <button className="vault-btn" onClick={() => setStep(3)}>
-                          SET DURATION →
+                            >
+                               <img src={src} alt="wiki" />
+                               {selectedImg === src && <div className="sel-check">✓</div>}
+                            </div>
+                          ))}
+                          {wikiImages.length === 0 && <p className="wiki-none">No visual identity found. Go back and try a broader term.</p>}
+                       </div>
+                       <button className="vault-btn btn-primary" onClick={() => setStep(3)} disabled={!selectedImg}>
+                          SET TARGET DATE →
                        </button>
-                       <button className="btn-back" onClick={() => setStep(1)}>Back</button>
+                       <button className="btn-back" onClick={() => setStep(1)}>← BACK</button>
                     </div>
                   )}
 
                   {step === 3 && (
                     <div className="creation-step animate-fade">
-                       <label>Protocol Window (Minutes)</label>
-                       <input 
-                        type="range" min="1" max="480" step="5"
-                        value={duration}
-                        onChange={e => setDuration(parseInt(e.target.value))}
-                       />
-                       <div className="duration-display">{Math.floor(duration/60)}h {duration%60}m</div>
-                       <button className="vault-btn btn-primary" onClick={addTask} disabled={loading}>
-                          {loading ? 'STORING...' : 'FINALIZE ENTRY ✨'}
+                       <label>Protocol Deadline (Calendar)</label>
+                       <div className="date-input-wrap">
+                          <input 
+                            type="datetime-local" 
+                            value={deadline}
+                            onChange={e => setDeadline(e.target.value)}
+                            min={new Date().toISOString().slice(0, 16)}
+                            className="vault-date-picker"
+                          />
+                       </div>
+                       <div className="deadline-preview">
+                          {deadline ? `Target: ${new Date(deadline).toLocaleString()}` : "Pick a date & time"}
+                       </div>
+                       <button className="vault-btn btn-primary" onClick={addTask} disabled={loading || !deadline}>
+                          {loading ? 'STORING...' : 'INITIATE COUTDOWN ✨'}
                        </button>
-                       <button className="btn-back" onClick={() => setStep(2)}>Back</button>
+                       <button className="btn-back" onClick={() => setStep(2)}>← BACK</button>
                     </div>
                   )}
                </div>
