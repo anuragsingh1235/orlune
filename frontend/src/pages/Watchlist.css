@@ -198,6 +198,16 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+.vault-pulse {
+  animation: vault-pulse-anim 2s infinite;
+}
+
+@keyframes vault-pulse-anim {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(180, 142, 173, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(180, 142, 173, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(180, 142, 173, 0); }
+}
+
 @media (max-width: 768px) {
   .wl-stats { gap: 24px; }
   .wl-stat span { font-size: 28px; }
