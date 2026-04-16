@@ -338,7 +338,7 @@ export default function Battles() {
     setGalInsightLoading(true);
     try {
       const { data } = await api.post('/ai/oracle', { 
-        prompt: `Provide a very concise, 2-sentence professional cinematic insight about "${q}". If it has a release date or upcoming season (like Season 4), mention it specifically. Keep it elite and high-authority.`,
+        prompt: `The user is searching for "${q}". Identify the specific movie or series title (even if it's a common word like "From") and provide a 2-sentence professional insight. Include specific release dates or upcoming season status (like Season 4 release window). Do not use placeholders like [Series Name]. Be direct and informative.`,
         history: [] 
       });
       setGalInsight(data.reply);
