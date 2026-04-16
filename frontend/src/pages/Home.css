@@ -292,26 +292,63 @@
     flex-direction: column;
     text-align: center;
     gap: 20px;
+    padding-bottom: 40px;
   }
   
   .dashboard-header h1 {
     font-size: 1.8rem !important;
     text-align: center;
     width: 100%;
+    margin-bottom: 8px;
   }
 
   .dashboard-header p {
     text-align: center;
-    font-size: 0.9rem !important;
+    font-size: 0.95rem !important;
+    opacity: 0.7;
   }
 
   .hero {
-    padding: 100px 0 60px;
+    padding: 120px 20px 80px;
+    text-align: center;
+    background: radial-gradient(circle at top, rgba(180, 142, 173, 0.15), transparent 70%);
+  }
+
+  .hero-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   
   .hero-title {
-    font-size: 2.8rem;
-    letter-spacing: -1.5px;
-    line-height: 1.1;
+    font-size: 3.2rem;
+    letter-spacing: -2px;
+    line-height: 1.0;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    text-align: center;
+    max-width: 100%;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 16px;
+  }
+
+  .section-title {
+    font-size: 1.6rem;
+    letter-spacing: -0.5px;
+  }
+
+  .container {
+    padding: 0 24px;
   }
 }

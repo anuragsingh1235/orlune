@@ -115,22 +115,22 @@ export default function Home() {
   return (
     <div className="home-page landing-splash-view animate-fade">
       <section className="hero-landing">
-        <div className="hero-content container">
-          <h1 className="hero-title animate-down">
-            Master Your <span className="text-gradient">Watcher's Legacy</span>
-          </h1>
-          <p className="hero-subtitle animate-up">
-            The ultimate archive for true cinematic enthusiasts. Track your watchlist, 
-            challenge the community in the Gallery, and ascend the rankings.
-          </p>
-          <div className="hero-cta animate-up">
-            <button className="btn btn-primary btn-lg" onClick={openRegister}>Master Your Legacy</button>
-            <button className="btn btn-outline btn-lg" onClick={openLogin}>Sign In</button>
-          </div>
-          <div className="animate-up" style={{ marginTop: '24px', opacity: 0.8 }}>
-            <span style={{ fontSize: '0.85rem', background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-              ✨ Orlune Archive Edition
+        <div className="hero-content container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+          <div className="animate-up" style={{ marginBottom: '24px' }}>
+            <span style={{ fontSize: '0.75rem', letterSpacing: '4px', textTransform: 'uppercase', color: '#B48EAD', fontWeight: '900', background: 'rgba(180, 142, 173, 0.1)', padding: '8px 20px', borderRadius: '40px' }}>
+              Strategic Protocol: Active
             </span>
+          </div>
+          <h1 className="hero-title animate-down" style={{ maxWidth: '900px' }}>
+            Elevate Your <span className="text-gradient">Watcher's Legacy</span>
+          </h1>
+          <p className="hero-subtitle animate-up" style={{ margin: '0 auto 48px', opacity: 0.7 }}>
+            The ultimate private archive for true cinematic enthusiasts. 
+            Track high-priority objectives, conquer challenges, and ascend the ranks of the Orlune Elite.
+          </p>
+          <div className="hero-cta animate-up" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '20px' }}>
+            <button className="btn btn-primary btn-lg" onClick={openRegister}>Initialize Legacy</button>
+            <button className="btn btn-secondary btn-lg" onClick={openLogin}>Sign In</button>
           </div>
         </div>
       </section>

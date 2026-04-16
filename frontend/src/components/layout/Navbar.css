@@ -396,7 +396,7 @@
   margin-top: 20px;
 }
 
-/* RESPONSIVE */
+/* RESPONSIVE OVERHAUL (Elite Mobile) */
 @media (max-width: 900px) {
   .navbar-desktop-links, .desktop-auth {
     display: none;
@@ -407,28 +407,42 @@
   }
   
   .navbar-inner {
-    padding: 0 16px; /* Tightened for small screens */
-    height: 64px;
+    padding: 0 24px;
+    height: 70px;
   }
   
+  .navbar {
+    background: transparent !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+  }
+
   .brand-text {
-    font-size: 16px;
-    letter-spacing: 1px;
+    font-size: 18px;
+    letter-spacing: 2px;
+    font-weight: 800;
+    text-transform: uppercase;
   }
   
   .brand-icon {
     width: 32px;
     height: 32px;
   }
+
+  /* Deep Mesh Background for Mobile */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% -20%, rgba(180, 142, 173, 0.15), transparent 80%),
+                radial-gradient(circle at 0% 100%, rgba(129, 161, 193, 0.1), transparent 50%);
+    z-index: -1;
+    pointer-events: none;
+  }
 }
 
-/* Extra small devices */
 @media (max-width: 480px) {
-  .navbar-inner {
-    padding: 0 12px;
-  }
-  
   .brand-text {
-    display: none; /* Hide text on very small screens to keep brand icon prominent */
+    font-size: 16px;
   }
 }
