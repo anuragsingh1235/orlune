@@ -1,29 +1,38 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import './Lab.css';
 
 const TABS = [
-  { id: 'sort',      icon: '📊', label: 'Data Race',     desc: 'Speed benchmark for datasets' },
-  { id: 'graph',     icon: '🗺️', label: 'Genre Map',     desc: 'Visualizing genre connections' },
-  { id: 'optimizer', icon: '🍿', label: 'Binge Plan',    desc: 'Optimal marathon strategy' },
-  { id: 'pattern',   icon: '🔍', label: 'Script Search', desc: 'Fast text pattern matching' },
-  { id: 'backtrack', icon: '🧩', label: 'Logic Puzzles', desc: 'Complex recursive solvers' },
+  { id: 'sort',      icon: '📊', label: 'Data Race',     desc: 'Sort algorithm benchmark' },
+  { id: 'optimizer', icon: '🍿', label: 'Binge Planner', desc: '0/1 Knapsack optimizer' },
+  { id: 'pattern',   icon: '🔍', label: 'Script Search', desc: 'Pattern matching engine' },
+  { id: 'backtrack', icon: '🧩', label: 'Logic Puzzles',  desc: 'Backtracking visualizer' },
 ];
 
 const ALGO_COLORS = {
-  merge:    '#5E81AC', quick:  '#88C0D0', heap:    '#B48EAD',
-  bubble:   '#BF616A', counting:'#A3BE8C', radix:  '#EBCB8B',
+  merge:'#88C0D0', quick:'#5E81AC', heap:'#B48EAD',
+  bubble:'#BF616A', counting:'#A3BE8C', radix:'#EBCB8B',
+};
+const ALGO_INFO = {
+  merge:    { best:'O(n log n)', avg:'O(n log n)', worst:'O(n log n)', space:'O(n)',     stable:true,  note:'Divide & Conquer — always consistent. Best for linked lists & external sort.' },
+  quick:    { best:'O(n log n)', avg:'O(n log n)', worst:'O(n²)',      space:'O(log n)', stable:false, note:'Partition-based. Fastest in practice due to cache efficiency. Bad pivot = O(n²).' },
+  heap:     { best:'O(n log n)', avg:'O(n log n)', worst:'O(n log n)', space:'O(1)',     stable:false, note:'In-place using Max-Heap. Consistent but poor cache performance.' },
+  bubble:   { best:'O(n)',       avg:'O(n²)',       worst:'O(n²)',      space:'O(1)',     stable:true,  note:'Simplest sort. O(n) best case with early-exit. Rarely used in production.' },
+  counting: { best:'O(n+k)',     avg:'O(n+k)',      worst:'O(n+k)',     space:'O(k)',     stable:true,  note:'Non-comparison. Perfect for small integer ranges like movie ratings (0-10).' },
+  radix:    { best:'O(nk)',      avg:'O(nk)',       worst:'O(nk)',      space:'O(n+k)',   stable:true,  note:'Digit-by-digit sort. k = digits. Extremely fast for fixed-length integers.' },
 };
 
-// ─── SORT STUDIO ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 📊 SORT STUDIO
+// ─────────────────────────────────────────────────────────────────────────────
 function SortStudio() {
-  const [algorithms, setAlgorithms]   = useState(['merge', 'quick', 'heap']);
-  const [dataType,   setDataType]     = useState('random');
-  const [size,       setSize]         = useState(60);
-  const [results,    setResults]      = useState(null);
-  const [rawData,    setRawData]      = useState([]);
-  const [loading,    setLoading]      = useState(false);
-  const [animBars,   setAnimBars]     = useState([]);
+  const [algorithms, setAlgorithms] = useState(['merge','quick','heap']);
+  const [dataType,   setDataType]   = useState('random');
+  const [size,       setSize]       = useState(80);
+  const [results,    setResults]    = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [animBars,   setAnimBars]   = useState([]);
+  const [phase,      setPhase]      = useState('idle');
 
   const toggleAlgo = (a) => setAlgorithms(prev =>
     prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]
@@ -31,368 +40,175 @@ function SortStudio() {
 
   const run = async () => {
     if (!algorithms.length) return;
-    setLoading(true); setResults(null);
+    setLoading(true); setResults(null); setPhase('running');
     try {
       const { data } = await api.post('/lab/sort', { algorithms, size, dataType });
-      setRawData(data.rawData);
-      setResults(data.results);
-      // Animate — show unsorted then sorted
       setAnimBars(data.rawData);
       setTimeout(() => {
         const firstSorted = data.results[algorithms[0]]?.sorted;
         if (firstSorted) setAnimBars(firstSorted);
-      }, 600);
-    } catch (e) { console.error(e); }
+        setResults(data.results);
+        setPhase('done');
+      }, 700);
+    } catch(e) { console.error(e); setPhase('idle'); }
     setLoading(false);
   };
 
   const max = Math.max(...(animBars.length ? animBars : [1]));
+  const winner = results ? Object.entries(results).sort((a,b)=>a[1].timeMs-b[1].timeMs)[0] : null;
+  const maxTime = results ? Math.max(...Object.values(results).map(r=>r.timeMs)) : 1;
 
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">📊 The Data Speed Race</h2>
-        <p className="lab-section-sub">Compare how different sorting methods handle real-world cinematic datasets. Watch the speed race in real time.</p>
+        <div className="lab-section-badge">⚡ DAA — Sorting Algorithms</div>
+        <h2 className="lab-section-title">The Algorithm Speed Race</h2>
+        <p className="lab-section-sub">Benchmark 6 sorting algorithms simultaneously on real-world movie rating datasets. Compare time complexity, operations, and memory usage live.</p>
       </div>
 
-      {/* Controls */}
       <div className="sort-controls glass-card">
         <div className="sort-ctrl-row">
           <div className="sort-ctrl-group">
             <label>Dataset Type</label>
             <div className="lab-pills">
-              {[['random','🎲 Random'],['nearly','〰️ Nearly Sorted'],['reverse','🔃 Reversed'],['sorted','✅ Already Sorted']].map(([v,l]) => (
+              {[['random','🎲 Random'],['nearly','〰️ Nearly Sorted'],['reverse','🔃 Reversed'],['sorted','✅ Pre-Sorted']].map(([v,l]) => (
                 <button key={v} className={`lab-pill ${dataType===v?'active':''}`} onClick={()=>setDataType(v)}>{l}</button>
               ))}
             </div>
           </div>
           <div className="sort-ctrl-group">
-            <label>Array Size: <strong>{size}</strong></label>
-            <input type="range" min="20" max="200" value={size} onChange={e=>setSize(+e.target.value)} className="lab-slider" />
+            <label>Array Size: <strong style={{color:'#88C0D0'}}>{size}</strong> elements</label>
+            <input type="range" min="20" max="200" value={size} onChange={e=>setSize(+e.target.value)} className="lab-slider"/>
           </div>
         </div>
-
         <div className="sort-ctrl-group">
-          <label>Algorithms</label>
+          <label>Select Algorithms</label>
           <div className="lab-pills">
-            {[['merge','Merge'],['quick','Quick'],['heap','Heap'],['bubble','Bubble'],['counting','Counting'],['radix','Radix']].map(([v,l]) => (
+            {Object.keys(ALGO_INFO).map(v => (
               <button key={v}
                 className={`lab-pill algo-pill ${algorithms.includes(v)?'active':''}`}
-                style={algorithms.includes(v)?{background:ALGO_COLORS[v]+'33', borderColor:ALGO_COLORS[v], color:ALGO_COLORS[v]}:{}}
-                onClick={()=>toggleAlgo(v)}
-              >{l} Sort</button>
+                style={algorithms.includes(v)?{background:ALGO_COLORS[v]+'18',borderColor:ALGO_COLORS[v],color:ALGO_COLORS[v]}:{}}
+                onClick={()=>toggleAlgo(v)}>
+                {v.charAt(0).toUpperCase()+v.slice(1)} Sort
+              </button>
             ))}
           </div>
         </div>
-
-        <button className="lab-run-btn" onClick={run} disabled={loading || !algorithms.length}>
-          {loading ? <span className="lab-spinner"/> : '▶'} {loading ? 'Running...' : 'Run Race'}
+        <button className="lab-run-btn" onClick={run} disabled={loading||!algorithms.length}>
+          {loading?<span className="lab-spinner"/>:'▶'} {loading?'Racing...':'Start Race'}
         </button>
       </div>
 
-      {/* Bar visualization */}
       {animBars.length > 0 && (
         <div className="sort-viz glass-card">
           <div className="sort-bars-wrap">
-            {animBars.map((v, i) => (
-              <div key={i} className="sort-bar-col" style={{ height: `${(v / max) * 100}%`, background: `hsl(${220 + v * 15}, 60%, 55%)` }} title={v} />
+            {animBars.map((v,i) => (
+              <div key={i} className="sort-bar-col"
+                style={{height:`${(v/max)*100}%`, background: phase==='done' ? `hsl(${190+i*0.5},55%,58%)` : `hsl(${220+v*12},50%,50%)`}}
+                title={v}/>
             ))}
           </div>
-          <p className="sort-viz-label">Array visualization ({animBars.length} elements)</p>
+          <p className="sort-viz-label">{phase==='done'?'✅ Sorted — ':'⏳ Raw data — '}{animBars.length} elements</p>
         </div>
       )}
 
-      {/* Results table */}
       {results && (
-        <div className="sort-results glass-card">
-          <h3 className="sort-results-title">⚡ Results</h3>
-          <div className="sort-table-wrap">
-            <table className="sort-table">
-              <thead>
-                <tr>
-                  <th>Algorithm</th><th>Time (ms)</th><th>Comparisons</th><th>Swaps</th>
-                  <th>Stable</th><th>Best Case</th><th>Avg Case</th><th>Worst Case</th><th>Space</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(results).map(([key, r]) => (
-                  <tr key={key} className="sort-row">
-                    <td><span className="algo-badge" style={{background:ALGO_COLORS[key]+'22',borderColor:ALGO_COLORS[key],color:ALGO_COLORS[key]}}>{r.name}</span></td>
-                    <td className="mono">{r.timeMs}</td>
-                    <td className="mono">{r.comparisons?.toLocaleString()}</td>
-                    <td className="mono">{r.swaps?.toLocaleString()}</td>
-                    <td>{r.stable ? '✅ Yes' : '❌ No'}</td>
-                    <td className="mono complexity">{r.bestCase}</td>
-                    <td className="mono complexity">{r.avgCase}</td>
-                    <td className="mono complexity">{r.worstCase}</td>
-                    <td className="mono complexity">{r.spaceComplexity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Winner callout */}
-          {(() => {
-            const winner = Object.entries(results).sort((a,b)=>a[1].timeMs-b[1].timeMs)[0];
-            return winner ? (
-              <div className="sort-winner">
-                🏆 Fastest: <strong style={{color:ALGO_COLORS[winner[0]]}}>{winner[1].name}</strong> — {winner[1].timeMs}ms
-                &nbsp;|&nbsp; {winner[1].description}
+        <>
+          {winner && (
+            <div className="glass-card" style={{padding:20,marginBottom:20}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <h3 style={{fontSize:'0.82rem',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1.5px'}}>⚡ Speed Comparison</h3>
+                <span style={{fontSize:'0.78rem',color:'var(--text-muted)'}}>Lower = Faster</span>
               </div>
-            ) : null;
-          })()}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── GENRE GRAPH ─────────────────────────────────────────────────────────────
-function GenreGraph() {
-  const canvasRef = useRef(null);
-  const [graphData, setGraphData]   = useState(null);
-  const [source,    setSource]      = useState('action');
-  const [target,    setTarget]      = useState('romance');
-  const [algorithm, setAlgorithm]   = useState('dijkstra');
-  const [result,    setResult]      = useState(null);
-  const [mst,       setMst]         = useState(null);
-  const [artPts,    setArtPts]      = useState(null);
-  const [fw,        setFw]          = useState(null);
-  const [loading,   setLoading]     = useState(false);
-  const [mode,      setMode]        = useState('path'); // 'path' | 'mst' | 'floyd' | 'art'
-
-  useEffect(() => {
-    api.get('/lab/graph/data').then(r => setGraphData(r.data)).catch(()=>{});
-  }, []);
-
-  const drawGraph = useCallback((path = [], mstEdges = [], artPoints = []) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !graphData) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
-
-    const nodePos = {};
-    graphData.nodes.forEach(n => { nodePos[n.id] = { x: n.x * W, y: n.y * H }; });
-
-    const pathSet = new Set();
-    for (let i = 0; i < path.length - 1; i++) pathSet.add(`${path[i]}-${path[i+1]}`);
-    const pathSetR = new Set([...pathSet].map(s => s.split('-').reverse().join('-')));
-    const mstSet = new Set((mstEdges || []).map(e => `${e.from}-${e.to}`));
-    const mstSetR = new Set([...mstSet].map(s => s.split('-').reverse().join('-')));
-    const artSet = new Set(artPoints);
-
-    // Draw edges
-    graphData.edges.forEach(e => {
-      const a = nodePos[e.from], b = nodePos[e.to];
-      const isPath = pathSet.has(`${e.from}-${e.to}`) || pathSetR.has(`${e.from}-${e.to}`);
-      const isMst  = mstSet.has(`${e.from}-${e.to}`)  || mstSetR.has(`${e.from}-${e.to}`);
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-      ctx.strokeStyle = isPath ? '#5E81AC' : isMst ? '#A3BE8C' : 'rgba(255,255,255,0.08)';
-      ctx.lineWidth   = isPath || isMst ? 2.5 : 1;
-      ctx.stroke();
-      // Weight label
-      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-      ctx.fillStyle = isPath ? '#88C0D0' : 'rgba(255,255,255,0.3)';
-      ctx.font = '11px Inter';
-      ctx.fillText(e.weight, mx + 3, my - 3);
-    });
-
-    // Draw nodes
-    graphData.nodes.forEach(n => {
-      const { x, y } = nodePos[n.id];
-      const isInPath = path.includes(n.id);
-      const isArt    = artSet.has(n.id);
-      const isSrc    = n.id === source;
-      const isTgt    = n.id === target;
-      ctx.beginPath();
-      ctx.arc(x, y, isSrc || isTgt ? 22 : 16, 0, Math.PI * 2);
-      ctx.fillStyle = isSrc ? '#5E81AC' : isTgt ? '#B48EAD' : isArt ? '#BF616A' : isInPath ? '#88C0D066' : 'rgba(255,255,255,0.05)';
-      ctx.fill();
-      ctx.strokeStyle = isInPath ? '#5E81AC' : isArt ? '#BF616A' : 'rgba(255,255,255,0.15)';
-      ctx.lineWidth = isInPath || isArt ? 2 : 1;
-      ctx.stroke();
-      ctx.fillStyle = '#E5E9F0';
-      ctx.font = `${isSrc||isTgt?'bold ':''} 11px Inter`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(n.label, x, y);
-    });
-  }, [graphData, source, target]);
-
-  useEffect(() => {
-    if (mode === 'path') drawGraph(result?.path || [], [], []);
-    if (mode === 'mst')  drawGraph([], mst?.mstEdges || [], []);
-    if (mode === 'art')  drawGraph([], [], artPts?.articulationPoints || []);
-    if (mode === 'floyd') drawGraph([], [], []);
-  }, [graphData, result, mst, artPts, mode, drawGraph]);
-
-  const runPath = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.post('/lab/graph/path', { source, target, algorithm });
-      setResult(data); setMode('path');
-    } catch(e){}
-    setLoading(false);
-  };
-
-  const runMST = async () => {
-    const { data } = await api.get('/lab/graph/mst');
-    setMst(data); setMode('mst');
-  };
-
-  const runArt = async () => {
-    const { data } = await api.get('/lab/graph/articulation');
-    setArtPts(data); setMode('art');
-  };
-
-  const runFloyd = async () => {
-    const { data } = await api.get('/lab/graph/floyd');
-    setFw(data); setMode('floyd');
-  };
-
-  const nodeIds = graphData?.nodes?.map(n => n.id) || [];
-
-  return (
-    <div className="lab-section">
-      <div className="lab-section-header">
-        <h2 className="lab-section-title">🗺️ Genre Connection Network</h2>
-        <p className="lab-section-sub">Visualization of how movie genres relate to each other. Calculate the shortest conceptual distance between categories.</p>
-      </div>
-
-      <div className="graph-layout">
-        {/* Left — controls */}
-        <div className="graph-controls glass-card">
-          <div className="lab-pills" style={{marginBottom:16}}>
-            {[['path','🛤 Path'],['mst','🌳 MST'],['art','📍 Articulation'],['floyd','📐 Floyd-Warshall']].map(([v,l])=>(
-              <button key={v} className={`lab-pill ${mode===v?'active':''}`} onClick={()=>setMode(v)}>{l}</button>
-            ))}
-          </div>
-
-          {mode === 'path' && (
-            <>
-              <div className="form-group">
-                <label>From Genre</label>
-                <select value={source} onChange={e=>setSource(e.target.value)} className="lab-select">
-                  {nodeIds.map(id=><option key={id} value={id}>{id.charAt(0).toUpperCase()+id.slice(1)}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>To Genre</label>
-                <select value={target} onChange={e=>setTarget(e.target.value)} className="lab-select">
-                  {nodeIds.map(id=><option key={id} value={id}>{id.charAt(0).toUpperCase()+id.slice(1)}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Algorithm</label>
-                <div className="lab-pills">
-                  {[['dijkstra','Dijkstra'],['bellmanFord','Bellman-Ford'],['bfs','BFS'],['dfs','DFS']].map(([v,l])=>(
-                    <button key={v} className={`lab-pill ${algorithm===v?'active':''}`} onClick={()=>setAlgorithm(v)}>{l}</button>
-                  ))}
+              {Object.entries(results).sort((a,b)=>a[1].timeMs-b[1].timeMs).map(([key,r]) => (
+                <div key={key} className="speed-bar-wrap">
+                  <span className="speed-bar-label" style={{color:ALGO_COLORS[key]}}>{r.name?.split(' ')[0]}</span>
+                  <div className="speed-bar-track">
+                    <div className="speed-bar-fill" style={{width:`${(r.timeMs/maxTime)*100}%`,background:`linear-gradient(90deg,${ALGO_COLORS[key]}88,${ALGO_COLORS[key]})`}}/>
+                  </div>
+                  <span className="speed-bar-val">{r.timeMs}ms</span>
                 </div>
+              ))}
+              <div className="sort-winner" style={{marginTop:14}}>
+                🏆 Winner: <strong style={{color:ALGO_COLORS[winner[0]],marginLeft:4}}>{winner[1].name}</strong>
+                <span style={{marginLeft:8,color:'var(--text-muted)'}}>— {winner[1].timeMs}ms · {winner[1].description}</span>
               </div>
-              <button className="lab-run-btn" onClick={runPath} disabled={loading}>
-                {loading ? <span className="lab-spinner"/> : '▶'} Find Path
-              </button>
-            </>
+            </div>
           )}
-          {mode === 'mst'   && <button className="lab-run-btn" onClick={runMST}>▶ Run Kruskal's MST</button>}
-          {mode === 'art'   && <button className="lab-run-btn" onClick={runArt}>▶ Find Articulation Points</button>}
-          {mode === 'floyd' && <button className="lab-run-btn" onClick={runFloyd}>▶ Run Floyd-Warshall</button>}
 
-          {/* Result info panel */}
-          {mode === 'path' && result && (
-            <div className="graph-result-panel">
-              <div className="graph-badge">{result.algorithm}</div>
-              <div className="graph-path-display">
-                {result.path?.map((n,i) => (
-                  <span key={n}>{n.charAt(0).toUpperCase()+n.slice(1)}{i < result.path.length-1 ? <span className="arrow"> → </span> : ''}</span>
-                ))}
-              </div>
-              <div className="graph-stat">Distance: <strong>{result.distance ?? '∞'}</strong></div>
-              <div className="graph-stat">Steps: <strong>{result.steps?.length}</strong></div>
-              <div className="complexity-box">
-                <span>{result.complexity?.time}</span>
-                <span>{result.complexity?.space}</span>
-              </div>
-              <p className="graph-desc">{result.description}</p>
+          <div className="sort-results glass-card">
+            <h3 className="sort-results-title">📋 Detailed Results</h3>
+            <div className="sort-table-wrap">
+              <table className="sort-table">
+                <thead>
+                  <tr><th>Algorithm</th><th>Time (ms)</th><th>Comparisons</th><th>Swaps</th><th>Stable</th><th>Best</th><th>Average</th><th>Worst</th><th>Space</th></tr>
+                </thead>
+                <tbody>
+                  {Object.entries(results).map(([key,r]) => {
+                    const info = ALGO_INFO[key]||{};
+                    return (
+                      <tr key={key}>
+                        <td><span className="algo-badge" style={{background:ALGO_COLORS[key]+'18',borderColor:ALGO_COLORS[key]+'55',color:ALGO_COLORS[key]}}>{r.name}</span></td>
+                        <td className="mono">{r.timeMs}</td>
+                        <td className="mono">{r.comparisons?.toLocaleString()}</td>
+                        <td className="mono">{r.swaps?.toLocaleString()}</td>
+                        <td style={{color:r.stable?'#A3BE8C':'#BF616A'}}>{r.stable?'✓ Yes':'✗ No'}</td>
+                        <td className="mono complexity">{info.best}</td>
+                        <td className="mono complexity">{info.avg}</td>
+                        <td className="mono complexity" style={{color:info.worst?.includes('²')?'#BF616A88':''}}>{info.worst}</td>
+                        <td className="mono complexity">{info.space}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          )}
-          {mode === 'mst' && mst && (
-            <div className="graph-result-panel">
-              <div className="graph-badge" style={{background:'#A3BE8C22',borderColor:'#A3BE8C',color:'#A3BE8C'}}>Kruskal's MST</div>
-              <div className="graph-stat">Total Weight: <strong>{mst.totalWeight}</strong></div>
-              <div className="graph-stat">Edges in MST: <strong>{mst.mstEdges?.length}</strong></div>
-              <div className="complexity-box"><span>O(E log E)</span><span>O(V)</span></div>
-              <p className="graph-desc">{mst.description}</p>
-            </div>
-          )}
-          {mode === 'art' && artPts && (
-            <div className="graph-result-panel">
-              <div className="graph-badge" style={{background:'#BF616A22',borderColor:'#BF616A',color:'#BF616A'}}>Articulation Points</div>
-              <div className="graph-stat">Critical Nodes: <strong>{artPts.articulationPoints?.join(', ')}</strong></div>
-              <div className="graph-stat">Bridges: <strong>{artPts.bridges?.length}</strong></div>
-              <p className="graph-desc">{artPts.description}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Right — canvas */}
-        <div className="graph-canvas-wrap glass-card">
-          <canvas ref={canvasRef} width={520} height={420} className="genre-canvas" />
-          <div className="graph-legend">
-            <span style={{color:'#5E81AC'}}>● Source</span>
-            <span style={{color:'#B48EAD'}}>● Target</span>
-            <span style={{color:'#A3BE8C'}}>— Path / MST</span>
-            <span style={{color:'#BF616A'}}>● Art. Point</span>
           </div>
-        </div>
-      </div>
 
-      {/* Floyd-Warshall matrix */}
-      {mode === 'floyd' && fw && (
-        <div className="fw-matrix glass-card">
-          <h3 style={{marginBottom:12,color:'var(--text-secondary)'}}>All-Pairs Shortest Paths Matrix</h3>
-          <div style={{overflowX:'auto'}}>
-            <table className="sort-table">
-              <thead>
-                <tr><th>↘</th>{fw.nodeLabels?.map(l=><th key={l}>{l}</th>)}</tr>
-              </thead>
-              <tbody>
-                {fw.matrix?.map((row, i) => (
-                  <tr key={i}>
-                    <td style={{color:'var(--accent)',fontWeight:700}}>{fw.nodeLabels?.[i]}</td>
-                    {row.map((v,j)=>(
-                      <td key={j} className="mono" style={{color: v===0?'var(--text-muted)': v===1e9?'var(--text-muted)':'var(--text-primary)'}}>{v>=1e9?'∞':v}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:14,marginTop:16}}>
+            {Object.entries(results).map(([key]) => {
+              const info = ALGO_INFO[key]; if (!info) return null;
+              return (
+                <div key={key} className="algo-info-card">
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                    <div style={{width:10,height:10,borderRadius:3,background:ALGO_COLORS[key],flexShrink:0}}/>
+                    <span style={{fontWeight:700,fontSize:'0.85rem',color:ALGO_COLORS[key]}}>{key.charAt(0).toUpperCase()+key.slice(1)} Sort</span>
+                    {info.stable
+                      ? <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#A3BE8C',border:'1px solid #A3BE8C55',padding:'2px 8px',borderRadius:20}}>STABLE</span>
+                      : <span style={{marginLeft:'auto',fontSize:'0.65rem',color:'#BF616A',border:'1px solid #BF616A55',padding:'2px 8px',borderRadius:20}}>UNSTABLE</span>}
+                  </div>
+                  <p style={{fontSize:'0.78rem',color:'var(--text-muted)',lineHeight:1.6,marginBottom:8}}>{info.note}</p>
+                  <div className="complexity-box"><span>Best: {info.best}</span><span>Space: {info.space}</span></div>
+                </div>
+              );
+            })}
           </div>
-          <div className="complexity-box" style={{marginTop:12}}><span>O(V³)</span><span>O(V²)</span></div>
-        </div>
+        </>
       )}
     </div>
   );
 }
 
-// ─── OPTIMIZER (Knapsack + LCS) ───────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 🍿 BINGE OPTIMIZER
+// ─────────────────────────────────────────────────────────────────────────────
 function Optimizer() {
-  const [budget, setBudget]   = useState(180);
-  const [result, setResult]   = useState(null);
+  const [budget,  setBudget]  = useState(240);
+  const [result,  setResult]  = useState(null);
   const [loading, setLoading] = useState(false);
-  const [view, setView]       = useState('dp');
+  const [view,    setView]    = useState('dp');
 
   const SAMPLE_ITEMS = [
-    { title:'Inception',       weight:148, value:8.8, poster:null },
-    { title:'Interstellar',    weight:169, value:8.6, poster:null },
-    { title:'The Dark Knight', weight:152, value:9.0, poster:null },
-    { title:'Parasite',        weight:132, value:8.6, poster:null },
-    { title:'Joker',           weight:122, value:8.4, poster:null },
-    { title:'Avengers',        weight:143, value:8.0, poster:null },
-    { title:'3 Idiots',        weight:170, value:8.4, poster:null },
-    { title:'DDLJ',            weight:189, value:8.0, poster:null },
+    {title:'Inception',        weight:148, value:8.8},
+    {title:'Interstellar',     weight:169, value:8.6},
+    {title:'The Dark Knight',  weight:152, value:9.0},
+    {title:'Parasite',         weight:132, value:8.6},
+    {title:'Joker',            weight:122, value:8.4},
+    {title:'Avengers Endgame', weight:181, value:8.4},
+    {title:'3 Idiots',         weight:170, value:8.4},
+    {title:'DDLJ',             weight:189, value:8.0},
+    {title:'Fight Club',       weight:139, value:8.8},
+    {title:'Pulp Fiction',     weight:154, value:8.9},
   ];
 
   const run = async () => {
@@ -404,272 +220,233 @@ function Optimizer() {
     setLoading(false);
   };
 
+  const dpScore  = result?.dp01?.maxValue?.toFixed(1);
+  const grdScore = result?.greedy?.maxValue?.toFixed(1);
+  const dpWins   = result && parseFloat(dpScore) > parseFloat(grdScore);
+
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">🍿 Smart Marathon Strategist</h2>
-        <p className="lab-section-sub">Input your available time and let our logic engine plan the perfect movie marathon to maximize your rating score.</p>
+        <div className="lab-section-badge">⚡ DAA — Dynamic Programming</div>
+        <h2 className="lab-section-title">Smart Binge Planner</h2>
+        <p className="lab-section-sub"><strong>0/1 Knapsack Problem</strong> — Set your free time and find the mathematically optimal movie marathon using bottom-up DP with backtracking. Guaranteed highest total rating.</p>
       </div>
 
       <div className="optim-layout">
         <div className="optim-controls glass-card">
           <div className="form-group">
-            <label>⏱ Time Budget: <strong>{Math.floor(budget/60)}h {budget%60}m</strong></label>
-            <input type="range" min="60" max="600" step="10" value={budget} onChange={e=>setBudget(+e.target.value)} className="lab-slider" />
+            <label>⏱ Time Budget</label>
+            <div style={{fontSize:'1.4rem',fontWeight:900,color:'#88C0D0',marginBottom:6}}>{Math.floor(budget/60)}h {budget%60}m</div>
+            <input type="range" min="60" max="600" step="10" value={budget} onChange={e=>setBudget(+e.target.value)} className="lab-slider"/>
           </div>
-
-          <div className="optim-items">
-            <label style={{marginBottom:10,display:'block'}}>Movies Dataset</label>
-            {SAMPLE_ITEMS.map((it, i) => (
-              <div key={i} className="optim-item">
-                <span className="optim-item-title">{it.title}</span>
-                <span className="optim-item-meta">{it.weight}min</span>
-                <span className="optim-item-meta">⭐{it.value}</span>
-              </div>
-            ))}
+          <div>
+            <label style={{fontSize:'0.72rem',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:8,display:'block'}}>Movie Dataset</label>
+            <div className="optim-items">
+              {SAMPLE_ITEMS.map((it,i) => (
+                <div key={i} className="optim-item">
+                  <span style={{width:20,height:20,borderRadius:6,background:'rgba(136,192,208,0.1)',border:'1px solid rgba(136,192,208,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.6rem',fontWeight:800,color:'#88C0D0',flexShrink:0}}>{i+1}</span>
+                  <span className="optim-item-title">{it.title}</span>
+                  <span className="optim-item-meta">{it.weight}m</span>
+                  <span className="optim-item-meta">⭐{it.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
           <button className="lab-run-btn" onClick={run} disabled={loading}>
-            {loading ? <span className="lab-spinner"/> : '▶'} Optimize
+            {loading?<span className="lab-spinner"/>:'▶'} {loading?'Computing DP...':'Optimize Marathon'}
           </button>
+          <div className="algo-info-card" style={{marginTop:16}}>
+            <div style={{fontWeight:700,fontSize:'0.78rem',color:'#88C0D0',marginBottom:8}}>Algorithm: 0/1 Knapsack (C++)</div>
+            <div className="algo-info-row"><span className="algo-info-label">Strategy</span><span className="algo-info-val">Bottom-Up Dynamic Programming</span></div>
+            <div className="algo-info-row"><span className="algo-info-label">Approach</span><span className="algo-info-val">Build DP table, then backtrack for selected items</span></div>
+            <div className="complexity-box" style={{marginTop:8}}><span>Time: O(N×W)</span><span>Space: O(N×W)</span></div>
+          </div>
         </div>
 
-        {result && (
-          <div className="optim-results">
-            <div className="lab-pills" style={{marginBottom:16}}>
-              <button className={`lab-pill ${view==='dp'?'active':''}`} onClick={()=>setView('dp')}>0/1 DP Result</button>
-              <button className={`lab-pill ${view==='greedy'?'active':''}`} onClick={()=>setView('greedy')}>Greedy Result</button>
-              <button className={`lab-pill ${view==='table'?'active':''}`} onClick={()=>setView('table')}>DP Table</button>
-              <button className={`lab-pill ${view==='code'?'active':''}`} onClick={()=>setView('code')} style={{color:'#88C0D0', borderColor: view==='code'?'#88C0D0':'transparent'}}>{'</>'} Source Code</button>
+        <div className="optim-results">
+          {!result ? (
+            <div className="glass-card" style={{padding:48,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,textAlign:'center',minHeight:300}}>
+              <div style={{fontSize:'3rem'}}>🎬</div>
+              <h3 style={{fontWeight:700,color:'var(--text-secondary)'}}>Set Your Time Budget</h3>
+              <p style={{color:'var(--text-muted)',fontSize:'0.88rem',maxWidth:320}}>The algorithm fills an N×W table bottom-up, then backtracks to find the exact movies that maximize your rating score.</p>
+              <div className="complexity-box" style={{justifyContent:'center'}}><span>Recurrence: T[i][w] = max(T[i-1][w], val[i] + T[i-1][w-wt[i]])</span></div>
             </div>
-
-            {view === 'dp' && (
-              <div className="optim-result-card glass-card">
-                <div className="optim-header">
-                  <span className="graph-badge">Calculated Marathon</span>
-                  <span className="optim-value">{result.dp01?.maxValue?.toFixed(1)} Quality Index</span>
-                  <span className="optim-weight">{result.dp01?.totalWeight} mins total</span>
+          ) : (
+            <>
+              <div className="glass-card" style={{padding:20,display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:12,alignItems:'center'}}>
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontSize:'0.7rem',fontWeight:700,color:'#88C0D0',textTransform:'uppercase',letterSpacing:'2px',marginBottom:6}}>0/1 Knapsack (DP)</div>
+                  <div style={{fontSize:'2rem',fontWeight:900,color:dpWins?'#A3BE8C':'var(--text-primary)'}}>{dpScore} <span style={{fontSize:'0.9rem',fontWeight:400,color:'var(--text-muted)'}}>pts</span></div>
+                  <div style={{fontSize:'0.78rem',color:'var(--text-muted)',marginTop:2}}>{result.dp01?.totalWeight}m used</div>
                 </div>
-                <div className="optim-selected">
-                  {result.dp01?.selected?.map((it,i)=>(
-                    <div key={i} className="optim-selected-item">
-                      <span className="optim-item-title">✅ {it.title}</span>
-                      <span className="optim-item-meta">{it.weight}min · ⭐{it.value}</span>
-                    </div>
-                  ))}
+                <div style={{textAlign:'center',padding:'0 8px'}}>
+                  <div style={{fontSize:'0.75rem',color:'var(--text-muted)',fontWeight:700}}>VS</div>
+                  {dpWins && <div style={{marginTop:6,fontSize:'0.65rem',color:'#A3BE8C',fontWeight:700,border:'1px solid #A3BE8C55',borderRadius:20,padding:'2px 8px'}}>DP WINS ✓</div>}
                 </div>
-                <div className="complexity-box" style={{marginTop:12, opacity: 0.4}}>
-                   <span>Optimized for performance</span>
-                </div>
-                <div style={{ marginTop: 16 }}>
-                  <p style={{color:'var(--text-secondary)',fontSize:'0.85rem',marginBottom:8}}>Recurrence Relation:</p>
-                  <code className="recurrence" style={{ display: 'block', padding: 12, background: 'rgba(0,0,0,0.4)', borderRadius: 8 }}>{result.dp01?.recurrence}</code>
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontSize:'0.7rem',fontWeight:700,color:'#A3BE8C88',textTransform:'uppercase',letterSpacing:'2px',marginBottom:6}}>Fractional (Greedy)</div>
+                  <div style={{fontSize:'2rem',fontWeight:900,color:'var(--text-secondary)'}}>{grdScore} <span style={{fontSize:'0.9rem',fontWeight:400,color:'var(--text-muted)'}}>pts</span></div>
+                  <div style={{fontSize:'0.78rem',color:'var(--text-muted)',marginTop:2}}>allows fractions</div>
                 </div>
               </div>
-            )}
 
-            {view === 'code' && (
-              <div className="code-panel glass-card" style={{ padding: 16, background: '#1e1e24', border: '1px solid #333' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ color: '#88C0D0', fontWeight: 600, fontSize: '0.9rem' }}>0/1 Knapsack (C++)</span>
-                  <span style={{ color: '#A3BE8C', fontWeight: 600, fontSize: '0.9rem' }}>Fractional Knapsack (C++)</span>
+              <div className="lab-pills">
+                {[['dp','✅ 0/1 DP Result'],['greedy','⚡ Greedy Result'],['table','📐 DP Table'],['code','</> C++ Code']].map(([v,l]) => (
+                  <button key={v} className={`lab-pill ${view===v?'active':''}`} onClick={()=>setView(v)}>{l}</button>
+                ))}
+              </div>
+
+              {view==='dp' && (
+                <div className="optim-result-card glass-card">
+                  <div className="optim-header">
+                    <span className="graph-badge">Optimal Marathon — 0/1 Knapsack DP</span>
+                    <span className="optim-value">{dpScore} Rating Points</span>
+                    <span className="optim-weight">{result.dp01?.totalWeight} min / {budget} min used</span>
+                  </div>
+                  <div className="optim-selected">
+                    {result.dp01?.selected?.map((it,i) => (
+                      <div key={i} className="optim-selected-item">
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{color:'#A3BE8C',fontWeight:700}}>✓</span>
+                          <strong style={{color:'var(--text-primary)'}}>{it.title}</strong>
+                        </div>
+                        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                          <span className="optim-item-meta">{it.weight} min</span>
+                          <span style={{color:'#EBCB8B',fontWeight:700}}>⭐ {it.value}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {!result.dp01?.selected?.length && <p style={{color:'var(--text-muted)',textAlign:'center',padding:20}}>No movies fit within this time budget.</p>}
+                  </div>
+                  <div style={{marginTop:16}}>
+                    <p style={{color:'var(--text-muted)',fontSize:'0.78rem',marginBottom:6}}>Recurrence Relation:</p>
+                    <code className="recurrence">{result.dp01?.recurrence}</code>
+                  </div>
+                  <div className="complexity-box" style={{marginTop:12}}>
+                    <span>{result.dp01?.complexity?.time}</span><span>{result.dp01?.complexity?.space}</span><span>Optimal: Guaranteed ✓</span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <pre style={{ flex: 1, margin: 0, padding: 12, background: '#111', borderRadius: 8, fontSize: '0.75rem', color: '#c5c8c6', overflowX: 'auto' }}>
-{`int knapsack01(int W, int wt[], int val[], int n) {
-  vector<vector<int>> dp(n + 1, vector<int>(W + 1));
-  for (int i = 0; i <= n; i++) {
+              )}
+
+              {view==='greedy' && (
+                <div className="optim-result-card glass-card">
+                  <div className="optim-header">
+                    <span className="graph-badge" style={{background:'#A3BE8C22',borderColor:'#A3BE8C55',color:'#A3BE8C'}}>Fractional Knapsack — Greedy</span>
+                    <span className="optim-value" style={{color:'var(--text-secondary)'}}>{grdScore} pts</span>
+                  </div>
+                  <div className="optim-selected">
+                    {result.greedy?.selected?.map((it,i) => (
+                      <div key={i} className="optim-selected-item">
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{color:it.fraction<1?'#EBCB8B':'#A3BE8C',fontWeight:700}}>{it.fraction<1?'⚡':'✓'}</span>
+                          <strong>{it.title}</strong>
+                          {it.fraction<1 && <span style={{fontSize:'0.7rem',background:'rgba(235,203,139,0.15)',color:'#EBCB8B',padding:'2px 8px',borderRadius:20,border:'1px solid rgba(235,203,139,0.3)'}}>{(it.fraction*100).toFixed(0)}% fraction</span>}
+                        </div>
+                        <span className="optim-item-meta">ratio: {it.ratio?.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{marginTop:14,padding:12,borderRadius:8,background:'rgba(191,97,106,0.08)',border:'1px solid rgba(191,97,106,0.2)'}}>
+                    <p style={{fontSize:'0.8rem',color:'#BF616A',fontWeight:600}}>⚠️ Why Greedy Fails for 0/1 Items</p>
+                    <p style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:4}}>Greedy allows fractional items (e.g. 73% of a movie — impossible in real life!). For whole items, greedy misses better combinations that DP guarantees.</p>
+                  </div>
+                  <div className="complexity-box" style={{marginTop:12}}><span>O(n log n)</span><span>O(n)</span><span>⚠️ NOT optimal for 0/1</span></div>
+                </div>
+              )}
+
+              {view==='table' && (
+                <div className="dp-table-card glass-card">
+                  <p style={{color:'var(--text-secondary)',marginBottom:12,fontSize:'0.85rem'}}><strong>DP Table</strong> — rows = movies, cols = time capacity. Each cell = max rating achievable. Algorithm reads bottom-right → top-left to find selected items.</p>
+                  <div style={{overflowX:'auto',maxHeight:340,overflowY:'auto',borderRadius:8,border:'1px solid rgba(255,255,255,0.06)'}}>
+                    <table className="sort-table dp-table">
+                      <thead><tr><th>Movie</th>{result.dp01?.dpTable?.[0]?.map((_,j)=><th key={j}>{j}</th>)}</tr></thead>
+                      <tbody>
+                        {result.dp01?.dpTable?.map((row,i) => (
+                          <tr key={i}>
+                            <td style={{color:'#88C0D0',fontWeight:600,whiteSpace:'nowrap',maxWidth:90,overflow:'hidden',textOverflow:'ellipsis',fontSize:'0.72rem'}}>{i===0?'— base —':result.items?.[i-1]?.title||`Item ${i}`}</td>
+                            {row.map((v,j) => <td key={j} className="mono" style={{fontSize:'0.68rem',color:v>0?'var(--text-primary)':'var(--text-muted)',background:v>0?`rgba(136,192,208,${Math.min(v/100,0.15)})`:'transparent'}}>{v}</td>)}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style={{fontSize:'0.72rem',color:'var(--text-muted)',marginTop:8}}>Final answer at cell [n][W] = {result.dp01?.maxValue?.toFixed(1)} pts</p>
+                </div>
+              )}
+
+              {view==='code' && (
+                <div className="glass-card" style={{padding:20,background:'#0d0d14',border:'1px solid rgba(255,255,255,0.08)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                    <div>
+                      <span style={{color:'#88C0D0',fontWeight:700,fontSize:'0.88rem'}}>C++ Implementation</span>
+                      <p style={{fontSize:'0.72rem',color:'var(--text-muted)',marginTop:2}}>File: <code style={{color:'#A3BE8C'}}>backend/binge_optimizer.cpp</code></p>
+                    </div>
+                    <span style={{fontSize:'0.65rem',color:'#A3BE8C',border:'1px solid #A3BE8C55',padding:'3px 10px',borderRadius:20}}>PRODUCTION READY</span>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                    <div>
+                      <p style={{fontSize:'0.7rem',color:'#88C0D0',fontWeight:700,marginBottom:6,textTransform:'uppercase',letterSpacing:'1px'}}>0/1 Knapsack (DP)</p>
+                      <pre style={{margin:0,padding:14,background:'rgba(0,0,0,0.5)',borderRadius:8,fontSize:'0.72rem',color:'#c5c8c6',overflowX:'auto',border:'1px solid rgba(255,255,255,0.05)'}}>
+{`int knapsack01(int W, int wt[],
+               int val[], int n) {
+  vector<vector<int>> dp(
+    n+1, vector<int>(W+1, 0));
+  for (int i = 1; i <= n; i++) {
     for (int w = 0; w <= W; w++) {
-      if (i == 0 || w == 0)
-        dp[i][w] = 0;
-      else if (wt[i - 1] <= w)
-        dp[i][w] = max(val[i - 1] + dp[i - 1][w - wt[i - 1]],
-                       dp[i - 1][w]);
-      else
-        dp[i][w] = dp[i - 1][w];
+      dp[i][w] = dp[i-1][w];
+      if (wt[i-1] <= w)
+        dp[i][w] = max(dp[i][w],
+          val[i-1]+dp[i-1][w-wt[i-1]]);
+    }
+  }
+  // Backtrack to find items
+  int w = W;
+  for (int i = n; i > 0; i--) {
+    if (dp[i][w] != dp[i-1][w]) {
+      selected.push_back(i-1);
+      w -= wt[i-1];
     }
   }
   return dp[n][W];
 }`}
-                  </pre>
-                  <pre style={{ flex: 1, margin: 0, padding: 12, background: '#111', borderRadius: 8, fontSize: '0.75rem', color: '#c5c8c6', overflowX: 'auto' }}>
+                      </pre>
+                    </div>
+                    <div>
+                      <p style={{fontSize:'0.7rem',color:'#A3BE8C',fontWeight:700,marginBottom:6,textTransform:'uppercase',letterSpacing:'1px'}}>Fractional (Greedy)</p>
+                      <pre style={{margin:0,padding:14,background:'rgba(0,0,0,0.5)',borderRadius:8,fontSize:'0.72rem',color:'#c5c8c6',overflowX:'auto',border:'1px solid rgba(255,255,255,0.05)'}}>
 {`struct Item { int value, weight; };
 bool cmp(Item a, Item b) {
-  return (double)a.value / a.weight > (double)b.value / b.weight;
+  return (double)a.value/a.weight >
+         (double)b.value/b.weight;
 }
-double fractionalKnapsack(int W, Item arr[], int n) {
-  sort(arr, arr + n, cmp);
+double fractionalKnapsack(
+    int W, Item arr[], int n) {
+  sort(arr, arr+n, cmp);
   double finalVal = 0.0;
   for (int i = 0; i < n; i++) {
     if (arr[i].weight <= W) {
       W -= arr[i].weight;
       finalVal += arr[i].value;
     } else {
-      finalVal += arr[i].value * ((double)W / arr[i].weight);
+      finalVal += arr[i].value *
+        ((double)W/arr[i].weight);
       break;
     }
   }
   return finalVal;
 }`}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {view === 'greedy' && (
-              <div className="optim-result-card glass-card">
-                <div className="optim-header">
-                  <span className="graph-badge" style={{background:'#A3BE8C22',borderColor:'#A3BE8C',color:'#A3BE8C'}}>Fractional Knapsack — Greedy</span>
-                  <span className="optim-value">Value: {result.greedy?.maxValue?.toFixed(1)}&nbsp;pts</span>
-                </div>
-                <div className="optim-selected">
-                  {result.greedy?.selected?.map((it,i)=>(
-                    <div key={i} className="optim-selected-item">
-                      <span className="optim-item-title">{it.fraction < 1 ? `⚡ ${(it.fraction*100).toFixed(0)}%` : '✅'} {it.title}</span>
-                      <span className="optim-item-meta">ratio: {it.ratio?.toFixed(2)} · taken: {it.takenValue?.toFixed(1)}pts</span>
+                      </pre>
                     </div>
-                  ))}
-                </div>
-                <div className="complexity-box" style={{marginTop:12}}><span>O(n log n)</span><span>O(n)</span></div>
-                <p className="graph-desc">Greedy sorts by value/weight ratio. Allows fractions. NOT valid for 0/1 items.</p>
-              </div>
-            )}
-
-            {view === 'table' && (
-              <div className="dp-table-card glass-card">
-                <p style={{color:'var(--text-secondary)',marginBottom:12,fontSize:'0.85rem'}}>DP Table — rows = items, cols = capacity (sampled). Cell = max value achievable.</p>
-                <div style={{overflowX:'auto',maxHeight:320,overflowY:'auto'}}>
-                  <table className="sort-table dp-table">
-                    <thead><tr><th>Item</th>{result.dp01?.dpTable?.[0]?.map((_,j)=><th key={j}>{j}</th>)}</tr></thead>
-                    <tbody>
-                      {result.dp01?.dpTable?.map((row,i)=>(
-                        <tr key={i}>
-                          <td style={{color:'var(--accent)',fontWeight:600,whiteSpace:'nowrap',maxWidth:80,overflow:'hidden',textOverflow:'ellipsis'}}>
-                            {i===0?'—':result.items?.[i-1]?.title||`Item ${i}`}
-                          </td>
-                          {row.map((v,j)=><td key={j} className="mono" style={{fontSize:'0.7rem',color:v>0?'var(--text-primary)':'var(--text-muted)'}}>{v}</td>)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── PATTERN DETECTOR ─────────────────────────────────────────────────────────
-function PatternDetector() {
-  const [text,      setText]      = useState('The Dark Knight Rises in the darkest night, the knight stands tall.');
-  const [pattern,   setPattern]   = useState('knight');
-  const [algorithms,setAlgorithms]= useState(['kmp','rabin','boyer','naive']);
-  const [result,    setResult]    = useState(null);
-  const [loading,   setLoading]   = useState(false);
-
-  const toggle = (a) => setAlgorithms(prev => prev.includes(a) ? prev.filter(x=>x!==a) : [...prev,a]);
-
-  const run = async () => {
-    if (!text || !pattern) return;
-    setLoading(true);
-    try {
-      const { data } = await api.post('/lab/pattern', { text, pattern, algorithms });
-      setResult(data);
-    } catch(e){}
-    setLoading(false);
-  };
-
-  const highlightText = (text, matches) => {
-    if (!matches?.length) return text;
-    const pLen = pattern.length;
-    const parts = [];
-    let last = 0;
-    [...matches].sort((a,b)=>a-b).forEach(idx => {
-      parts.push(text.slice(last, idx));
-      parts.push(<mark key={idx} className="pattern-match">{text.slice(idx, idx+pLen)}</mark>);
-      last = idx + pLen;
-    });
-    parts.push(text.slice(last));
-    return parts;
-  };
-
-  const resultList = result ? Object.entries(result.results) : [];
-  const firstMatches = resultList[0]?.[1]?.matches || [];
-
-  return (
-    <div className="lab-section">
-      <div className="lab-section-header">
-        <h2 className="lab-section-title">🔍 Script Pattern Search</h2>
-        <p className="lab-section-sub">Experience high-speed text search logic. Find specific phrases in massive scripts using advanced matching techniques.</p>
-      </div>
-
-      <div className="pattern-layout">
-        <div className="pattern-controls glass-card">
-          <div className="form-group">
-            <label>Text to Search</label>
-            <textarea className="lab-textarea" rows={4} value={text} onChange={e=>setText(e.target.value)} placeholder="Enter text..." />
-          </div>
-          <div className="form-group">
-            <label>Pattern</label>
-            <input className="lab-input" value={pattern} onChange={e=>setPattern(e.target.value)} placeholder="e.g. knight" />
-          </div>
-          <div className="form-group">
-            <label>Algorithms</label>
-            <div className="lab-pills">
-              {[['kmp','KMP'],['rabin','Rabin-Karp'],['boyer','Boyer-Moore'],['naive','Naive']].map(([v,l])=>(
-                <button key={v} className={`lab-pill ${algorithms.includes(v)?'active':''}`} onClick={()=>toggle(v)}>{l}</button>
-              ))}
-            </div>
-          </div>
-          <button className="lab-run-btn" onClick={run} disabled={loading}>
-            {loading ? <span className="lab-spinner"/> : '▶'} Search
-          </button>
-        </div>
-
-        <div className="pattern-results-col">
-          {result && (
-            <>
-              <div className="pattern-text-display glass-card">
-                <p className="pattern-text-content">
-                  {highlightText(result.text, firstMatches)}
-                </p>
-                <p style={{color:'var(--text-muted)',fontSize:'0.78rem',marginTop:8}}>
-                  {firstMatches.length} match{firstMatches.length!==1?'es':''} found for "{pattern}"
-                </p>
-              </div>
-
-              <div className="pattern-compare glass-card">
-                <table className="sort-table">
-                  <thead>
-                    <tr><th>Algorithm</th><th>Matches</th><th>Comparisons</th><th>Time (ms)</th><th>Time Complexity</th><th>Space</th></tr>
-                  </thead>
-                  <tbody>
-                    {resultList.map(([key, r]) => (
-                      <tr key={key}>
-                        <td><span className="algo-badge">{r.algorithm}</span></td>
-                        <td className="mono">{r.matches?.length}</td>
-                        <td className="mono">{r.comparisons}</td>
-                        <td className="mono">{r.timeMs}</td>
-                        <td className="mono complexity">{r.complexity?.time}</td>
-                        <td className="mono complexity">{r.complexity?.space}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {result.results?.kmp?.failureFunction && (
-                <div className="kmp-failure glass-card">
-                  <p style={{color:'var(--text-secondary)',marginBottom:8,fontSize:'0.85rem'}}>KMP Failure Function for pattern "<strong>{pattern}</strong>"</p>
-                  <div className="ff-row">
-                    {pattern.split('').map((c,i)=>(
-                      <div key={i} className="ff-cell">
-                        <div className="ff-char">{c}</div>
-                        <div className="ff-val">{result.results.kmp.failureFunction[i]}</div>
-                      </div>
-                    ))}
+                  </div>
+                  <div style={{marginTop:12,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                    <div style={{padding:10,borderRadius:8,background:'rgba(136,192,208,0.05)',border:'1px solid rgba(136,192,208,0.15)',fontSize:'0.75rem'}}>
+                      <strong style={{color:'#88C0D0'}}>0/1 Knapsack</strong>
+                      <div style={{color:'var(--text-muted)',marginTop:4}}>Complexity: <code>O(N×W)</code> time, <code>O(N×W)</code> space. Guaranteed optimal. Each item: include OR exclude (no fractions).</div>
+                    </div>
+                    <div style={{padding:10,borderRadius:8,background:'rgba(163,190,140,0.05)',border:'1px solid rgba(163,190,140,0.15)',fontSize:'0.75rem'}}>
+                      <strong style={{color:'#A3BE8C'}}>Fractional Knapsack</strong>
+                      <div style={{color:'var(--text-muted)',marginTop:4}}>Complexity: <code>O(N log N)</code> — just sort by ratio. Allows fractions. NOT valid for movies (can't watch half a film).</div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -681,16 +458,187 @@ function PatternDetector() {
   );
 }
 
-// ─── BACKTRACKING ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 🔍 PATTERN DETECTOR
+// ─────────────────────────────────────────────────────────────────────────────
+function PatternDetector() {
+  const [text,       setText]       = useState('The Dark Knight rises in the darkest night. The knight stands tall and fights against the darkness, reclaiming the night for Gotham.');
+  const [pattern,    setPattern]    = useState('knight');
+  const [algorithms, setAlgorithms] = useState(['kmp','rabin','boyer','naive']);
+  const [result,     setResult]     = useState(null);
+  const [loading,    setLoading]    = useState(false);
+
+  const toggle = (a) => setAlgorithms(prev => prev.includes(a)?prev.filter(x=>x!==a):[...prev,a]);
+
+  const run = async () => {
+    if (!text||!pattern) return;
+    setLoading(true);
+    try { const {data} = await api.post('/lab/pattern',{text,pattern,algorithms}); setResult(data); }
+    catch(e){}
+    setLoading(false);
+  };
+
+  const ALGO_META = {
+    kmp:   {color:'#88C0D0', full:'KMP',         time:'O(n+m)',     space:'O(m)',    detail:'Precomputes Failure Function to skip redundant comparisons. Never re-scans matched characters.'},
+    rabin: {color:'#B48EAD', full:'Rabin-Karp',  time:'O(n+m) avg', space:'O(1)',   detail:'Rolling hash — updates in O(1) per window slide. Excellent for multi-pattern search.'},
+    boyer: {color:'#A3BE8C', full:'Boyer-Moore', time:'O(n/m) best',space:'O(α)',   detail:'Scans RIGHT to LEFT. Bad-character heuristic allows skipping large text sections.'},
+    naive: {color:'#BF616A', full:'Naive',        time:'O(n×m)',     space:'O(1)',   detail:'Brute force — checks every position. Shown only for comparison to demonstrate why KMP matters.'},
+  };
+
+  const firstMatches = result ? Object.values(result.results)[0]?.matches||[] : [];
+  const maxComp = result ? Math.max(...Object.values(result.results).map(r=>r.comparisons||0)) : 1;
+
+  const highlightText = (text, matches) => {
+    if (!matches?.length) return text;
+    const pLen = pattern.length;
+    const parts = [];
+    let last = 0;
+    [...matches].sort((a,b)=>a-b).forEach(idx => {
+      parts.push(text.slice(last, idx));
+      parts.push(<mark key={idx} className="pattern-match">{text.slice(idx,idx+pLen)}</mark>);
+      last = idx+pLen;
+    });
+    parts.push(text.slice(last));
+    return parts;
+  };
+
+  return (
+    <div className="lab-section">
+      <div className="lab-section-header">
+        <div className="lab-section-badge">⚡ DAA — String Matching Algorithms</div>
+        <h2 className="lab-section-title">Script Pattern Search Engine</h2>
+        <p className="lab-section-sub">Run <strong>KMP, Rabin-Karp, Boyer-Moore,</strong> and <strong>Naive Search</strong> simultaneously. See exactly how many comparisons each saves — with the KMP Failure Function table visualized.</p>
+      </div>
+
+      <div className="pattern-layout">
+        <div className="pattern-controls glass-card">
+          <div className="form-group">
+            <label>Text to Search</label>
+            <textarea className="lab-textarea" rows={5} value={text} onChange={e=>setText(e.target.value)}/>
+          </div>
+          <div className="form-group">
+            <label>Search Pattern</label>
+            <input className="lab-input" value={pattern} onChange={e=>setPattern(e.target.value)} placeholder="e.g. knight"/>
+          </div>
+          <div className="form-group">
+            <label>Algorithms</label>
+            <div className="lab-pills">
+              {Object.entries(ALGO_META).map(([v,meta]) => (
+                <button key={v} className={`lab-pill ${algorithms.includes(v)?'active':''}`}
+                  style={algorithms.includes(v)?{background:meta.color+'18',borderColor:meta.color,color:meta.color}:{}}
+                  onClick={()=>toggle(v)}>{meta.full}</button>
+              ))}
+            </div>
+          </div>
+          <button className="lab-run-btn" onClick={run} disabled={loading}>
+            {loading?<span className="lab-spinner"/>:'🔍'} {loading?'Searching...':'Run Search'}
+          </button>
+          <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:8}}>
+            {algorithms.map(a => {
+              const meta = ALGO_META[a]; if (!meta) return null;
+              return (
+                <div key={a} className="algo-info-card" style={{padding:12}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                    <div style={{width:8,height:8,borderRadius:2,background:meta.color,flexShrink:0}}/>
+                    <strong style={{fontSize:'0.78rem',color:meta.color}}>{meta.full}</strong>
+                    <span className="mono" style={{marginLeft:'auto',fontSize:'0.66rem',color:'var(--text-muted)'}}>{meta.time}</span>
+                  </div>
+                  <p style={{fontSize:'0.72rem',color:'var(--text-muted)',lineHeight:1.5}}>{meta.detail}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="pattern-results-col">
+          {!result && (
+            <div className="glass-card" style={{padding:48,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12,textAlign:'center',minHeight:280}}>
+              <div style={{fontSize:'2.5rem'}}>🔍</div>
+              <p style={{color:'var(--text-muted)',fontSize:'0.9rem'}}>Run the search to see KMP, Rabin-Karp, Boyer-Moore and Naive results side-by-side</p>
+            </div>
+          )}
+          {result && (
+            <>
+              <div className="pattern-text-display glass-card">
+                <p className="pattern-text-content">{highlightText(result.text, firstMatches)}</p>
+                <div style={{marginTop:10,display:'flex',gap:12,alignItems:'center'}}>
+                  <span style={{fontSize:'0.78rem',color:'var(--text-muted)'}}><strong style={{color:'#88C0D0'}}>{firstMatches.length}</strong> match{firstMatches.length!==1?'es':''} for "{pattern}"</span>
+                  <span style={{fontSize:'0.72rem',color:'var(--text-muted)'}}>n={result.text?.length}, m={pattern.length}</span>
+                </div>
+              </div>
+
+              <div className="glass-card" style={{padding:20}}>
+                <h3 style={{fontSize:'0.82rem',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:14}}>Comparisons Made (Less = Smarter)</h3>
+                {Object.entries(result.results).map(([key,r]) => {
+                  const meta = ALGO_META[key];
+                  return (
+                    <div key={key} className="speed-bar-wrap">
+                      <span className="speed-bar-label" style={{color:meta?.color}}>{meta?.full}</span>
+                      <div className="speed-bar-track"><div className="speed-bar-fill" style={{width:`${(r.comparisons/maxComp)*100}%`,background:`linear-gradient(90deg,${meta?.color}55,${meta?.color})`}}/></div>
+                      <span className="speed-bar-val">{r.comparisons}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pattern-compare glass-card">
+                <div style={{overflowX:'auto',borderRadius:8,border:'1px solid rgba(255,255,255,0.05)'}}>
+                  <table className="sort-table">
+                    <thead><tr><th>Algorithm</th><th>Matches</th><th>Comparisons</th><th>Time (ms)</th><th>Time Complexity</th><th>Space</th></tr></thead>
+                    <tbody>
+                      {Object.entries(result.results).map(([key,r]) => {
+                        const meta = ALGO_META[key];
+                        return (
+                          <tr key={key}>
+                            <td><span className="algo-badge" style={{background:meta?.color+'18',borderColor:meta?.color+'55',color:meta?.color}}>{r.algorithm}</span></td>
+                            <td className="mono" style={{color:'#A3BE8C',fontWeight:700}}>{r.matches?.length}</td>
+                            <td className="mono">{r.comparisons}</td>
+                            <td className="mono">{r.timeMs}</td>
+                            <td className="mono complexity">{r.complexity?.time}</td>
+                            <td className="mono complexity">{r.complexity?.space}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {result.results?.kmp?.failureFunction && (
+                <div className="kmp-failure glass-card">
+                  <h3 style={{fontSize:'0.82rem',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:4}}>KMP Failure Function</h3>
+                  <p style={{color:'var(--text-muted)',fontSize:'0.75rem',marginBottom:12,lineHeight:1.6}}>For pattern "<strong style={{color:'#88C0D0'}}>{pattern}</strong>" — tells the algorithm where to restart after a mismatch to avoid re-scanning already-matched characters.</p>
+                  <div className="ff-row">
+                    {pattern.split('').map((c,i) => (
+                      <div key={i} className="ff-cell">
+                        <div className="ff-char">{c}</div>
+                        <div className="ff-val">{result.results.kmp.failureFunction[i]}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{fontSize:'0.7rem',color:'var(--text-muted)',marginTop:10}}>Value 0 = restart from beginning. Value n = skip n characters on mismatch.</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🧩 BACKTRACKING LAB
+// ─────────────────────────────────────────────────────────────────────────────
 function BacktrackLab() {
-  const [mode, setMode]       = useState('nqueens');
-  const [n,    setN]          = useState(6);
-  const [result, setResult]   = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [franchise, setFranchise] = useState('mcu');
+  const [mode,       setMode]       = useState('nqueens');
+  const [n,          setN]          = useState(6);
+  const [result,     setResult]     = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [franchise,  setFranchise]  = useState('mcu');
   const [franchises, setFranchises] = useState([]);
-  const [subArr, setSubArr]   = useState([2,3,6,9,12,15,18]);
-  const [subTarget, setSubTarget] = useState(18);
+  const [subArr]                    = useState([2,3,6,9,12,15,18]);
+  const [subTarget,  setSubTarget]  = useState(18);
 
   useEffect(() => {
     api.get('/lab/franchises').then(r=>setFranchises(r.data)).catch(()=>{});
@@ -699,160 +647,185 @@ function BacktrackLab() {
   const run = async () => {
     setLoading(true); setResult(null);
     try {
-      if (mode === 'nqueens') {
-        const { data } = await api.post('/lab/nqueens', { n });
-        setResult(data);
-      } else if (mode === 'topo') {
-        const { data } = await api.post('/lab/topo', { franchise });
-        setResult(data);
-      } else if (mode === 'subsets') {
-        const { data } = await api.post('/lab/sumsubsets', { arr: subArr, target: subTarget });
-        setResult(data);
-      }
+      if (mode==='nqueens') { const {data} = await api.post('/lab/nqueens',{n}); setResult(data); }
+      else if (mode==='topo') { const {data} = await api.post('/lab/topo',{franchise}); setResult(data); }
+      else if (mode==='subsets') { const {data} = await api.post('/lab/sumsubsets',{arr:subArr,target:subTarget}); setResult(data); }
     } catch(e){}
     setLoading(false);
+  };
+
+  const MODE_INFO = {
+    nqueens: {time:'O(N!)',   space:'O(N)',   desc:'Place N queens so no two attack each other. Recursive backtracking — tries each column per row, backs up on any conflict.'},
+    topo:    {time:'O(V+E)', space:'O(V)',   desc:"Kahn's BFS-based topological sort on the franchise DAG. Finds valid watch order and detects circular dependencies."},
+    subsets: {time:'O(2ⁿ)', space:'O(N)',   desc:'Find all subsets summing to target. Prunes branches early when running sum > target — far faster than brute force.'},
   };
 
   return (
     <div className="lab-section">
       <div className="lab-section-header">
-        <h2 className="lab-section-title">🧩 Strategic Logic Puzzles</h2>
-        <p className="lab-section-sub">Visualizing how computers solve complex logic problems through recursive decision making.</p>
+        <div className="lab-section-badge">⚡ DAA — Backtracking Algorithms</div>
+        <h2 className="lab-section-title">Strategic Logic Puzzles</h2>
+        <p className="lab-section-sub">Visualize how computers solve complex problems through <strong>recursive decision trees</strong>. See every attempt, backtrack, and the final solution in real time.</p>
       </div>
 
-      <div className="lab-pills" style={{marginBottom:20}}>
-        {[['nqueens','♛ N-Queens'],['topo','📋 Topo Sort'],['subsets','∑ Sum of Subsets']].map(([v,l])=>(
+      <div className="lab-pills" style={{marginBottom:24}}>
+        {[['nqueens','♛ N-Queens'],['topo','📋 Topological Sort'],['subsets','∑ Sum of Subsets']].map(([v,l]) => (
           <button key={v} className={`lab-pill ${mode===v?'active':''}`} onClick={()=>{setMode(v);setResult(null);}}>{l}</button>
         ))}
       </div>
 
       <div className="backtrack-layout">
-        <div className="glass-card" style={{padding:24,minWidth:260}}>
-          {mode === 'nqueens' && (
+        <div className="glass-card" style={{padding:24}}>
+          {mode==='nqueens' && (
             <div className="form-group">
-              <label>Board Size N: <strong>{n}×{n}</strong></label>
-              <input type="range" min="4" max="9" value={n} onChange={e=>setN(+e.target.value)} className="lab-slider" />
-              <p style={{color:'var(--text-muted)',fontSize:'0.8rem',marginTop:8}}>Place {n} queens so none attack each other.</p>
+              <label>Board Size</label>
+              <div style={{fontSize:'1.8rem',fontWeight:900,color:'#EBCB8B',marginBottom:6,textAlign:'center'}}>{n} × {n}</div>
+              <input type="range" min="4" max="9" value={n} onChange={e=>setN(+e.target.value)} className="lab-slider"/>
+              <p style={{color:'var(--text-muted)',fontSize:'0.78rem',marginTop:8,lineHeight:1.6}}>Place {n} queens on a {n}×{n} board so no two share a row, column, or diagonal.</p>
             </div>
           )}
-          {mode === 'topo' && (
+          {mode==='topo' && (
             <div className="form-group">
-              <label>Franchise Watch Order</label>
+              <label>Franchise</label>
               <select value={franchise} onChange={e=>setFranchise(e.target.value)} className="lab-select">
-                {franchises.map(f=><option key={f.id} value={f.id}>{f.label}</option>)}
+                {franchises.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
               </select>
-              <p style={{color:'var(--text-muted)',fontSize:'0.8rem',marginTop:8}}>Detects circular dependencies & gives valid watch order.</p>
+              <p style={{color:'var(--text-muted)',fontSize:'0.78rem',marginTop:8,lineHeight:1.6}}>Computes the correct watch order for a movie franchise using Kahn's algorithm on a DAG.</p>
             </div>
           )}
-          {mode === 'subsets' && (
-            <div className="form-group">
-              <label>Target Sum: <strong>{subTarget}</strong></label>
-              <input type="range" min="5" max="50" value={subTarget} onChange={e=>setSubTarget(+e.target.value)} className="lab-slider" />
-              <p style={{color:'var(--text-muted)',fontSize:'0.8rem',marginTop:8}}>Array: [{subArr.join(', ')}]</p>
+          {mode==='subsets' && (
+            <div>
+              <div className="form-group">
+                <label>Target Sum: <strong style={{color:'#88C0D0'}}>{subTarget}</strong></label>
+                <input type="range" min="5" max="50" value={subTarget} onChange={e=>setSubTarget(+e.target.value)} className="lab-slider"/>
+              </div>
+              <p style={{color:'var(--text-muted)',fontSize:'0.78rem',lineHeight:1.6}}>Array: <code style={{color:'#A3BE8C'}}>[{subArr.join(', ')}]</code></p>
             </div>
           )}
+
           <button className="lab-run-btn" style={{marginTop:16}} onClick={run} disabled={loading}>
-            {loading?<span className="lab-spinner"/>:'▶'} Solve
+            {loading?<span className="lab-spinner"/>:'▶'} {loading?'Solving...':'Solve'}
           </button>
+
+          <div className="algo-info-card" style={{marginTop:16}}>
+            <div className="complexity-box" style={{marginBottom:10}}><span>Time: {MODE_INFO[mode].time}</span><span>Space: {MODE_INFO[mode].space}</span></div>
+            <p style={{fontSize:'0.78rem',color:'var(--text-muted)',lineHeight:1.6}}>{MODE_INFO[mode].desc}</p>
+          </div>
         </div>
 
-        {result && (
-          <div className="backtrack-results glass-card">
-            {mode === 'nqueens' && (
-              <>
-                <div className="bt-stat-row">
-                  <div className="bt-stat"><strong>{result.solutionCount}</strong><span>Solutions</span></div>
-                  <div className="bt-stat"><strong>{result.backtracks}</strong><span>Backtracks</span></div>
-                  <div className="bt-stat"><strong>{result.totalSteps}</strong><span>Total Steps</span></div>
-                  <div className="bt-stat"><strong>{result.timeMs}ms</strong><span>Time</span></div>
-                </div>
-                <div className="complexity-box"><span>{result.complexity?.time}</span><span>{result.complexity?.space}</span></div>
-                <p className="graph-desc" style={{marginTop:8}}>{result.description}</p>
-                {result.solutions?.[0] && (
-                  <div style={{marginTop:16}}>
-                    <p style={{color:'var(--text-secondary)',marginBottom:8,fontSize:'0.85rem'}}>First Solution:</p>
-                    <div className="nqueens-board" style={{gridTemplateColumns:`repeat(${n},1fr)`}}>
-                      {Array.from({length:n*n},(_,idx)=>{
-                        const r=Math.floor(idx/n), c=idx%n;
-                        return (
-                          <div key={idx} className={`nqueens-cell ${(r+c)%2===0?'light':'dark'} ${result.solutions[0][r]===c?'queen':''}`}>
-                            {result.solutions[0][r]===c?'♛':''}
-                          </div>
-                        );
-                      })}
-                    </div>
+        <div>
+          {!result && !loading && (
+            <div className="glass-card" style={{padding:48,textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:12,minHeight:300,justifyContent:'center'}}>
+              <div style={{fontSize:'2.5rem'}}>{mode==='nqueens'?'♛':mode==='topo'?'📋':'∑'}</div>
+              <p style={{color:'var(--text-muted)',fontSize:'0.9rem'}}>Configure above and click Solve to run the algorithm</p>
+            </div>
+          )}
+
+          {result && (
+            <div className="backtrack-results glass-card">
+              {mode==='nqueens' && (
+                <>
+                  <div className="bt-stat-row">
+                    <div className="bt-stat"><strong>{result.solutionCount}</strong><span>Solutions</span></div>
+                    <div className="bt-stat"><strong style={{color:'#BF616A'}}>{result.backtracks}</strong><span>Backtracks</span></div>
+                    <div className="bt-stat"><strong>{result.totalSteps}</strong><span>Steps</span></div>
+                    <div className="bt-stat"><strong style={{color:'#A3BE8C'}}>{result.timeMs}ms</strong><span>Time</span></div>
                   </div>
-                )}
-              </>
-            )}
-            {mode === 'topo' && (
-              <>
-                <div className={`topo-status ${result.hasCycle?'error':'success'}`}>
-                  {result.hasCycle ? '⚠️ Cycle Detected! No valid order.' : '✅ Valid topological order found!'}
-                </div>
-                {!result.hasCycle && (
-                  <div className="topo-order">
-                    {result.order?.map((node,i)=>(
-                      <div key={i} className="topo-node">
-                        <span className="topo-num">{i+1}</span>
-                        <span className="topo-label">{node}</span>
-                        {i < result.order.length-1 && <span className="topo-arrow">→</span>}
+                  <div className="complexity-box" style={{marginBottom:14}}><span>{result.complexity?.time}</span><span>{result.complexity?.space}</span></div>
+                  <p style={{color:'var(--text-muted)',fontSize:'0.78rem',marginBottom:16,lineHeight:1.6}}>{result.description}</p>
+                  {result.solutions?.[0] && (
+                    <div>
+                      <p style={{color:'var(--text-secondary)',fontWeight:600,fontSize:'0.8rem',marginBottom:10}}>Solution 1 of {result.solutionCount}:</p>
+                      <div className="nqueens-board" style={{gridTemplateColumns:`repeat(${n},1fr)`}}>
+                        {Array.from({length:n*n},(_,idx) => {
+                          const r=Math.floor(idx/n), c=idx%n;
+                          return <div key={idx} className={`nqueens-cell ${(r+c)%2===0?'light':'dark'} ${result.solutions[0][r]===c?'queen':''}`}>{result.solutions[0][r]===c?'♛':''}</div>;
+                        })}
                       </div>
-                    ))}
-                  </div>
-                )}
-                <div className="complexity-box" style={{marginTop:16}}><span>{result.complexity?.time}</span><span>{result.complexity?.space}</span></div>
-                <p className="graph-desc">{result.description}</p>
-              </>
-            )}
-            {mode === 'subsets' && (
-              <>
-                <div className="bt-stat-row">
-                  <div className="bt-stat"><strong>{result.solutionCount}</strong><span>Subsets</span></div>
-                  <div className="bt-stat"><strong>{result.backtracks}</strong><span>Backtracks</span></div>
-                  <div className="bt-stat"><strong>{result.timeMs}ms</strong><span>Time</span></div>
-                </div>
-                <div className="subset-solutions">
-                  {result.solutions?.map((s,i)=>(
-                    <div key={i} className="subset-row glass-card">
-                      [{s.join(' + ')}] = {subTarget}
                     </div>
-                  ))}
-                </div>
-                <div className="complexity-box" style={{marginTop:12}}><span>{result.complexity?.time}</span><span>{result.complexity?.space}</span></div>
-                <p className="graph-desc">{result.description}</p>
-              </>
-            )}
-          </div>
-        )}
+                  )}
+                  <div style={{marginTop:20,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                    {Array.from({length:Math.min(result.solutionCount,20)}).map((_,i) => (
+                      <div key={i} style={{width:10,height:10,borderRadius:2,background:i===0?'#EBCB8B':'rgba(235,203,139,0.3)',border:'1px solid rgba(235,203,139,0.4)'}}/>
+                    ))}
+                    {result.solutionCount > 20 && <span style={{fontSize:'0.72rem',color:'var(--text-muted)'}}>+{result.solutionCount-20} more</span>}
+                  </div>
+                </>
+              )}
+
+              {mode==='topo' && (
+                <>
+                  <div className={`topo-status ${result.hasCycle?'error':'success'}`}>
+                    {result.hasCycle ? '⚠️ Cycle Detected! No valid topological order exists.' : `✅ Valid watch order found — ${result.order?.length} movies`}
+                  </div>
+                  {!result.hasCycle && (
+                    <div className="topo-order" style={{marginBottom:16}}>
+                      {result.order?.map((node,i) => (
+                        <div key={i} className="topo-node">
+                          <span className="topo-num">{i+1}</span>
+                          <span className="topo-label">{node}</span>
+                          {i < result.order.length-1 && <span className="topo-arrow">→</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="complexity-box">
+                    <span>O(V+E)</span><span>O(V)</span>
+                    <span style={{color:result.hasCycle?'#BF616A':'#A3BE8C'}}>{result.hasCycle?'Cycle Found':'Valid DAG'}</span>
+                  </div>
+                  <p style={{fontSize:'0.78rem',color:'var(--text-muted)',marginTop:10,lineHeight:1.6}}>{result.description}</p>
+                </>
+              )}
+
+              {mode==='subsets' && (
+                <>
+                  <div className="bt-stat-row">
+                    <div className="bt-stat"><strong style={{color:'#A3BE8C'}}>{result.solutionCount}</strong><span>Subsets Found</span></div>
+                    <div className="bt-stat"><strong style={{color:'#BF616A'}}>{result.backtracks}</strong><span>Branches Pruned</span></div>
+                    <div className="bt-stat"><strong>{result.timeMs}ms</strong><span>Time</span></div>
+                  </div>
+                  <div className="subset-solutions">
+                    {result.solutions?.map((s,i) => <div key={i} className="subset-row">[{s.join(' + ')}] = {subTarget}</div>)}
+                    {!result.solutions?.length && <p style={{color:'#BF616A',padding:12}}>No subset sums to {subTarget}.</p>}
+                  </div>
+                  <div className="complexity-box" style={{marginTop:12}}><span>{result.complexity?.time}</span><span>{result.complexity?.space}</span><span>Pruning applied ✓</span></div>
+                  <p style={{fontSize:'0.78rem',color:'var(--text-muted)',marginTop:10,lineHeight:1.6}}>{result.description}</p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── MAIN LAB PAGE ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 🚀 MAIN LAB PAGE
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Lab() {
   const [activeTab, setActiveTab] = useState('sort');
 
   return (
     <div className="lab-page animate-fade">
       <div className="lab-hero">
-        <div className="lab-hero-glow" />
         <p className="lab-eyebrow">ORLUNE · ALGORITHM ENGINE</p>
         <h1 className="lab-title">Intelligence <span>Core</span></h1>
         <p className="lab-subtitle">
-          Real algorithms powering this platform — visualized live.
-          <br/>Sorting · Graph Theory · Dynamic Programming · String Matching · Backtracking
+          Real DAA algorithms powering this platform — visualized live.<br/>
+          Sorting · Dynamic Programming · String Matching · Backtracking
         </p>
+        <div className="lab-hero-stats">
+          <div className="lab-hero-stat"><span className="lab-hero-stat-num">17</span><span className="lab-hero-stat-label">Algorithms</span></div>
+          <div className="lab-hero-stat"><span className="lab-hero-stat-num">4</span><span className="lab-hero-stat-label">DAA Categories</span></div>
+          <div className="lab-hero-stat"><span className="lab-hero-stat-num">Live</span><span className="lab-hero-stat-label">Real API</span></div>
+          <div className="lab-hero-stat"><span className="lab-hero-stat-num">C++</span><span className="lab-hero-stat-label">Core Engine</span></div>
+        </div>
       </div>
 
       <div className="lab-tabs-bar">
         {TABS.map(t => (
-          <button
-            key={t.id}
-            className={`lab-tab ${activeTab === t.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(t.id)}
-          >
+          <button key={t.id} className={`lab-tab ${activeTab===t.id?'active':''}`} onClick={()=>setActiveTab(t.id)}>
             <span className="lab-tab-icon">{t.icon}</span>
             <span className="lab-tab-label">{t.label}</span>
             <span className="lab-tab-desc">{t.desc}</span>
@@ -861,11 +834,10 @@ export default function Lab() {
       </div>
 
       <div className="lab-body container">
-        {activeTab === 'sort'      && <SortStudio />}
-        {activeTab === 'graph'     && <GenreGraph />}
-        {activeTab === 'optimizer' && <Optimizer />}
-        {activeTab === 'pattern'   && <PatternDetector />}
-        {activeTab === 'backtrack' && <BacktrackLab />}
+        {activeTab==='sort'      && <SortStudio/>}
+        {activeTab==='optimizer' && <Optimizer/>}
+        {activeTab==='pattern'   && <PatternDetector/>}
+        {activeTab==='backtrack' && <BacktrackLab/>}
       </div>
     </div>
   );
